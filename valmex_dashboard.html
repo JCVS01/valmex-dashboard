@@ -4,547 +4,346 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VALMEX | Dashboard Asesor</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js">
-// ── Cargar info del usuario activo ──────────
-async function loadUser() {
-  try {
-    const res = await fetch('/me');
-    if (!res.ok) return; // si no hay sesión, no redirigir — Flask ya maneja eso
-    const user = await res.json();
-    if (!user.ok) return;
-    document.getElementById('user-avatar').textContent = user.iniciales;
-    document.getElementById('user-name').textContent   = user.nombre;
-    if (user.rol === 'vista') {
-      document.querySelectorAll('.nav-tab').forEach(btn => {
-        const txt = btn.textContent.trim();
-        if (txt === 'Configuración' || txt === 'VALMEX Elite') {
-          btn.style.display = 'none';
-        }
-      });
-    }
-  } catch(e) {
-    console.log('Error cargando usuario:', e);
-  }
-}
-loadUser();
-
-</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
-// ── Cargar info del usuario activo ──────────
-async function loadUser() {
-  try {
-    const res = await fetch('/me');
-    if (!res.ok) return; // si no hay sesión, no redirigir — Flask ya maneja eso
-    const user = await res.json();
-    if (!user.ok) return;
-    document.getElementById('user-avatar').textContent = user.iniciales;
-    document.getElementById('user-name').textContent   = user.nombre;
-    if (user.rol === 'vista') {
-      document.querySelectorAll('.nav-tab').forEach(btn => {
-        const txt = btn.textContent.trim();
-        if (txt === 'Configuración' || txt === 'VALMEX Elite') {
-          btn.style.display = 'none';
-        }
-      });
-    }
-  } catch(e) {
-    console.log('Error cargando usuario:', e);
-  }
-}
-loadUser();
-
-</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
-// ── Cargar info del usuario activo ──────────
-async function loadUser() {
-  try {
-    const res = await fetch('/me');
-    if (!res.ok) return; // si no hay sesión, no redirigir — Flask ya maneja eso
-    const user = await res.json();
-    if (!user.ok) return;
-    document.getElementById('user-avatar').textContent = user.iniciales;
-    document.getElementById('user-name').textContent   = user.nombre;
-    if (user.rol === 'vista') {
-      document.querySelectorAll('.nav-tab').forEach(btn => {
-        const txt = btn.textContent.trim();
-        if (txt === 'Configuración' || txt === 'VALMEX Elite') {
-          btn.style.display = 'none';
-        }
-      });
-    }
-  } catch(e) {
-    console.log('Error cargando usuario:', e);
-  }
-}
-loadUser();
-
-</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Montserrat',sans-serif;background:#F0F3F7;color:#1A2540;}
+:root{--navy:#00205C;--sky:#41BBC9;--blue:#3DA5E0;--silver:#D3DDE6;--gray:#5B6670;--white:#fff;--bg:#F0F3F7;}
 
-:root {
-  --navy:   #00205C;
-  --sky:    #41BBC9;
-  --blue:   #3DA5E0;
-  --silver: #D3DDE6;
-  --gray:   #5B6670;
-  --white:  #FFFFFF;
-  --bg:     #F0F3F7;
+/* ── TOPBAR ── */
+.topbar{background:var(--navy);width:100%;box-shadow:0 2px 12px rgba(0,0,0,.25);}
+.brand{max-width:1600px;margin:0 auto;padding:0 32px;height:76px;display:flex;align-items:center;justify-content:space-between;}
+.logo-btn{display:flex;align-items:center;cursor:pointer;background:none;border:none;padding:6px 8px;border-radius:8px;transition:background .18s;flex-shrink:0;}
+.logo-btn:hover{background:rgba(255,255,255,.10);}
+.logo-img{height:42px;width:auto;}
+.nav{display:flex;align-items:center;gap:4px;}
+.nav-tab{color:rgba(255,255,255,.75);background:transparent;border:none;font-family:'Montserrat',sans-serif;font-weight:600;font-size:14px;padding:8px 18px;border-radius:10px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.nav-tab:hover{background:rgba(255,255,255,.12);color:#fff;}
+.nav-tab.active{background:#fff;color:var(--navy);font-weight:700;}
+.header-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.advisor-avatar{width:34px;height:34px;border-radius:50%;background:var(--sky);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--navy);flex-shrink:0;}
+.advisor-name{font-size:13px;color:rgba(255,255,255,.85);font-weight:500;}
+.btn-logout{background:none;border:none;cursor:pointer;color:rgba(255,255,255,.55);font-size:17px;padding:4px 8px;border-radius:6px;transition:color .15s;}
+.btn-logout:hover{color:#fff;}
+.hamburger{display:none;background:none;border:none;cursor:pointer;flex-direction:column;gap:5px;padding:6px;}
+.hamburger span{display:block;width:22px;height:2px;background:#fff;border-radius:2px;}
 
-  /* Canvas fijo 1280×720 */
-  --canvas-w: 1280px;
-  --canvas-h: 720px;
-  --gap:      12px;
-  --edge-pad: 12px;
-  --card-radius: 12px;
+/* ── MOBILE NAV ── */
+.mobile-nav{display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.5);}
+.mobile-panel{position:absolute;top:0;right:0;width:260px;height:100%;background:var(--navy);padding:24px 20px;display:flex;flex-direction:column;gap:6px;}
+.mobile-close{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;align-self:flex-end;margin-bottom:8px;}
+.mobile-user{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.15);margin-bottom:8px;}
+.mobile-tab{color:rgba(255,255,255,.8);background:transparent;border:none;font-family:'Montserrat',sans-serif;font-weight:600;font-size:15px;padding:11px 14px;border-radius:10px;cursor:pointer;text-align:left;width:100%;transition:all .15s;}
+.mobile-tab:hover,.mobile-tab.active{background:rgba(255,255,255,.15);color:#fff;}
+.mobile-logout{margin-top:auto;padding:11px 14px;color:rgba(255,255,255,.55);background:none;border:none;font-family:'Montserrat',sans-serif;font-size:13px;cursor:pointer;text-align:left;border-radius:10px;transition:all .15s;}
+.mobile-logout:hover{color:#fff;background:rgba(255,255,255,.10);}
 
-  /* Fila superior */
-  --row-top-h: 328px;
-  --comp-w: 190px;  --comp-h: var(--row-top-h);
-  --hoy-w:  328px;  --hoy-h:  var(--row-top-h);
-  --line-h: var(--row-top-h);
+/* ── CONTAINER / PAGES ── */
+.container{max-width:1400px;margin:0 auto;padding:24px 20px;}
+.page{display:none;}.page.active{display:block;}
 
-  /* Pies */
-  --pie-w: 405px; --pie-h: 287px;
+/* ── BOTÓN DESCARGA ── */
+.btn-dl{width:36px;height:36px;border-radius:8px;background:var(--navy);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;transition:background .18s;text-decoration:none;flex-shrink:0;}
+.btn-dl:hover{background:var(--sky);}
 
-  /* Posiciones */
-  --row-top-y: 85px;
-  --comp-x: 9px;   --comp-y: var(--row-top-y);
-  --hoy-x: calc(var(--comp-x) + var(--comp-w) + var(--gap));
-  --hoy-y: var(--row-top-y);
-  --line-x: calc(var(--hoy-x) + var(--hoy-w) + var(--gap));
-  --line-y: var(--row-top-y);
-  --pie1-x: 8px;
-  --pie2-x: calc(var(--pie1-x) + var(--pie-w) + var(--gap));
-  --pie3-x: calc(var(--pie2-x) + var(--pie-w) + var(--gap));
-  --pies-y: calc(var(--row-top-y) + var(--row-top-h) + var(--gap));
-}
+/* ── PRESENTACIÓN ── */
+.pres-card{background:#fff;border-radius:14px;border:1px solid var(--silver);box-shadow:0 4px 20px rgba(0,32,92,.08);overflow:hidden;}
+.pres-hdr{background:#F7F9FC;border-bottom:1px solid var(--silver);padding:13px 20px;display:flex;align-items:center;justify-content:space-between;}
+.pres-hdr h2{font-size:14px;font-weight:600;color:var(--navy);}
+.pres-body{width:100%;height:80vh;overflow:hidden;line-height:0;}
+.pres-body iframe{width:100%;height:100%;border:none;display:block;}
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── PROPUESTA ── */
+.prop-titlebar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.prop-title-left{display:flex;align-items:center;gap:10px;}
+.prop-accent{width:10px;height:28px;background:var(--sky);border-radius:3px;flex-shrink:0;}
+.prop-title{font-size:20px;font-weight:900;letter-spacing:.3px;color:var(--navy);text-transform:uppercase;}
+.prop-rule{height:2px;background:var(--navy);border-radius:2px;margin-bottom:14px;}
+.prop-right{display:flex;align-items:center;gap:12px;}
 
-body {
-  font-family: 'Montserrat', sans-serif;
-  background: var(--bg);
-  color: #1A2540;
-}
-
-/* ══ HEADER ══ */
-.topbar {
-  background: var(--navy);
-  width: 100%;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.25);
-}
-.brand {
-  max-width: 1700px;
-  margin: 0 auto;
-  padding: 0 40px;
-  height: 90px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-/* Logo — clickeable → Presentación */
-.logo-btn {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  background: none;
-  border: none;
-  padding: 8px 10px;
-  border-radius: 10px;
-  transition: background 0.18s;
-  margin-right: 0;
-  flex-shrink: 0;
-  flex-shrink: 0;
-}
-.logo-btn:hover { background: rgba(255,255,255,0.10); }
-.logo-svg { height: 52px; width: auto; }
-
-/* Nav tabs */
-.nav { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: center; }
-.nav-tab {
-  color: rgba(255,255,255,0.75);
-  background: transparent;
-  border: 2px solid transparent;
-  font-family: 'Montserrat', sans-serif;
-  font-weight: 600;
-  font-size: 18px;
-  padding: 10px 28px;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.15s;
-  white-space: nowrap;
-}
-.nav-tab:hover { background: rgba(255,255,255,0.12); color: var(--white); }
-.nav-tab.active { background: var(--white); color: var(--navy); font-weight: 700; }
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-}
-.advisor-avatar {
-  width: 38px; height: 38px; border-radius: 50%;
-  background: var(--sky);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 800; color: var(--navy);
-}
-.advisor-name { font-size: 14px; color: rgba(255,255,255,0.85); font-weight: 500; }
-
-/* ══ CONTENIDO ══ */
-.container { max-width: 1700px; margin: 0 auto; padding: 32px 48px; }
-
-/* Páginas */
-.page { display: none; }
-.page.active { display: block; }
-
-/* ══ BOTÓN DESCARGA (reutilizable) ══ */
-.btn-dl {
-  width: 40px; height: 40px;
-  border-radius: 8px;
-  background: var(--navy);
-  border: none; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  color: var(--white);
-  transition: background 0.18s;
-  text-decoration: none;
-  flex-shrink: 0;
-}
-.btn-dl:hover { background: var(--sky); }
-
-/* ══ PRESENTACIÓN ══ */
-.pres-card {
-  background: var(--white);
-  border-radius: 14px;
-  border: 1px solid var(--silver);
-  box-shadow: 0 4px 20px rgba(0,32,92,0.08);
-  overflow: hidden;
-  max-width: 1280px;
-  margin: 0 auto;
-}
-.pres-header {
-  background: #F7F9FC;
-  border-bottom: 1px solid var(--silver);
-  padding: 14px 22px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.pres-header h2 {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--navy);
-  font-family: 'Montserrat', sans-serif;
-}
-.pres-iframe-wrap {
-  width: 100%;
-  height: 78vh;
-  overflow: hidden;
-  background: var(--white);
-  line-height: 0;
-}
-.pres-iframe-wrap iframe {
-  width: 100%; height: 100%;
-  border: none; display: block;
-}
-
-/* ══ PROPUESTA ══ */
-.app-stage { overflow-x: auto; }
-
-.prop-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-bottom: 14px;
-  max-width: var(--canvas-w);
-  margin-inline: auto;
-}
-.prop-toolbar span { font-size: 12px; color: var(--gray); font-family: 'Inter', sans-serif; }
-
-/* Canvas 1280×720 */
-.propuesta-dashboard {
-  position: relative;
-  width: var(--canvas-w);
-  height: var(--canvas-h);
-  background: #fff;
-  border-radius: 14px; overflow: hidden;
-  border: 1px solid rgba(0,0,0,.08);
-  box-shadow: 0 10px 30px rgba(0,0,0,.10);
-  margin-inline: auto;
-}
-
-/* Título overlay */
-.prop-titlebar {
-  position: absolute; left: 0; top: 0; right: 0;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 8px 12px 4px;
-}
-.prop-title-left { display: flex; align-items: center; gap: 12px; }
-.prop-accent { width: 12px; height: 32px; background: var(--sky); border-radius: 3px; flex: 0 0 auto; }
-.prop-title { font-size: 24px; font-weight: 900; letter-spacing: .3px; color: var(--navy); text-transform: uppercase; line-height: 32px; }
-.prop-title-right { display: flex; align-items: center; }
-.prop-rule {
-  position: absolute; left: 12px; right: 12px; top: 50px;
-  height: 3px; background: var(--navy); border-radius: 2px;
-}
-
-/* Board absoluto */
-.board { position: absolute; left: 0; top: 0; width: var(--canvas-w); height: var(--canvas-h); }
+/* Grid — desktop: 2 filas */
+.prop-grid{display:flex;flex-direction:column;gap:12px;}
+.prop-row1{display:grid;grid-template-columns:180px 290px 150px 1fr;gap:12px;min-height:290px;}
+.prop-row2{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;min-height:240px;}
 
 /* Card base */
-.card {
-  position: absolute;
-  background: #fff;
-  border: 1px solid rgba(0,0,0,.08);
-  border-radius: var(--card-radius);
-  overflow: hidden;
-  display: flex; flex-direction: column;
-  box-shadow: 0 6px 18px rgba(0,0,0,.06);
-}
-.card > header {
-  background: var(--navy);
-  color: #fff;
-  padding: 8px 12px;
-  font-weight: 800;
-  font-size: 13px;
-  letter-spacing: .2px;
-  flex-shrink: 0;
-}
-.card > .body {
-  padding: 10px;
-  background: #fff;
-  flex: 1 1 auto;
-  display: flex;
-}
-.card canvas { width: 100% !important; height: 100% !important; display: block; }
+.pcard{background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 4px 14px rgba(0,0,0,.06);}
+.pcard>.ph{background:var(--navy);color:#fff;padding:7px 12px;font-weight:700;font-size:11.5px;letter-spacing:.2px;flex-shrink:0;}
+.pcard>.pb{padding:10px;flex:1 1 auto;display:flex;background:#fff;overflow:hidden;}
+.pcard canvas{width:100%!important;height:100%!important;display:block;}
 
-/* Posiciones fila superior */
-.comp  { left: var(--comp-x); top: var(--comp-y); width: var(--comp-w); height: var(--comp-h); }
-.hoy   { left: var(--hoy-x);  top: var(--hoy-y);  width: var(--hoy-w);  height: var(--hoy-h); }
-.linea { top: var(--line-y); height: var(--line-h); left: var(--line-x); right: var(--edge-pad); }
+/* Rendimientos hoy */
+.rh-grid{width:100%;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:1fr;gap:6px;}
+.rh-block{background:#fff;border:1px solid rgba(0,0,0,.10);border-radius:8px;padding:7px;text-align:center;display:flex;flex-direction:column;justify-content:center;}
+.rh-pill{display:inline-block;background:var(--navy);color:#fff;padding:3px 7px;border-radius:6px;font-weight:800;font-size:9.5px;margin-bottom:4px;}
+.rh-val{font-size:17px;font-weight:900;color:#111;}
+.rh-val.pos{color:#16A34A;}.rh-val.neg{color:#DC2626;}.rh-val.flat{color:var(--sky);}
 
-/* Posiciones pies */
-.pie1 { left: var(--pie1-x); top: var(--pies-y); width: var(--pie-w); height: var(--pie-h); }
-.pie2 { left: var(--pie2-x); top: var(--pies-y); width: var(--pie-w); height: var(--pie-h); }
-.pie3 { left: var(--pie3-x); top: var(--pies-y); width: var(--pie-w); height: var(--pie-h); }
+/* Deuda */
+.deuda-inner{display:flex;flex-direction:column;gap:8px;width:100%;justify-content:center;}
+.deuda-row{background:#f7f9fc;border-radius:8px;padding:8px 10px;border-left:3px solid var(--navy);}
+.deuda-lbl{font-size:9px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;display:block;}
+.deuda-val{font-size:13px;font-weight:800;color:var(--navy);}
 
-/* Rendimientos Hoy — 2×3 */
-.prop-rh-body { padding: 8px; align-items: stretch; }
-.rh-grid {
-  width: 100%; height: 100%;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-auto-rows: 1fr;
-  gap: 10px;
-  align-content: start;
+/* Nota */
+.prop-note{font-size:10px;color:var(--gray);margin-top:8px;font-family:'Inter',sans-serif;font-style:italic;}
+
+/* ── CONFIGURACIÓN ── */
+.cfg-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:820px;margin:0 auto;}
+.cfg-card{background:#fff;border:1px solid var(--silver);border-radius:12px;box-shadow:0 2px 14px rgba(0,32,92,.08);overflow:hidden;}
+.cfg-hdr{background:var(--navy);padding:12px 18px;}
+.cfg-hdr h3{font-size:11px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.8px;}
+.cfg-body{padding:18px;}
+.fg{margin-bottom:12px;}
+.fg label{display:block;font-size:10px;font-weight:600;color:var(--gray);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;font-family:'Inter',sans-serif;}
+.fg input,.fg select{width:100%;padding:9px 12px;border:1.5px solid var(--silver);border-radius:7px;font-size:13px;font-family:'Inter',sans-serif;color:#1A2540;background:#fff;outline:none;transition:border-color .18s;}
+.fg input:focus,.fg select:focus{border-color:var(--sky);}
+.btn-primary{padding:9px 22px;background:var(--navy);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Montserrat',sans-serif;transition:background .18s;}
+.btn-primary:hover{background:var(--sky);color:var(--navy);}
+
+/* ── COMPARATIVA ── */
+.cmp-card{background:#fff;border:1px solid var(--silver);border-radius:12px;box-shadow:0 2px 14px rgba(0,32,92,.08);overflow:hidden;}
+.cmp-hdr{background:var(--navy);padding:12px 20px;}
+.cmp-hdr h3{font-size:11px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.8px;}
+.cmp-body{padding:20px;height:360px;}
+
+/* ── ELITE ── */
+.elite-hero{background:linear-gradient(130deg,var(--navy) 0%,#0A3580 100%);border-radius:14px;padding:36px 40px;display:flex;align-items:center;gap:28px;box-shadow:0 8px 32px rgba(0,32,92,.22);}
+.elite-icon{width:58px;height:58px;background:#C9A84C;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.elite-text h2{font-size:20px;font-weight:800;color:#fff;margin-bottom:6px;}
+.elite-text p{font-size:13px;color:rgba(255,255,255,.76);font-family:'Inter',sans-serif;line-height:1.6;}
+.elite-features{margin-top:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.ef-card{background:#fff;border:1px solid var(--silver);border-radius:10px;padding:16px;}
+.ef-icon{width:34px;height:34px;border-radius:8px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:8px;}
+.ef-card h4{font-size:11px;font-weight:700;color:var(--navy);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;}
+.ef-card p{font-size:11px;color:var(--gray);font-family:'Inter',sans-serif;line-height:1.5;}
+
+/* ══ TABLET PORTRAIT (≤1024px vertical) ══ */
+@media(max-width:1024px) and (orientation:portrait){
+  .prop-row1{grid-template-columns:1fr 1fr;}
+  .prop-row1 .linea{grid-column:1/-1;min-height:220px;}
+  .prop-row2{grid-template-columns:1fr;}
+  .cfg-grid{grid-template-columns:1fr;}
+  .elite-features{grid-template-columns:1fr;}
+  .prop-title{font-size:17px;}
+  .prop-row2 .pcard{min-height:300px;}
 }
-.rh-block {
-  background: #fff;
-  border: 1px solid rgba(0,0,0,.10);
-  border-radius: 10px;
-  padding: 10px;
-  text-align: center;
-  display: flex; flex-direction: column; justify-content: center;
-}
-.rh-pill {
-  display: inline-block;
-  background: var(--navy);
-  color: #fff;
-  padding: 6px 10px;
-  border-radius: 8px;
-  font-weight: 800;
-  font-size: 12px;
-  margin-bottom: 8px;
-}
-.rh-val { font-size: 22px; font-weight: 900; color: #111; }
-.rh-val.pos { color: #16A34A; }
-.rh-val.neg { color: #DC2626; }
-.rh-val.flat { color: var(--sky); }
 
-/* ══ CONFIGURACIÓN ══ */
-.config-grid {
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 20px; max-width: 840px; margin: 0 auto;
+/* ══ MOBILE PORTRAIT (≤600px vertical) ══ */
+@media(max-width:600px) and (orientation:portrait){
+  .nav{display:none;}
+  .advisor-name{display:none;}
+  .btn-logout{display:none;}
+  .hamburger{display:flex;}
+  .brand{padding:0 16px;height:62px;}
+  .logo-img{height:34px;}
+  .container{padding:12px;}
+  .pres-body{height:65vh;}
+  .prop-row1{grid-template-columns:1fr;}
+  .prop-row1 .linea{grid-column:auto;min-height:200px;}
+  .prop-row2{grid-template-columns:1fr;}
+  .prop-title{font-size:15px;}
+  .rh-val{font-size:19px;}
+  .cfg-grid{grid-template-columns:1fr;}
+  .elite-hero{flex-direction:column;padding:24px 20px;}
+  .elite-features{grid-template-columns:1fr;}
+  .cmp-body{height:260px;}
+  .prop-row2 .pcard{min-height:280px;}
+  .prop-row2 .pb{min-height:240px;}
 }
-.cfg-card { background: var(--white); border: 1px solid var(--silver); border-radius: 12px; box-shadow: 0 2px 14px rgba(0,32,92,0.08); overflow: hidden; }
-.cfg-header { background: var(--navy); padding: 13px 18px; }
-.cfg-header h3 { font-size: 12px; font-weight: 700; color: var(--white); text-transform: uppercase; letter-spacing: 0.8px; }
-.cfg-body { padding: 18px; }
-.fg { margin-bottom: 13px; }
-.fg label { display: block; font-size: 10.5px; font-weight: 600; color: var(--gray); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; font-family: 'Inter', sans-serif; }
-.fg input, .fg select { width: 100%; padding: 8px 11px; border: 1px solid var(--silver); border-radius: 7px; font-size: 13px; font-family: 'Inter', sans-serif; color: #1A2540; background: var(--white); outline: none; transition: border-color 0.18s; }
-.fg input:focus, .fg select:focus { border-color: var(--sky); }
-.btn-primary { padding: 9px 22px; background: var(--navy); color: var(--white); border: none; border-radius: 7px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: 'Montserrat', sans-serif; transition: background 0.18s; }
-.btn-primary:hover { background: var(--sky); color: var(--navy); }
 
-/* ══ COMPARATIVA ══ */
-.comp-wrap { background: var(--white); border: 1px solid var(--silver); border-radius: 12px; box-shadow: 0 2px 14px rgba(0,32,92,0.08); overflow: hidden; max-width: 1000px; margin: 0 auto; }
-.comp-wrap-header { background: var(--navy); padding: 13px 20px; }
-.comp-wrap-header h3 { font-size: 12px; font-weight: 700; color: var(--white); text-transform: uppercase; letter-spacing: 0.8px; }
-.comp-body { padding: 24px; height: 380px; position: relative; }
-
-/* ══ ELITE ══ */
-.elite-hero { max-width: 840px; margin: 0 auto; background: linear-gradient(130deg, var(--navy) 0%, #0A3580 100%); border-radius: 14px; padding: 40px 48px; display: flex; align-items: center; gap: 36px; box-shadow: 0 8px 32px rgba(0,32,92,0.22); }
-.elite-icon { width: 68px; height: 68px; background: #C9A84C; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0; }
-.elite-text h2 { font-size: 22px; font-weight: 800; color: var(--white); margin-bottom: 6px; letter-spacing: 1px; }
-.elite-text p  { font-size: 13px; color: rgba(255,255,255,0.76); font-family: 'Inter', sans-serif; line-height: 1.6; }
-.elite-features { max-width: 840px; margin: 18px auto 0; display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
-.ef-card { background: var(--white); border: 1px solid var(--silver); border-radius: 10px; padding: 18px; box-shadow: 0 2px 10px rgba(0,32,92,0.07); }
-.ef-icon { width: 36px; height: 36px; border-radius: 8px; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 10px; }
-.ef-card h4 { font-size: 11.5px; font-weight: 700; color: var(--navy); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
-.ef-card p  { font-size: 11px; color: var(--gray); font-family: 'Inter', sans-serif; line-height: 1.5; }
-
-@media (max-width: 1360px) {
-  .container { padding: 20px; }
-  .app-stage { overflow-x: auto; }
-  .propuesta-dashboard { min-width: var(--canvas-w); }
+/* ══ LANDSCAPE (celular o tablet horizontal) ══ */
+@media(orientation:landscape) and (max-height:600px){
+  .nav{display:none;}
+  .hamburger{display:flex;}
+  .brand{padding:0 14px;height:54px;}
+  .logo-img{height:30px;}
+  .advisor-name{display:none;}
+  .btn-logout{display:none;}
+  .container{padding:8px 12px;}
+  /* 4 columnas compactas */
+  .prop-row1{grid-template-columns:140px 190px 120px 1fr;min-height:210px;gap:8px;}
+  .prop-row1 .linea{grid-column:auto;}
+  .prop-row2{grid-template-columns:repeat(3,1fr);min-height:180px;gap:8px;}
+  .prop-grid{gap:8px;}
+  /* Tipografía compacta */
+  .prop-title{font-size:14px;}
+  .rh-val{font-size:13px;}
+  .rh-pill{font-size:8px;padding:2px 5px;}
+  .rh-block{padding:5px;}
+  .deuda-val{font-size:11px;}
+  .deuda-lbl{font-size:7.5px;}
+  .deuda-row{padding:6px 8px;}
+  /* Headers compactos */
+  .ph{padding:4px 10px;font-size:9.5px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  /* Gráfica de línea ocupa el espacio restante */
+  .prop-row1 .linea .pb{min-height:130px;}
+  .prop-rule{margin-bottom:8px;}
+  .prop-titlebar{margin-bottom:6px;}
+  .prop-note{display:none;}
+  .pres-body{height:78vh;}
+  /* Donuts */
+  .prop-row2 .pcard{min-height:170px;}
+  .prop-row2 .pb{min-height:140px;}
 }
-@media print {
-  .topbar, .prop-toolbar, .prop-title-right { display: none !important; }
-  .propuesta-dashboard { box-shadow: none !important; border: none !important; }
-  body { background: white !important; }
+
+/* ══ TABLET LANDSCAPE (≥768px horizontal) ══ */
+@media(orientation:landscape) and (min-height:600px){
+  /* Tablet horizontal = casi desktop, solo ajustes menores */
+  .prop-row1{grid-template-columns:180px 280px 150px 1fr;min-height:270px;}
+  .prop-row2{grid-template-columns:repeat(3,1fr);min-height:220px;}
+}
+
+@media print{
+  .topbar,.prop-right{display:none!important;}
+  body{background:#fff!important;}
 }
 </style>
 </head>
 <body>
 
-<!-- ══════════ HEADER ══════════ -->
+<!-- TOPBAR -->
 <header class="topbar">
   <div class="brand">
-
-    <!-- Logo clickeable → Presentación -->
-    <button class="logo-btn" onclick="showPage('presentacion')" title="Ver presentación comercial">
-      <img src="/VALMEX.png" class="logo-svg" alt="VALMEX Logo">
+    <button class="logo-btn" onclick="showPage('presentacion')" title="Inicio">
+      <img src="/VALMEX.png" class="logo-img" alt="VALMEX">
     </button>
-
-    <!-- Nav -->
     <nav class="nav">
       <button class="nav-tab" onclick="showPage('configuracion',this)">Configuración</button>
       <button class="nav-tab" onclick="showPage('propuesta',this)">Propuesta</button>
       <button class="nav-tab" onclick="showPage('comparativa',this)">Comparativa</button>
       <button class="nav-tab" onclick="showPage('elite',this)">VALMEX Elite</button>
     </nav>
-
     <div class="header-right">
-      <div class="advisor-avatar">JC</div>
-      <span class="advisor-name">José Carlos Villa</span>
+      <div class="advisor-avatar" id="user-avatar">--</div>
+      <span class="advisor-name" id="user-name"></span>
+      <button class="btn-logout" onclick="window.location.href='/logout'" title="Cerrar sesión">⏻</button>
+      <button class="hamburger" onclick="openMobileNav()" aria-label="Menú">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </div>
 </header>
 
-<!-- ══════════ CONTENIDO ══════════ -->
+<!-- MOBILE NAV -->
+<div class="mobile-nav" id="mobile-nav" onclick="closeMobileNav()">
+  <div class="mobile-panel" onclick="event.stopPropagation()">
+    <button class="mobile-close" onclick="closeMobileNav()">✕</button>
+    <div class="mobile-user">
+      <div class="advisor-avatar" id="mobile-avatar">--</div>
+      <span style="color:#fff;font-size:14px;font-weight:600;" id="mobile-name"></span>
+    </div>
+    <button class="mobile-tab" onclick="showPage('presentacion');closeMobileNav()">Presentación</button>
+    <button class="mobile-tab" onclick="showPage('configuracion');closeMobileNav()">Configuración</button>
+    <button class="mobile-tab" onclick="showPage('propuesta');closeMobileNav()">Propuesta</button>
+    <button class="mobile-tab" onclick="showPage('comparativa');closeMobileNav()">Comparativa</button>
+    <button class="mobile-tab" onclick="showPage('elite');closeMobileNav()">VALMEX Elite</button>
+    <button class="mobile-logout" onclick="window.location.href='/logout'">⏻ Cerrar sesión</button>
+  </div>
+</div>
+
+<!-- CONTENIDO -->
 <div class="container">
 
-  <!-- ── PRESENTACIÓN ── -->
+  <!-- PRESENTACIÓN -->
   <div id="page-presentacion" class="page active">
     <div class="pres-card">
-      <div class="pres-header">
+      <div class="pres-hdr">
         <h2>Presentación</h2>
-        <a href="/PC.pdf"
-           download="Presentacion_Comercial_Valmex.pdf"
-           class="btn-dl"
-           title="Descargar presentación">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
+        <a href="/PC.pdf" download="Presentacion_Comercial_Valmex.pdf" class="btn-dl" title="Descargar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         </a>
       </div>
-      <div class="pres-iframe-wrap">
-        <iframe
-          src="/PC.pdf#toolbar=0&navpanes=0&scrollbar=0&view=FitH"
-          title="Presentación Comercial Valmex">
-        </iframe>
+      <div class="pres-body">
+        <iframe src="/PC.pdf#toolbar=0&navpanes=0&scrollbar=0&view=FitH" title="Presentación Comercial"></iframe>
       </div>
     </div>
   </div>
 
-  <!-- ── PROPUESTA ── -->
+  <!-- PROPUESTA -->
   <div id="page-propuesta" class="page">
-    <div class="app-stage">
-      <div class="prop-toolbar">
-        <span>Exportar como PDF · Hoja carta horizontal</span>
-        <button class="btn-dl" id="btn-export-pdf" title="Descargar PDF">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
-        </button>
+    <div class="prop-titlebar">
+      <div class="prop-title-left">
+        <div class="prop-accent"></div>
+        <span class="prop-title">Estrategia Portafolio</span>
       </div>
+      <div class="prop-right">
+        <span style="font-size:11px;color:var(--gray);font-family:'Inter',sans-serif;">Exportar PDF</span>
+        <button class="btn-dl" id="btn-pdf" title="Descargar PDF">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+        <img src="/VALMEX2.png" style="height:30px;width:auto;" alt="">
+      </div>
+    </div>
+    <div class="prop-rule"></div>
 
-      <div class="propuesta-dashboard" id="propuesta-dashboard">
-        <div class="prop-titlebar">
-          <div class="prop-title-left">
-            <div class="prop-accent"></div>
-            <span class="prop-title">Estrategia del Portafolio</span>
-          </div>
-          <div class="prop-title-right">
-            <svg height="26" viewBox="0 0 160 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <polygon points="0,28 2.5,28 10,8 7.5,8" fill="#0b2a5a"/>
-              <polygon points="22,28 24.5,28 17,8 14.5,8" fill="#0b2a5a"/>
-              <polygon points="7.5,8 10,8 15,20 12.5,20" fill="#0b2a5a"/>
-              <polygon points="14.5,8 17,8 12,20 9.5,20" fill="#0b2a5a"/>
-              <polygon points="9.5,20 15,20 12.25,26" fill="#41BBC9"/>
-              <rect x="31" y="4" width="1.5" height="24" rx="0.75" fill="#41BBC9"/>
-              <text x="38" y="14" font-family="Montserrat,sans-serif" font-weight="700" font-size="9.5" letter-spacing="1.2" fill="#0b2a5a">VALORES</text>
-              <text x="38" y="27" font-family="Montserrat,sans-serif" font-weight="700" font-size="9.5" letter-spacing="1.2" fill="#0b2a5a">MEXICANOS</text>
-            </svg>
-          </div>
+    <div class="prop-grid" id="prop-dash">
+      <!-- FILA 1 -->
+      <div class="prop-row1">
+        <!-- Composición -->
+        <div class="pcard">
+          <div class="ph">Composición</div>
+          <div class="pb" style="padding:8px 6px;"><canvas id="c-comp"></canvas></div>
         </div>
-        <div class="prop-rule"></div>
-
-        <div class="board">
-          <div class="card comp">
-            <header>Composición</header>
-            <div class="body" style="padding:8px;"><canvas id="chart-composicion"></canvas></div>
-          </div>
-
-          <div class="card hoy">
-            <header>Rendimientos Hoy</header>
-            <div class="body prop-rh-body">
-              <div class="rh-grid">
-                <div class="rh-block"><span class="rh-pill">Propuesta</span><span class="rh-val pos">+0.48%</span></div>
-                <div class="rh-block"><span class="rh-pill">Benchmark</span><span class="rh-val pos">+0.31%</span></div>
-                <div class="rh-block"><span class="rh-pill">RV México</span><span class="rh-val neg">−0.12%</span></div>
-                <div class="rh-block"><span class="rh-pill">RV USA</span><span class="rh-val pos">+0.73%</span></div>
-                <div class="rh-block"><span class="rh-pill">Deuda MX</span><span class="rh-val flat">+0.05%</span></div>
-                <div class="rh-block"><span class="rh-pill">Alternat.</span><span class="rh-val pos">+0.19%</span></div>
-              </div>
+        <!-- Rendimientos Hoy -->
+        <div class="pcard">
+          <div class="ph">Rendimientos Hoy</div>
+          <div class="pb" style="padding:8px;">
+            <div class="rh-grid">
+              <div class="rh-block"><span class="rh-pill">MTD</span><span class="rh-val pos">0.13%</span></div>
+              <div class="rh-block"><span class="rh-pill">3 Meses</span><span class="rh-val pos">1.31%</span></div>
+              <div class="rh-block"><span class="rh-pill">YTD</span><span class="rh-val pos">8.15%</span></div>
+              <div class="rh-block"><span class="rh-pill">12 Meses</span><span class="rh-val pos">7.90%</span></div>
+              <div class="rh-block"><span class="rh-pill">24 Meses</span><span class="rh-val pos">12.54%</span></div>
+              <div class="rh-block"><span class="rh-pill">36 Meses</span><span class="rh-val pos">12.55%</span></div>
             </div>
           </div>
+        </div>
+        <!-- Deuda -->
+        <div class="pcard">
+          <div class="ph">Deuda</div>
+          <div class="pb" style="padding:10px;">
+            <div class="deuda-inner">
+              <div class="deuda-row"><span class="deuda-lbl">Duración</span><span class="deuda-val">1.30 / 4.97</span></div>
+              <div class="deuda-row"><span class="deuda-lbl">Yield to Maturity</span><span class="deuda-val">8.55% / 5.19%</span></div>
+              <div class="deuda-row"><span class="deuda-lbl">Calificación Crediticia</span><span class="deuda-val">BBB, AA / AA</span></div>
+            </div>
+          </div>
+        </div>
+        <!-- Línea -->
+        <div class="pcard linea">
+          <div class="ph" id="linea-ph">Rendimientos mensuales — Perfiles a través del tiempo</div>
+          <div class="pb" style="padding:10px;"><canvas id="c-linea"></canvas></div>
+        </div>
+      </div>
 
-          <div class="card linea">
-            <header>Rendimientos Mensuales — Perfiles a través del Tiempo</header>
-            <div class="body" style="padding:8px;"><canvas id="chart-lineas"></canvas></div>
-          </div>
-
-          <div class="card pie1">
-            <header>Clase de Activos</header>
-            <div class="body" style="padding:6px;height:100%;"><canvas id="chart-clase"></canvas></div>
-          </div>
-          <div class="card pie2">
-            <header>Exposición Geográfica RV</header>
-            <div class="body" style="padding:6px;height:100%;"><canvas id="chart-geo"></canvas></div>
-          </div>
-          <div class="card pie3">
-            <header>Exposición Sectorial RV</header>
-            <div class="body" style="padding:6px;height:100%;"><canvas id="chart-sector"></canvas></div>
-          </div>
+      <!-- FILA 2 -->
+      <div class="prop-row2">
+        <div class="pcard">
+          <div class="ph">Clase de activos</div>
+          <div class="pb" style="padding:6px;"><canvas id="c-clase"></canvas></div>
+        </div>
+        <div class="pcard">
+          <div class="ph">Exposición geográfica RV</div>
+          <div class="pb" style="padding:6px;"><canvas id="c-geo"></canvas></div>
+        </div>
+        <div class="pcard">
+          <div class="ph">Exposición Sectorial RV</div>
+          <div class="pb" style="padding:6px;"><canvas id="c-sector"></canvas></div>
         </div>
       </div>
     </div>
+    <p class="prop-note">*Rendimientos con plazo menor a un año están expresados en términos efectivos y los rendimientos mayores a un año en términos anualizados. Los rendimientos se encuentran actualizados al 31/12/2025.</p>
   </div>
 
-  <!-- ── CONFIGURACIÓN ── -->
+  <!-- CONFIGURACIÓN -->
   <div id="page-configuracion" class="page">
-    <div class="config-grid">
+    <div class="cfg-grid">
       <div class="cfg-card">
-        <div class="cfg-header"><h3>Datos del Cliente</h3></div>
+        <div class="cfg-hdr"><h3>Datos del Cliente</h3></div>
         <div class="cfg-body">
           <div class="fg"><label>Nombre completo</label><input type="text" placeholder="Ej. María García López"></div>
           <div class="fg"><label>Perfil de riesgo</label>
@@ -555,7 +354,7 @@ body {
         </div>
       </div>
       <div class="cfg-card">
-        <div class="cfg-header"><h3>Parámetros del Portafolio</h3></div>
+        <div class="cfg-hdr"><h3>Parámetros del Portafolio</h3></div>
         <div class="cfg-body">
           <div class="fg"><label>Benchmark</label>
             <select><option>CETES 28d</option><option selected>IPC + CETES</option><option>S&P 500</option></select>
@@ -572,15 +371,15 @@ body {
     </div>
   </div>
 
-  <!-- ── COMPARATIVA ── -->
+  <!-- COMPARATIVA -->
   <div id="page-comparativa" class="page">
-    <div class="comp-wrap">
-      <div class="comp-wrap-header"><h3>Comparativa de Portafolios</h3></div>
-      <div class="comp-body"><canvas id="chart-comparativa"></canvas></div>
+    <div class="cmp-card">
+      <div class="cmp-hdr"><h3>Comparativa de Portafolios</h3></div>
+      <div class="cmp-body"><canvas id="c-comp2"></canvas></div>
     </div>
   </div>
 
-  <!-- ── ELITE ── -->
+  <!-- ELITE -->
   <div id="page-elite" class="page">
     <div class="elite-hero">
       <div class="elite-icon">⭐</div>
@@ -596,147 +395,145 @@ body {
     </div>
   </div>
 
-</div>
+</div><!-- /.container -->
 
-<!-- ══════════ JS ══════════ -->
 <script>
+// ── NAVEGACIÓN ──
 const PAGES = ['presentacion','propuesta','configuracion','comparativa','elite'];
-
 function showPage(name, el) {
   PAGES.forEach(id => document.getElementById('page-'+id).classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
   document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
   if (el) el.classList.add('active');
-  if (name === 'propuesta') setTimeout(() => Object.values(charts).forEach(c => c && c.resize()), 60);
+  if (name === 'propuesta') setTimeout(() => Object.values(charts).forEach(c => c && c.resize && c.resize()), 80);
+  window.scrollTo(0,0);
 }
+function openMobileNav()  { document.getElementById('mobile-nav').style.display='block'; document.body.style.overflow='hidden'; }
+function closeMobileNav() { document.getElementById('mobile-nav').style.display='none';  document.body.style.overflow=''; }
 
-Chart.defaults.font.family = "'Inter', sans-serif";
+// ── USUARIO ──
+fetch('/me')
+  .then(r => r.ok ? r.json() : null)
+  .then(user => {
+    if (!user || !user.ok) return;
+    document.getElementById('user-avatar').textContent = user.iniciales;
+    document.getElementById('user-name').textContent   = user.nombre;
+    document.getElementById('mobile-avatar').textContent = user.iniciales;
+    document.getElementById('mobile-name').textContent   = user.nombre;
+    if (user.rol === 'vista') {
+      document.querySelectorAll('.nav-tab,.mobile-tab').forEach(btn => {
+        if (['Configuración','VALMEX Elite'].includes(btn.textContent.trim()))
+          btn.style.display = 'none';
+      });
+    }
+  }).catch(()=>{});
+
+// ── CHARTS ──
+Chart.defaults.font.family = "'Inter',sans-serif";
 Chart.defaults.font.size   = 11;
 Chart.defaults.color       = '#5B6670';
 
-const PALETTE = ['#00205C','#41BBC9','#3DA5E0','#22C55E','#8B5CF6','#EF4444','#F59E0B'];
-const charts  = {};
+const PAL = ['#00205C','#3DA5E0','#F59E0B','#8B5CF6','#EC4899','#A78BFA','#6EE7B7','#FCD34D','#6B7280','#34D399','#F87171'];
+const charts = {};
 
-charts.comp = new Chart(document.getElementById('chart-composicion'), {
-  type: 'bar',
-  data: {
-    labels: ['Deuda MX','RV MX','RV USA','Intl Desa.','Alternat.','Liquidez'],
-    datasets: [{ data:[35,20,18,12,10,5], backgroundColor:'#00205C', borderRadius:0, barPercentage:0.62 }]
+// Composición barra horizontal
+charts.comp = new Chart(document.getElementById('c-comp'),{
+  type:'bar',
+  data:{
+    labels:['VLMXETF','VXDEUDA','VXGUBCP','VXUDIMP','VALMX28','VALMXVL','VLMXTEC','VLMXDME'],
+    datasets:[{data:[34.37,22.52,10.00,10.00,6.90,6.90,5.00,4.31],backgroundColor:'#00205C',borderRadius:0,barPercentage:.65}]
   },
-  options: {
-    indexAxis:'y', responsive:true, maintainAspectRatio:false,
-    plugins:{ legend:{display:false} },
-    layout:{ padding:{right:38} },
+  options:{
+    indexAxis:'y',responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    layout:{padding:{right:38}},
     scales:{
-      x:{ display:false, max:44, grid:{display:false} },
-      y:{ grid:{display:false}, ticks:{font:{size:10,weight:'700'},color:'#00205C'}, border:{display:false} }
+      x:{display:false,max:42,grid:{display:false}},
+      y:{grid:{display:false},ticks:{font:{size:9,weight:'700'},color:'#00205C'},border:{display:false}}
     }
   },
-  plugins:[{ id:'pct', afterDatasetsDraw(chart){
-    const {ctx,scales:{x,y}} = chart;
-    ctx.save();
+  plugins:[{id:'pct',afterDatasetsDraw(chart){
+    const {ctx,scales:{x,y}}=chart; ctx.save();
     chart.data.datasets[0].data.forEach((val,i)=>{
-      const bar = chart.getDatasetMeta(0).data[i];
-      ctx.fillStyle='#00205C'; ctx.font='bold 10.5px Inter,sans-serif';
-      ctx.textBaseline='middle';
-      ctx.fillText(val+'%', x.getPixelForValue(val)+4, bar.y);
+      const bar=chart.getDatasetMeta(0).data[i];
+      ctx.fillStyle='#00205C';ctx.font='bold 9px Inter,sans-serif';ctx.textBaseline='middle';
+      ctx.fillText(val+'%',x.getPixelForValue(val)+4,bar.y);
     });
     ctx.restore();
   }}]
 });
 
-charts.linea = new Chart(document.getElementById('chart-lineas'), {
+// Línea 2016-2024
+charts.linea = new Chart(document.getElementById('c-linea'),{
   type:'line',
   data:{
-    labels:['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],
+    labels:['2016','2017','2018','2019','2020','2021','2022','2023','2024'],
     datasets:[
-      { label:'Propuesta', data:[0,1.2,2.8,2.1,3.5,5.0,4.6,6.2,7.8,7.1,9.0,10.4],
-        borderColor:'#00205C', backgroundColor:'rgba(0,32,92,0.06)',
-        borderWidth:2.5, pointRadius:3, tension:0.4, fill:true },
-      { label:'Benchmark', data:[0,0.8,1.6,1.2,2.0,3.1,2.8,3.9,4.7,4.2,5.6,6.3],
-        borderColor:'#41BBC9', backgroundColor:'transparent',
-        borderWidth:2, pointRadius:3, tension:0.4, borderDash:[5,3] }
+      {label:'Propuesta',data:[100,108,112,122,115,140,150,170,200],borderColor:'#3DA5E0',backgroundColor:'transparent',borderWidth:2.5,pointRadius:2,tension:.4},
+      {label:'Bench propuesta',data:[100,106,110,118,112,134,144,162,193],borderColor:'#F59E0B',backgroundColor:'transparent',borderWidth:2,pointRadius:2,tension:.4,borderDash:[4,3]}
     ]
   },
   options:{
-    responsive:true, maintainAspectRatio:false,
-    plugins:{ legend:{ position:'top', align:'end', labels:{ boxWidth:11, font:{size:10}, padding:10 } } },
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10},padding:10,usePointStyle:true}}},
     scales:{
-      x:{ grid:{color:'rgba(0,0,0,0.04)'}, ticks:{font:{size:9.5}}, border:{display:false} },
-      y:{ grid:{color:'rgba(0,0,0,0.04)'}, ticks:{font:{size:9.5}, callback:v=>v+'%'}, border:{display:false} }
+      x:{grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:9.5}},border:{display:false}},
+      y:{min:90,grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:9.5}},border:{display:false}}
     }
   }
 });
 
-function makeDoughnut(id, labels, data) {
-  return new Chart(document.getElementById(id), {
+// Donuts
+function donut(id,labels,data,colors){
+  const isPortraitMobile = window.innerWidth <= 600 && window.innerHeight > window.innerWidth;
+  const isMobile = isPortraitMobile;
+  return new Chart(document.getElementById(id),{
     type:'doughnut',
-    data:{ labels, datasets:[{ data, backgroundColor:PALETTE.slice(0,data.length), borderWidth:1.5, borderColor:'#fff', hoverOffset:5 }] },
-    options:{ responsive:true, maintainAspectRatio:false, cutout:'55%',
-      plugins:{ legend:{ position:'right', labels:{ boxWidth:9, font:{size:9.5}, padding:7, color:'#00205C' } } } }
+    data:{labels,datasets:[{data,backgroundColor:colors||PAL.slice(0,data.length),borderWidth:1.5,borderColor:'#fff',hoverOffset:5}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',
+      plugins:{legend:{
+        position: isMobile ? 'bottom' : 'right',
+        labels:{boxWidth:9,font:{size: isMobile ? 10 : 9.5},padding: isMobile ? 8 : 6,color:'#1A2540'}
+      }}
+    }
   });
 }
+charts.clase  = donut('c-clase', ['Deuda Local','RV Global','Deuda Global'],[76.9,18.8,4.3],['#00205C','#3DA5E0','#F59E0B']);
+charts.geo    = donut('c-geo',   ['Norte-América','Eurozona','Europa','América Latina','Otros emergentes','Asia Emergente','Japón','Asia-Pacífico'],[65.49,12.81,7.66,3.89,3.25,2.37,2.3,2.23]);
+charts.sector = donut('c-sector',['Tecnología','Financiero','Salud','Comunicaciones','Industriales','Consumo discrecional','Consumo básico','Materiales','Energía'],[32.57,15.25,12.64,8.51,8.4,7.93,5.13,4.2,3.0]);
 
-charts.clase  = makeDoughnut('chart-clase',  ['Deuda MX','RV MX','RV USA','Intl Desa.','Alternat.','Liquidez'],[35,20,18,12,10,5]);
-charts.geo    = makeDoughnut('chart-geo',    ['México','EUA','Europa','Asia','Latam'],[28,35,18,11,8]);
-charts.sector = makeDoughnut('chart-sector', ['Financiero','Tecnología','Consumo','Salud','Industrial','Energía'],[22,25,18,14,12,9]);
-
-charts.comp2 = new Chart(document.getElementById('chart-comparativa'), {
+// Comparativa
+charts.comp2 = new Chart(document.getElementById('c-comp2'),{
   type:'bar',
   data:{
     labels:['Conservador','Moderado','Balanceado','Crecimiento','Agresivo'],
     datasets:[
-      { label:'Rendimiento 1A (%)', data:[4.2,6.8,9.4,12.1,15.7], backgroundColor:'#00205C', borderRadius:4, barPercentage:0.5 },
-      { label:'Benchmark 1A (%)',   data:[3.1,5.2,7.6,9.8,12.4],  backgroundColor:'#41BBC9', borderRadius:4, barPercentage:0.5 }
+      {label:'Rendimiento 1A (%)',data:[4.2,6.8,9.4,12.1,15.7],backgroundColor:'#00205C',borderRadius:4,barPercentage:.5},
+      {label:'Benchmark 1A (%)', data:[3.1,5.2,7.6,9.8,12.4], backgroundColor:'#41BBC9',borderRadius:4,barPercentage:.5}
     ]
   },
-  options:{ responsive:true, maintainAspectRatio:false,
-    plugins:{ legend:{ position:'top', labels:{ font:{size:12}, padding:14 } } },
+  options:{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top',labels:{font:{size:12},padding:14}}},
     scales:{
-      x:{ grid:{display:false}, border:{display:false} },
-      y:{ grid:{color:'rgba(0,0,0,0.05)'}, border:{display:false}, ticks:{callback:v=>v+'%'} }
+      x:{grid:{display:false},border:{display:false}},
+      y:{grid:{color:'rgba(0,0,0,.05)'},border:{display:false},ticks:{callback:v=>v+'%'}}
     }
   }
 });
 
-document.getElementById('btn-export-pdf').addEventListener('click', async () => {
-  const {jsPDF} = window.jspdf;
-  const dash  = document.getElementById('propuesta-dashboard');
-  const badge = dash.querySelector('.prop-title-right');
-  if(badge) badge.style.visibility='hidden';
-  const canvas = await html2canvas(dash,{scale:2,useCORS:true,backgroundColor:'#fff'});
-  if(badge) badge.style.visibility='visible';
-  const img = canvas.toDataURL('image/png');
-  const pdf = new jsPDF({orientation:'landscape',unit:'mm',format:'letter'});
-  const pw=pdf.internal.pageSize.getWidth(), ph=pdf.internal.pageSize.getHeight(), m=8;
-  const iw=pw-m*2, ih=Math.min((canvas.height/canvas.width)*iw, ph-m*2);
+// PDF Export
+document.getElementById('btn-pdf').addEventListener('click',async()=>{
+  const {jsPDF}=window.jspdf;
+  const el=document.getElementById('prop-dash');
+  const cv=await html2canvas(el,{scale:2,useCORS:true,backgroundColor:'#F0F3F7'});
+  const img=cv.toDataURL('image/png');
+  const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'letter'});
+  const pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight(),m=8;
+  const iw=pw-m*2,ih=Math.min((cv.height/cv.width)*iw,ph-m*2);
   pdf.addImage(img,'PNG',m,m,iw,ih);
   pdf.save('propuesta_valmex.pdf');
 });
-
-// ── Cargar info del usuario activo ──────────
-async function loadUser() {
-  try {
-    const res = await fetch('/me');
-    if (!res.ok) return; // si no hay sesión, no redirigir — Flask ya maneja eso
-    const user = await res.json();
-    if (!user.ok) return;
-    document.getElementById('user-avatar').textContent = user.iniciales;
-    document.getElementById('user-name').textContent   = user.nombre;
-    if (user.rol === 'vista') {
-      document.querySelectorAll('.nav-tab').forEach(btn => {
-        const txt = btn.textContent.trim();
-        if (txt === 'Configuración' || txt === 'VALMEX Elite') {
-          btn.style.display = 'none';
-        }
-      });
-    }
-  } catch(e) {
-    console.log('Error cargando usuario:', e);
-  }
-}
-loadUser();
-
 </script>
 </body>
 </html>
