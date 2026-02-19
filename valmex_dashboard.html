@@ -4,9 +4,87 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VALMEX | Dashboard Asesor</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js">
+// ── Cargar info del usuario activo ──────────
+async function loadUser() {
+  try {
+    const res  = await fetch('/me');
+    if (!res.ok) { window.location.href = '/'; return; }
+    const user = await res.json();
+    document.getElementById('user-avatar').textContent = user.iniciales;
+    document.getElementById('user-name').textContent   = user.nombre;
+
+    // Si es solo "vista", ocultar pestañas de admin
+    if (user.rol === 'vista') {
+      // Vista solo puede ver Propuesta y Comparativa
+      document.querySelectorAll('.nav-tab').forEach(btn => {
+        const txt = btn.textContent.trim();
+        if (txt === 'Configuración' || txt === 'VALMEX Elite') {
+          btn.style.display = 'none';
+        }
+      });
+    }
+  } catch(e) {
+    window.location.href = '/';
+  }
+}
+loadUser();
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
+// ── Cargar info del usuario activo ──────────
+async function loadUser() {
+  try {
+    const res  = await fetch('/me');
+    if (!res.ok) { window.location.href = '/'; return; }
+    const user = await res.json();
+    document.getElementById('user-avatar').textContent = user.iniciales;
+    document.getElementById('user-name').textContent   = user.nombre;
+
+    // Si es solo "vista", ocultar pestañas de admin
+    if (user.rol === 'vista') {
+      // Vista solo puede ver Propuesta y Comparativa
+      document.querySelectorAll('.nav-tab').forEach(btn => {
+        const txt = btn.textContent.trim();
+        if (txt === 'Configuración' || txt === 'VALMEX Elite') {
+          btn.style.display = 'none';
+        }
+      });
+    }
+  } catch(e) {
+    window.location.href = '/';
+  }
+}
+loadUser();
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+// ── Cargar info del usuario activo ──────────
+async function loadUser() {
+  try {
+    const res  = await fetch('/me');
+    if (!res.ok) { window.location.href = '/'; return; }
+    const user = await res.json();
+    document.getElementById('user-avatar').textContent = user.iniciales;
+    document.getElementById('user-name').textContent   = user.nombre;
+
+    // Si es solo "vista", ocultar pestañas de admin
+    if (user.rol === 'vista') {
+      // Vista solo puede ver Propuesta y Comparativa
+      document.querySelectorAll('.nav-tab').forEach(btn => {
+        const txt = btn.textContent.trim();
+        if (txt === 'Configuración' || txt === 'VALMEX Elite') {
+          btn.style.display = 'none';
+        }
+      });
+    }
+  } catch(e) {
+    window.location.href = '/';
+  }
+}
+loadUser();
+
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 
@@ -69,6 +147,7 @@ body {
   height: 90px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
 }
 
 /* Logo — clickeable → Presentación */
@@ -81,14 +160,14 @@ body {
   padding: 8px 10px;
   border-radius: 10px;
   transition: background 0.18s;
-  margin-right: 50px;
+  margin-right: 0;
   flex-shrink: 0;
 }
 .logo-btn:hover { background: rgba(255,255,255,0.10); }
 .logo-svg { height: 52px; width: auto; }
 
 /* Nav tabs */
-.nav { display: flex; align-items: center; gap: 8px; }
+.nav { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: center; }
 .nav-tab {
   color: rgba(255,255,255,0.75);
   background: transparent;
@@ -356,7 +435,7 @@ body {
 
     <div class="header-right">
       <div class="advisor-avatar">JC</div>
-      <span class="advisor-name">José Carlos</span>
+      <span class="advisor-name">José Carlos Villanueva</span>
     </div>
   </div>
 </header>
@@ -639,6 +718,32 @@ document.getElementById('btn-export-pdf').addEventListener('click', async () => 
   pdf.addImage(img,'PNG',m,m,iw,ih);
   pdf.save('propuesta_valmex.pdf');
 });
+
+// ── Cargar info del usuario activo ──────────
+async function loadUser() {
+  try {
+    const res  = await fetch('/me');
+    if (!res.ok) { window.location.href = '/'; return; }
+    const user = await res.json();
+    document.getElementById('user-avatar').textContent = user.iniciales;
+    document.getElementById('user-name').textContent   = user.nombre;
+
+    // Si es solo "vista", ocultar pestañas de admin
+    if (user.rol === 'vista') {
+      // Vista solo puede ver Propuesta y Comparativa
+      document.querySelectorAll('.nav-tab').forEach(btn => {
+        const txt = btn.textContent.trim();
+        if (txt === 'Configuración' || txt === 'VALMEX Elite') {
+          btn.style.display = 'none';
+        }
+      });
+    }
+  } catch(e) {
+    window.location.href = '/';
+  }
+}
+loadUser();
+
 </script>
 </body>
 </html>
