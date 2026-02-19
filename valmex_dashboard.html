@@ -8,15 +8,13 @@
 // ── Cargar info del usuario activo ──────────
 async function loadUser() {
   try {
-    const res  = await fetch('/me');
-    if (!res.ok) { window.location.href = '/'; return; }
+    const res = await fetch('/me');
+    if (!res.ok) return; // si no hay sesión, no redirigir — Flask ya maneja eso
     const user = await res.json();
+    if (!user.ok) return;
     document.getElementById('user-avatar').textContent = user.iniciales;
     document.getElementById('user-name').textContent   = user.nombre;
-
-    // Si es solo "vista", ocultar pestañas de admin
     if (user.rol === 'vista') {
-      // Vista solo puede ver Propuesta y Comparativa
       document.querySelectorAll('.nav-tab').forEach(btn => {
         const txt = btn.textContent.trim();
         if (txt === 'Configuración' || txt === 'VALMEX Elite') {
@@ -25,7 +23,7 @@ async function loadUser() {
       });
     }
   } catch(e) {
-    window.location.href = '/';
+    console.log('Error cargando usuario:', e);
   }
 }
 loadUser();
@@ -35,15 +33,13 @@ loadUser();
 // ── Cargar info del usuario activo ──────────
 async function loadUser() {
   try {
-    const res  = await fetch('/me');
-    if (!res.ok) { window.location.href = '/'; return; }
+    const res = await fetch('/me');
+    if (!res.ok) return; // si no hay sesión, no redirigir — Flask ya maneja eso
     const user = await res.json();
+    if (!user.ok) return;
     document.getElementById('user-avatar').textContent = user.iniciales;
     document.getElementById('user-name').textContent   = user.nombre;
-
-    // Si es solo "vista", ocultar pestañas de admin
     if (user.rol === 'vista') {
-      // Vista solo puede ver Propuesta y Comparativa
       document.querySelectorAll('.nav-tab').forEach(btn => {
         const txt = btn.textContent.trim();
         if (txt === 'Configuración' || txt === 'VALMEX Elite') {
@@ -52,7 +48,7 @@ async function loadUser() {
       });
     }
   } catch(e) {
-    window.location.href = '/';
+    console.log('Error cargando usuario:', e);
   }
 }
 loadUser();
@@ -62,15 +58,13 @@ loadUser();
 // ── Cargar info del usuario activo ──────────
 async function loadUser() {
   try {
-    const res  = await fetch('/me');
-    if (!res.ok) { window.location.href = '/'; return; }
+    const res = await fetch('/me');
+    if (!res.ok) return; // si no hay sesión, no redirigir — Flask ya maneja eso
     const user = await res.json();
+    if (!user.ok) return;
     document.getElementById('user-avatar').textContent = user.iniciales;
     document.getElementById('user-name').textContent   = user.nombre;
-
-    // Si es solo "vista", ocultar pestañas de admin
     if (user.rol === 'vista') {
-      // Vista solo puede ver Propuesta y Comparativa
       document.querySelectorAll('.nav-tab').forEach(btn => {
         const txt = btn.textContent.trim();
         if (txt === 'Configuración' || txt === 'VALMEX Elite') {
@@ -79,7 +73,7 @@ async function loadUser() {
       });
     }
   } catch(e) {
-    window.location.href = '/';
+    console.log('Error cargando usuario:', e);
   }
 }
 loadUser();
@@ -436,7 +430,7 @@ body {
 
     <div class="header-right">
       <div class="advisor-avatar">JC</div>
-      <span class="advisor-name">José Carlos Villanueva</span>
+      <span class="advisor-name">José Carlos Villa</span>
     </div>
   </div>
 </header>
@@ -723,15 +717,13 @@ document.getElementById('btn-export-pdf').addEventListener('click', async () => 
 // ── Cargar info del usuario activo ──────────
 async function loadUser() {
   try {
-    const res  = await fetch('/me');
-    if (!res.ok) { window.location.href = '/'; return; }
+    const res = await fetch('/me');
+    if (!res.ok) return; // si no hay sesión, no redirigir — Flask ya maneja eso
     const user = await res.json();
+    if (!user.ok) return;
     document.getElementById('user-avatar').textContent = user.iniciales;
     document.getElementById('user-name').textContent   = user.nombre;
-
-    // Si es solo "vista", ocultar pestañas de admin
     if (user.rol === 'vista') {
-      // Vista solo puede ver Propuesta y Comparativa
       document.querySelectorAll('.nav-tab').forEach(btn => {
         const txt = btn.textContent.trim();
         if (txt === 'Configuración' || txt === 'VALMEX Elite') {
@@ -740,7 +732,7 @@ async function loadUser() {
       });
     }
   } catch(e) {
-    window.location.href = '/';
+    console.log('Error cargando usuario:', e);
   }
 }
 loadUser();
