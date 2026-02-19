@@ -4,48 +4,33 @@ import os
 app = Flask(__name__)
 app.secret_key = "valmex_secret_2024"
 
-# ── USUARIOS ──────────────────────────────────────
+BASE = os.path.dirname(os.path.abspath(__file__))
+
 USERS = {
-    "jvilla": {
-        "nombre": "José Carlos Villa",
-        "password": "valmex",
-        "rol": "admin",
-        "iniciales": "JV"
-    },
-    "emartino": {
-        "nombre": "Emilio Martino",
-        "password": "valmex",
-        "rol": "vista",
-        "iniciales": "EM"
-    },
-    "oscargar": {
-        "nombre": "Oscar García",
-        "password": "valmex",
-        "rol": "vista",
-        "iniciales": "OG"
-    }
+    "jvilla":    {"nombre": "José Carlos Villa", "password": "valmex", "rol": "admin", "iniciales": "JV"},
+    "emartino":  {"nombre": "Emilio Martino",    "password": "valmex", "rol": "vista", "iniciales": "EM"},
+    "oscargar":  {"nombre": "Oscar García",       "password": "valmex", "rol": "vista", "iniciales": "OG"}
 }
 
-# ── RUTAS ─────────────────────────────────────────
 @app.route("/")
 def index():
     if "usuario" not in session:
-        return send_file("login.html")
-    return send_file("valmex_dashboard.html")
+        return send_file(os.path.join(BASE, "login.html"))
+    return send_file(os.path.join(BASE, "valmex_dashboard.html"))
 
 @app.route("/login", methods=["POST"])
 def login():
-    data = request.get_json()
-    usuario = data.get("usuario", "").strip()
+    data     = request.get_json()
+    usuario  = data.get("usuario", "").strip()
     password = data.get("password", "").strip()
-    user = USERS.get(usuario)
+    user     = USERS.get(usuario)
     if user and user["password"] == password:
-        session["usuario"] = usuario
-        session["nombre"] = user["nombre"]
-        session["rol"] = user["rol"]
+        session["usuario"]   = usuario
+        session["nombre"]    = user["nombre"]
+        session["rol"]       = user["rol"]
         session["iniciales"] = user["iniciales"]
         return jsonify({"ok": True, "nombre": user["nombre"], "rol": user["rol"], "iniciales": user["iniciales"]})
-    return jsonify({"ok": False, "error": "Usuario o contraseña incorrectos"}), 401
+    return jsonify({"ok": False}), 401
 
 @app.route("/logout")
 def logout():
@@ -56,26 +41,21 @@ def logout():
 def me():
     if "usuario" not in session:
         return jsonify({"ok": False}), 401
-    return jsonify({
-        "ok": True,
-        "nombre": session["nombre"],
-        "rol": session["rol"],
-        "iniciales": session["iniciales"]
-    })
+    return jsonify({"ok": True, "nombre": session["nombre"], "rol": session["rol"], "iniciales": session["iniciales"]})
 
 @app.route("/PC.pdf")
 def pdf():
     if "usuario" not in session:
         return redirect("/")
-    return send_file("PC.pdf")
+    return send_file(os.path.join(BASE, "PC.pdf"))
 
 @app.route("/VALMEX.png")
 def logo1():
-    return send_file("VALMEX.png")
+    return send_file(os.path.join(BASE, "VALMEX.png"))
 
 @app.route("/VALMEX2.png")
 def logo2():
-    return send_file("VALMEX2.png")
+    return send_file(os.path.join(BASE, "VALMEX2.png"))
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
