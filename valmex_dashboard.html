@@ -53,7 +53,7 @@ body{font-family:'Montserrat',sans-serif;background:#F0F3F7;color:#1A2540;}
 .pres-card{background:#fff;border-radius:14px;border:1px solid var(--silver);box-shadow:0 4px 20px rgba(0,32,92,.08);overflow:hidden;}
 .pres-hdr{background:#F7F9FC;border-bottom:1px solid var(--silver);padding:13px 20px;display:flex;align-items:center;justify-content:space-between;}
 .pres-hdr h2{font-size:14px;font-weight:600;color:var(--navy);}
-.pres-body{width:100%;height:80vh;overflow:hidden;line-height:0;}
+.pres-body{width:100%;height:calc(100vh - 140px);overflow:hidden;line-height:0;}
 .pres-body iframe{width:100%;height:100%;border:none;display:block;}
 
 /* ── PROPUESTA ── */
@@ -65,13 +65,13 @@ body{font-family:'Montserrat',sans-serif;background:#F0F3F7;color:#1A2540;}
 .prop-right{display:flex;align-items:center;gap:12px;}
 
 /* Grid — desktop: 2 filas */
-.prop-grid{display:flex;flex-direction:column;gap:12px;}
-.prop-row1{display:grid;grid-template-columns:180px 290px 150px 1fr;gap:12px;min-height:290px;}
+.prop-grid{display:flex;flex-direction:column;gap:12px;} .prop-row1,.prop-row2{min-height:240px;}
+.prop-row1{display:grid;grid-template-columns:1fr 1fr 0.55fr 1.55fr;gap:12px;min-height:0;}
 .prop-row2{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;min-height:240px;}
 
 /* Card base */
 .pcard{background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 4px 14px rgba(0,0,0,.06);}
-.pcard>.ph{background:var(--navy);color:#fff;padding:7px 12px;font-weight:700;font-size:11.5px;letter-spacing:.2px;flex-shrink:0;}
+.pcard>.ph{background:var(--navy);color:#fff;padding:7px 12px;font-weight:700;font-size:11.5px;letter-spacing:.2px;flex-shrink:0;text-align:center;}
 .pcard>.pb{padding:10px;flex:1 1 auto;display:flex;background:#fff;overflow:hidden;}
 .pcard canvas{width:100%!important;height:100%!important;display:block;}
 
@@ -220,7 +220,7 @@ body{font-family:'Montserrat',sans-serif;background:#F0F3F7;color:#1A2540;}
     <div class="header-right">
       <div class="advisor-avatar" id="user-avatar">--</div>
       <span class="advisor-name" id="user-name"></span>
-      <button class="btn-logout" onclick="window.location.href='/logout'" title="Cerrar sesión">⏻</button>
+      <button class="btn-logout" onclick="window.location.href='/logout'" title="Cerrar sesión"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h7"/><polyline points="17 15 20 12 17 9"/><line x1="20" y1="12" x2="9" y2="12"/></svg></button>
       <button class="hamburger" onclick="openMobileNav()" aria-label="Menú">
         <span></span><span></span><span></span>
       </button>
@@ -241,7 +241,7 @@ body{font-family:'Montserrat',sans-serif;background:#F0F3F7;color:#1A2540;}
     <button class="mobile-tab" onclick="showPage('propuesta');closeMobileNav()">Propuesta</button>
     <button class="mobile-tab" onclick="showPage('comparativa');closeMobileNav()">Comparativa</button>
     <button class="mobile-tab" onclick="showPage('elite');closeMobileNav()">VALMEX Elite</button>
-    <button class="mobile-logout" onclick="window.location.href='/logout'">⏻ Cerrar sesión</button>
+    <button class="mobile-logout" onclick="window.location.href='/logout'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h7"/><polyline points="17 15 20 12 17 9"/><line x1="20" y1="12" x2="9" y2="12"/></svg> Cerrar sesión</button>
   </div>
 </div>
 
@@ -253,7 +253,7 @@ body{font-family:'Montserrat',sans-serif;background:#F0F3F7;color:#1A2540;}
     <div class="pres-card">
       <div class="pres-hdr">
         <h2>Presentación</h2>
-        <a href="/PC.pdf" download="Presentacion_Comercial_Valmex.pdf" class="btn-dl" title="Descargar">
+        <a href="/PC.pdf" download="PRESENTACIÓN COMERCIAL VALMEX.pdf" class="btn-dl" title="Descargar">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         </a>
       </div>
@@ -290,7 +290,7 @@ body{font-family:'Montserrat',sans-serif;background:#F0F3F7;color:#1A2540;}
         </div>
         <!-- Rendimientos Hoy -->
         <div class="pcard">
-          <div class="ph">Rendimientos Hoy</div>
+          <div class="ph">Rendimientos</div>
           <div class="pb" style="padding:8px;">
             <div class="rh-grid">
               <div class="rh-block"><span class="rh-pill">MTD</span><span class="rh-val pos">0.13%</span></div>
@@ -304,7 +304,7 @@ body{font-family:'Montserrat',sans-serif;background:#F0F3F7;color:#1A2540;}
         </div>
         <!-- Deuda -->
         <div class="pcard">
-          <div class="ph">Deuda</div>
+          <div class="ph">Drilldown Deuda</div>
           <div class="pb" style="padding:10px;">
             <div class="deuda-inner">
               <div class="deuda-row"><span class="deuda-lbl">Duración</span><span class="deuda-val">1.30 / 4.97</span></div>
@@ -315,7 +315,7 @@ body{font-family:'Montserrat',sans-serif;background:#F0F3F7;color:#1A2540;}
         </div>
         <!-- Línea -->
         <div class="pcard linea">
-          <div class="ph" id="linea-ph">Rendimientos mensuales — Perfiles a través del tiempo</div>
+          <div class="ph">Backtesting</div>
           <div class="pb" style="padding:10px;"><canvas id="c-linea"></canvas></div>
         </div>
       </div>
@@ -525,14 +525,17 @@ charts.comp2 = new Chart(document.getElementById('c-comp2'),{
 // PDF Export
 document.getElementById('btn-pdf').addEventListener('click',async()=>{
   const {jsPDF}=window.jspdf;
-  const el=document.getElementById('prop-dash');
+  const el=document.getElementById('page-propuesta');
   const cv=await html2canvas(el,{scale:2,useCORS:true,backgroundColor:'#F0F3F7'});
   const img=cv.toDataURL('image/png');
   const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'letter'});
-  const pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight(),m=8;
-  const iw=pw-m*2,ih=Math.min((cv.height/cv.width)*iw,ph-m*2);
-  pdf.addImage(img,'PNG',m,m,iw,ih);
-  pdf.save('propuesta_valmex.pdf');
+  const pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight();
+  const ratio=cv.width/cv.height;
+  let iw=pw, ih=pw/ratio;
+  if(ih>ph){ih=ph;iw=ph*ratio;}
+  const mx=(pw-iw)/2, my=(ph-ih)/2;
+  pdf.addImage(img,'PNG',mx,my,iw,ih);
+  pdf.save('PROPUESTA DE INVERSIÓN VALMEX.pdf');
 });
 </script>
 </body>
