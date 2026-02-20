@@ -42,19 +42,24 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
 .mobile-logout:hover{color:#fff;background:rgba(255,255,255,.10);}
 
 /* ── CONTAINER / PAGES ── */
-.container{max-width:1400px;margin:0 auto;padding:24px 20px;background:#fff;} #page-presentacion{margin:-24px -20px;height:calc(100vh - 72px);flex-direction:column;}
+.container{max-width:1400px;margin:0 auto;padding:24px 20px;background:#fff;} #page-presentacion{margin:-24px -20px;height:calc(100vh - 72px);flex-direction:column;} #page-propuesta{margin:-24px -20px;padding:24px 20px;max-width:100vw;}
 
-/* US Letter landscape: 962x724px usable area (279.4x215.9mm @ 96dpi, margins 1.27cm) */
-/* Web: prop-dash fluido, ocupa todo el espacio */
-.prop-dash-scaler{width:100%;display:block;}
+/* US Letter landscape: 962x724px — escalado via transform para la web */
+.prop-dash-scaler{width:100%;overflow:hidden;display:block;}
 #prop-dash{
-  width:100%;
+  width:962px;
+  height:724px;
+  flex-shrink:0;
   background:#fff;
+  box-shadow:0 4px 32px rgba(0,0,0,0.10);
+  border-radius:4px;
+  overflow:hidden;
   padding:14px 16px 10px;
   display:grid;
   grid-template-columns:repeat(6,1fr);
-  gap:16px;
+  gap:8px;
   align-content:start;
+  transform-origin:top center;
 }
 .page{display:none;background:#fff;}.page.active{display:block;background:#fff;} #page-presentacion.active{display:flex;} #page-propuesta.active{display:flex;flex-direction:column;}
 
@@ -220,7 +225,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
 <header class="topbar">
   <div class="brand">
     <div style="display:flex;align-items:center;gap:16px;flex:1;justify-content:center;">
-      <button class="logo-btn" id="logo-tab" onclick="showPage('', this)" title="">
+      <button class="logo-btn" id="logo-tab" onclick="showPage('presentacion', this)" title="Presentación">
         <img src="/VALMEX.png" class="logo-img" alt="VALMEX">
       </button>
       <nav class="nav">
@@ -282,7 +287,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
     <div class="prop-titlebar" id="prop-toolbar">
       <div></div>
       <div class="prop-right">
-        <span style="font-size:11px;color:var(--gray);font-family:'Inter',sans-serif;"></span>
+        <span style="font-size:11px;color:var(--gray);font-family:'Inter',sans-serif;">Exportar PDF</span>
         <button class="btn-dl" id="btn-pdf" title="Descargar PDF">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         </button>
@@ -426,9 +431,11 @@ function scaleDash() {
   const scaler = dash ? dash.parentElement : null;
   if (!dash || !scaler) return;
   const available = scaler.offsetWidth;
-  const scale = Math.min(1, available / 962);
+  const scale = available / 962;
   dash.style.transform = 'scale('+scale+')';
+  dash.style.transformOrigin = 'top left';
   dash.style.marginBottom = (724 * scale - 724) + 'px';
+  scaler.style.height = (724 * scale) + 'px';
 }
 window.addEventListener('resize', scaleDash);
 window.addEventListener('load', scaleDash);
@@ -603,18 +610,21 @@ document.getElementById('btn-pdf').addEventListener('click',async()=>{
   // Carta horizontal sin márgenes: 279.4 x 215.9 mm
   const MARGIN=0, AREA_W=279.4, AREA_H=215.9;
 
-  // Fijar dimensiones para exportar (962x724 = US Letter landscape a 96dpi)
-  const origW=el.style.width, origH=el.style.height, origGap=el.style.gap;
-  el.style.width='962px'; el.style.height='724px'; el.style.gap='8px';
-  await new Promise(r=>setTimeout(r,120)); // esperar re-render
+  // Resetear transform sin tocar layout — html2canvas captura el elemento real
+  const origTransform = el.style.transform;
+  el.style.transform = 'none';
+  const scaler = el.parentElement;
+  const origOverflow = scaler.style.overflow;
+  scaler.style.overflow = 'visible';
 
-  const cv=await html2canvas(el,{
-    scale:4, useCORS:true, backgroundColor:'#ffffff',
-    width:962, height:724, logging:false
+  const cv = await html2canvas(el, {
+    scale: 4, useCORS: true, backgroundColor: '#ffffff',
+    width: 962, height: 724, logging: false,
+    x: 0, y: 0
   });
 
-  // Restaurar dimensiones web
-  el.style.width=origW; el.style.height=origH; el.style.gap=origGap;
+  el.style.transform = origTransform;
+  scaler.style.overflow = origOverflow;
   const img=cv.toDataURL('image/png');
 
   // Mantener proporción dentro del área útil
