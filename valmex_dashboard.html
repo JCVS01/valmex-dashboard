@@ -42,32 +42,21 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
 .mobile-logout:hover{color:#fff;background:rgba(255,255,255,.10);}
 
 /* ── CONTAINER / PAGES ── */
-.container{max-width:1400px;margin:0 auto;padding:24px 20px;background:#fff;} #page-propuesta{margin:-24px -20px;padding:0;width:100vw;box-sizing:border-box;} #page-presentacion{margin:-24px -20px;height:calc(100vh - 72px);display:flex;flex-direction:column;}
-#page-propuesta{display:none;}
-#page-propuesta.active{display:block;}
+.container{max-width:1400px;margin:0 auto;padding:24px 20px;background:#fff;} #page-presentacion{margin:-24px -20px;height:calc(100vh - 72px);flex-direction:column;}
+
 /* US Letter landscape: 962x724px usable area (279.4x215.9mm @ 96dpi, margins 1.27cm) */
-.prop-dash-scaler{
-  width:100%;
-  overflow:hidden;
-  display:flex;
-  justify-content:center;
-}
+/* Web: prop-dash fluido, ocupa todo el espacio */
+.prop-dash-scaler{width:100%;display:block;}
 #prop-dash{
-  width:962px;
-  height:724px;
-  flex-shrink:0;
+  width:100%;
   background:#fff;
-  box-shadow:0 4px 32px rgba(0,0,0,0.12);
-  border-radius:4px;
-  overflow:hidden;
   padding:14px 16px 10px;
   display:grid;
   grid-template-columns:repeat(6,1fr);
-  gap:8px;
+  gap:16px;
   align-content:start;
-  transform-origin:top center;
 }
-.page{display:none;background:#fff;}.page.active{display:block;background:#fff;}
+.page{display:none;background:#fff;}.page.active{display:block;background:#fff;} #page-presentacion.active{display:flex;} #page-propuesta.active{display:flex;flex-direction:column;}
 
 /* ── BOTÓN DESCARGA ── */
 .btn-dl{width:36px;height:36px;border-radius:8px;background:var(--navy);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;transition:background .18s;text-decoration:none;flex-shrink:0;}
@@ -86,7 +75,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
 .prop-accent{width:8px;height:28px;background:var(--sky);border-radius:3px;flex-shrink:0;}
 .prop-title{font-size:22px;font-weight:900;letter-spacing:.3px;color:var(--navy);text-transform:uppercase;}
 .prop-rule{height:2px;background:var(--navy);border-radius:2px;margin-bottom:14px;}
-.prop-right{display:flex;align-items:center;gap:12px;} #prop-toolbar{padding:8px 20px 4px;margin-bottom:0;}
+.prop-right{display:flex;align-items:center;gap:12px;} #prop-toolbar{padding:8px 0 4px;margin-bottom:0;}
 .prop-dash-title{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:4px 2px 6px;}
 
 /* Grid — desktop: 2 filas */
@@ -614,10 +603,18 @@ document.getElementById('btn-pdf').addEventListener('click',async()=>{
   // Carta horizontal sin márgenes: 279.4 x 215.9 mm
   const MARGIN=0, AREA_W=279.4, AREA_H=215.9;
 
+  // Fijar dimensiones para exportar (962x724 = US Letter landscape a 96dpi)
+  const origW=el.style.width, origH=el.style.height, origGap=el.style.gap;
+  el.style.width='962px'; el.style.height='724px'; el.style.gap='8px';
+  await new Promise(r=>setTimeout(r,120)); // esperar re-render
+
   const cv=await html2canvas(el,{
     scale:4, useCORS:true, backgroundColor:'#ffffff',
-    width:el.offsetWidth, height:el.offsetHeight, logging:false
+    width:962, height:724, logging:false
   });
+
+  // Restaurar dimensiones web
+  el.style.width=origW; el.style.height=origH; el.style.gap=origGap;
   const img=cv.toDataURL('image/png');
 
   // Mantener proporción dentro del área útil
