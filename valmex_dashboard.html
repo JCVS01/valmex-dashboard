@@ -101,9 +101,9 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
 
 /* Rendimientos hoy */
 .rh-grid{width:100%;height:100%;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,1fr);gap:6px;}
-.rh-block{background:#fff;border:1px solid rgba(0,0,0,.10);border-radius:8px;padding:4px;text-align:center;display:flex;flex-direction:column;justify-content:center;}
-.rh-pill{display:inline-block;background:var(--navy);color:#fff;padding:2px 6px;border-radius:6px;font-weight:800;font-size:9px;margin-bottom:3px;}
-.rh-val{font-size:15px;font-weight:900;color:#111;}
+.rh-block{background:#fff;border:1px solid var(--silver);border-radius:7px;padding:7px 9px;border-left:3px solid var(--navy);display:flex;flex-direction:column;justify-content:center;}
+.rh-pill{font-size:9px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;display:block;font-family:'Montserrat',sans-serif;}
+.rh-val{font-size:13px;font-weight:800;color:var(--navy);font-family:'Montserrat',sans-serif;}
 .rh-val.pos{color:#16A34A;}.rh-val.neg{color:#DC2626;}.rh-val.flat{color:var(--sky);}
 
 /* Deuda */
@@ -491,9 +491,9 @@ fetch('/me')
   }).catch(()=>{});
 
 // ── CHARTS ──
-Chart.defaults.font.family = "'Inter',sans-serif";
-Chart.defaults.font.size   = 11;
-Chart.defaults.color       = '#5B6670';
+Chart.defaults.font.family = "'Montserrat',sans-serif";
+Chart.defaults.font.size   = 10;
+Chart.defaults.color       = '#00205C';
 
 const PAL = ['#00205C','#3DA5E0','#41BBC9','#1A4A8A','#F59E0B','#2E6DB4','#5B9BD5','#8FB8E0','#B8D4ED','#0A3580','#6BAED6'];
 const charts = {};
@@ -503,23 +503,34 @@ charts.comp = new Chart(document.getElementById('c-comp'),{
   type:'bar',
   data:{
     labels:['VLMXETF','VXDEUDA','VXGUBCP','VXUDIMP','VALMX28','VALMXVL','VLMXTEC','VLMXDME'],
-    datasets:[{data:[34.37,22.52,10.00,10.00,6.90,6.90,5.00,4.31],backgroundColor:'#3DA5E0',borderRadius:0,barPercentage:.65}]
+    datasets:[{
+      data:[34.37,22.52,10.00,10.00,6.90,6.90,5.00,4.31],
+      backgroundColor:'#3DA5E0',
+      borderRadius:3,
+      barPercentage:.55,
+      categoryPercentage:.85
+    }]
   },
   options:{
     indexAxis:'y',responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{display:false}},
-    layout:{padding:{right:38}},
+    plugins:{legend:{display:false},tooltip:{
+      callbacks:{label:ctx=>' '+ctx.raw+'%'},
+      backgroundColor:'#00205C',titleFont:{size:10},bodyFont:{size:10},padding:8,cornerRadius:6
+    }},
+    layout:{padding:{right:44,top:4,bottom:4}},
     scales:{
       x:{display:false,max:42,grid:{display:false}},
-      y:{grid:{display:false},ticks:{font:{size:9,weight:'700'},color:'#00205C'},border:{display:false}}
+      y:{grid:{display:false},ticks:{font:{size:9,weight:'700',family:'Montserrat'},color:'#00205C'},border:{display:false}}
     }
   },
   plugins:[{id:'pct',afterDatasetsDraw(chart){
     const {ctx,scales:{x,y}}=chart; ctx.save();
     chart.data.datasets[0].data.forEach((val,i)=>{
       const bar=chart.getDatasetMeta(0).data[i];
-      ctx.fillStyle='#00205C';ctx.font='bold 9px Inter,sans-serif';ctx.textBaseline='middle';
-      ctx.fillText(val+'%',x.getPixelForValue(val)+4,bar.y);
+      ctx.fillStyle='#00205C';
+      ctx.font='700 9px Montserrat,sans-serif';
+      ctx.textBaseline='middle';
+      ctx.fillText(val.toFixed(2)+'%', x.getPixelForValue(val)+6, bar.y);
     });
     ctx.restore();
   }}]
@@ -531,33 +542,105 @@ charts.linea = new Chart(document.getElementById('c-linea'),{
   data:{
     labels:['2016','2017','2018','2019','2020','2021','2022','2023','2024'],
     datasets:[
-      {label:'Propuesta',data:[100,108,112,122,115,140,150,170,200],borderColor:'#3DA5E0',backgroundColor:'transparent',borderWidth:2.5,pointRadius:2,tension:.4},
-      {label:'Bench propuesta',data:[100,106,110,118,112,134,144,162,193],borderColor:'#F59E0B',backgroundColor:'transparent',borderWidth:2,pointRadius:2,tension:.4,borderDash:[4,3]}
+      {
+        label:'Propuesta',
+        data:[100,108,112,122,115,140,150,170,200],
+        borderColor:'#3DA5E0',
+        backgroundColor:'rgba(61,165,224,0.08)',
+        fill:true,
+        borderWidth:2.5,
+        pointRadius:3,
+        pointBackgroundColor:'#3DA5E0',
+        pointBorderColor:'#fff',
+        pointBorderWidth:1.5,
+        pointHoverRadius:5,
+        tension:.35
+      },
+      {
+        label:'Benchmark',
+        data:[100,106,110,118,112,134,144,162,193],
+        borderColor:'#00205C',
+        backgroundColor:'transparent',
+        borderWidth:2,
+        borderDash:[5,4],
+        pointRadius:3,
+        pointBackgroundColor:'#00205C',
+        pointBorderColor:'#fff',
+        pointBorderWidth:1.5,
+        pointHoverRadius:5,
+        tension:.35
+      }
     ]
   },
   options:{
     responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10},padding:10,usePointStyle:true}}},
+    interaction:{mode:'index',intersect:false},
+    plugins:{
+      legend:{position:'bottom',labels:{boxWidth:8,font:{size:9,family:'Montserrat',weight:'600'},padding:14,usePointStyle:true,pointStyleWidth:8,color:'#00205C'}},
+      tooltip:{backgroundColor:'#00205C',titleFont:{size:10,weight:'600'},bodyFont:{size:10},padding:10,cornerRadius:6,callbacks:{label:ctx=>' '+ctx.dataset.label+': '+ctx.raw}}
+    },
     scales:{
-      x:{grid:{display:false},ticks:{font:{size:9.5}},border:{display:false}},
-      y:{min:90,grid:{display:false},ticks:{font:{size:9.5}},border:{display:false}}
+      x:{grid:{display:false},ticks:{font:{size:9,family:'Montserrat'},color:'#00205C'},border:{display:false}},
+      y:{min:90,grid:{color:'rgba(0,32,92,0.06)'},ticks:{font:{size:9,family:'Montserrat'},color:'#00205C'},border:{display:false}}
     }
   }
 });
 
 // Donuts
 function donut(id,labels,data,colors){
-  const isPortraitMobile = window.innerWidth <= 600 && window.innerHeight > window.innerWidth;
-  const isMobile = isPortraitMobile;
+  const isMobile = window.innerWidth<=600 && window.innerHeight>window.innerWidth;
   return new Chart(document.getElementById(id),{
     type:'doughnut',
-    data:{labels,datasets:[{data,backgroundColor:colors||PAL.slice(0,data.length),borderWidth:1.5,borderColor:'#fff',hoverOffset:5}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
-      plugins:{legend:{
-        position: isMobile ? 'bottom' : 'right',
-        labels:{boxWidth:9,font:{size: isMobile ? 10 : 9.5},padding: isMobile ? 8 : 6,color:'#1A2540'}
-      }}
-    }
+    data:{labels,datasets:[{
+      data,
+      backgroundColor:colors||PAL.slice(0,data.length),
+      borderWidth:2,
+      borderColor:'#fff',
+      hoverOffset:8,
+      hoverBorderWidth:3
+    }]},
+    options:{
+      responsive:true,maintainAspectRatio:false,cutout:'65%',
+      plugins:{
+        legend:{
+          position:isMobile?'bottom':'right',
+          labels:{
+            boxWidth:8,
+            font:{size:9,family:'Montserrat',weight:'600'},
+            padding:10,
+            color:'#00205C',
+            usePointStyle:true,
+            pointStyleWidth:8
+          }
+        },
+        tooltip:{
+          backgroundColor:'#00205C',
+          titleFont:{size:10,weight:'700',family:'Montserrat'},
+          bodyFont:{size:10,family:'Montserrat'},
+          padding:10,
+          cornerRadius:6,
+          callbacks:{label:ctx=>' '+ctx.label+': '+ctx.raw.toFixed(2)+'%'}
+        }
+      }
+    },
+    plugins:[{
+      id:'pctLabel',
+      afterDatasetsDraw(chart){
+        const {ctx,data}=chart;
+        ctx.save();
+        chart.getDatasetMeta(0).data.forEach((arc,i)=>{
+          const val=data.datasets[0].data[i];
+          if(val<3) return; // no mostrar si es muy pequeño
+          const {x,y}=arc.tooltipPosition();
+          ctx.fillStyle='#fff';
+          ctx.font='bold 9px Montserrat,sans-serif';
+          ctx.textAlign='center';
+          ctx.textBaseline='middle';
+          ctx.fillText(val.toFixed(1)+'%',x,y);
+        });
+        ctx.restore();
+      }
+    }]
   });
 }
 charts.clase  = donut('c-clase', ['Deuda Local','RV Global','Deuda Global'],[76.9,18.8,4.3],['#00205C','#3DA5E0','#F59E0B']);
