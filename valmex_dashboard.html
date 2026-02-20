@@ -42,7 +42,7 @@ body{font-family:'Montserrat',sans-serif;background:#F0F3F7;color:#1A2540;}
 .mobile-logout:hover{color:#fff;background:rgba(255,255,255,.10);}
 
 /* ── CONTAINER / PAGES ── */
-.container{max-width:1400px;margin:0 auto;padding:24px 20px;}
+.container{max-width:1400px;margin:0 auto;padding:24px 20px;} #page-presentacion{margin:-24px -20px;} #page-propuesta{display:none;flex-direction:column;} #page-propuesta.active{display:flex;min-height:calc(100vh - 76px - 48px);}
 .page{display:none;}.page.active{display:block;}
 
 /* ── BOTÓN DESCARGA ── */
@@ -51,9 +51,9 @@ body{font-family:'Montserrat',sans-serif;background:#F0F3F7;color:#1A2540;}
 
 /* ── PRESENTACIÓN ── */
 .pres-card{background:#fff;border-radius:14px;border:1px solid var(--silver);box-shadow:0 4px 20px rgba(0,32,92,.08);overflow:hidden;}
-.pres-hdr{background:#F7F9FC;border-bottom:1px solid var(--silver);padding:13px 20px;display:flex;align-items:center;justify-content:space-between;}
-.pres-hdr h2{font-size:14px;font-weight:600;color:var(--navy);}
-.pres-body{width:100%;height:calc(100vh - 140px);overflow:hidden;line-height:0;}
+.pres-hdr{background:#F7F9FC;border-bottom:1px solid var(--silver);padding:6px 14px;display:flex;align-items:center;justify-content:space-between;}
+.pres-hdr h2{font-size:12px;font-weight:600;color:var(--navy);}
+.pres-body{width:100%;height:calc(100vh - 76px - 48px - 34px);overflow:hidden;line-height:0;}
 .pres-body iframe{width:100%;height:100%;border:none;display:block;}
 
 /* ── PROPUESTA ── */
@@ -63,11 +63,23 @@ body{font-family:'Montserrat',sans-serif;background:#F0F3F7;color:#1A2540;}
 .prop-title{font-size:20px;font-weight:900;letter-spacing:.3px;color:var(--navy);text-transform:uppercase;}
 .prop-rule{height:2px;background:var(--navy);border-radius:2px;margin-bottom:14px;}
 .prop-right{display:flex;align-items:center;gap:12px;}
+.prop-dash-title{display:flex;align-items:center;justify-content:space-between;padding:10px 0 4px;}
 
 /* Grid — desktop: 2 filas */
-.prop-grid{display:flex;flex-direction:column;gap:12px;} .prop-row1,.prop-row2{min-height:240px;}
-.prop-row1{display:grid;grid-template-columns:1fr 1fr 0.55fr 1.55fr;gap:12px;min-height:0;}
-.prop-row2{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;min-height:240px;}
+/* Prop grid */
+/* Un solo grid de 6 columnas para toda la propuesta */
+.prop-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;align-items:stretch;}
+.prop-dash-title{grid-column:1/-1;}
+.prop-rule-full{grid-column:1/-1;height:2px;background:var(--navy);border-radius:2px;}
+/* Fila 1 */
+.prop-row1{display:contents;}
+.card-comp{grid-column:span 1;min-height:240px;}
+.card-rend{grid-column:span 1;min-height:240px;}
+.card-deuda{grid-column:span 1;min-height:240px;}
+.card-back{grid-column:span 3;min-height:240px;}
+/* Fila 2 — cada pie = 2 cols exactas del mismo grid */
+.prop-row2{display:contents;}
+.card-pie{grid-column:span 2;min-height:240px;}
 
 /* Card base */
 .pcard{background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 4px 14px rgba(0,0,0,.06);}
@@ -123,13 +135,11 @@ body{font-family:'Montserrat',sans-serif;background:#F0F3F7;color:#1A2540;}
 
 /* ══ TABLET PORTRAIT (≤1024px vertical) ══ */
 @media(max-width:1024px) and (orientation:portrait){
-  .prop-row1{grid-template-columns:1fr 1fr;}
-  .prop-row1 .linea{grid-column:1/-1;min-height:220px;}
-  .prop-row2{grid-template-columns:1fr;}
+  .card-comp,.card-rend,.card-deuda{grid-column:span 1;}
+  .card-back{grid-column:span 3;}
+  .card-pie{grid-column:span 2;}
   .cfg-grid{grid-template-columns:1fr;}
   .elite-features{grid-template-columns:1fr;}
-  .prop-title{font-size:17px;}
-  .prop-row2 .pcard{min-height:300px;}
 }
 
 /* ══ MOBILE PORTRAIT (≤600px vertical) ══ */
@@ -142,20 +152,18 @@ body{font-family:'Montserrat',sans-serif;background:#F0F3F7;color:#1A2540;}
   .logo-img{height:34px;}
   .container{padding:12px;}
   .pres-body{height:65vh;}
-  .prop-row1{grid-template-columns:1fr;}
-  .prop-row1 .linea{grid-column:auto;min-height:200px;}
-  .prop-row2{grid-template-columns:1fr;}
+  .prop-grid{grid-template-columns:1fr;}
+  .card-comp,.card-rend,.card-deuda,.card-back,.card-pie{grid-column:span 1;}
   .prop-title{font-size:15px;}
   .rh-val{font-size:19px;}
   .cfg-grid{grid-template-columns:1fr;}
   .elite-hero{flex-direction:column;padding:24px 20px;}
   .elite-features{grid-template-columns:1fr;}
   .cmp-body{height:260px;}
-  .prop-row2 .pcard{min-height:280px;}
-  .prop-row2 .pb{min-height:240px;}
+  .prop-row1 .pcard,.prop-row2 .pcard{min-height:200px;}
 }
 
-/* ══ LANDSCAPE (celular o tablet horizontal) ══ */
+/* ══ LANDSCAPE CELULAR (horizontal, pantalla pequeña) ══ */
 @media(orientation:landscape) and (max-height:600px){
   .nav{display:none;}
   .hamburger{display:flex;}
@@ -164,12 +172,10 @@ body{font-family:'Montserrat',sans-serif;background:#F0F3F7;color:#1A2540;}
   .advisor-name{display:none;}
   .btn-logout{display:none;}
   .container{padding:8px 12px;}
-  /* 4 columnas compactas */
-  .prop-row1{grid-template-columns:140px 190px 120px 1fr;min-height:210px;gap:8px;}
-  .prop-row1 .linea{grid-column:auto;}
-  .prop-row2{grid-template-columns:repeat(3,1fr);min-height:180px;gap:8px;}
   .prop-grid{gap:8px;}
-  /* Tipografía compacta */
+  .card-comp,.card-rend,.card-deuda{grid-column:span 1;min-height:200px;}
+  .card-back{grid-column:span 3;min-height:200px;}
+  .card-pie{grid-column:span 2;min-height:170px;}
   .prop-title{font-size:14px;}
   .rh-val{font-size:13px;}
   .rh-pill{font-size:8px;padding:2px 5px;}
@@ -177,24 +183,16 @@ body{font-family:'Montserrat',sans-serif;background:#F0F3F7;color:#1A2540;}
   .deuda-val{font-size:11px;}
   .deuda-lbl{font-size:7.5px;}
   .deuda-row{padding:6px 8px;}
-  /* Headers compactos */
   .ph{padding:4px 10px;font-size:9.5px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  /* Gráfica de línea ocupa el espacio restante */
-  .prop-row1 .linea .pb{min-height:130px;}
-  .prop-rule{margin-bottom:8px;}
-  .prop-titlebar{margin-bottom:6px;}
   .prop-note{display:none;}
   .pres-body{height:78vh;}
-  /* Donuts */
-  .prop-row2 .pcard{min-height:170px;}
-  .prop-row2 .pb{min-height:140px;}
 }
 
-/* ══ TABLET LANDSCAPE (≥768px horizontal) ══ */
-@media(orientation:landscape) and (min-height:600px){
-  /* Tablet horizontal = casi desktop, solo ajustes menores */
-  .prop-row1{grid-template-columns:180px 280px 150px 1fr;min-height:270px;}
-  .prop-row2{grid-template-columns:repeat(3,1fr);min-height:220px;}
+/* ══ TABLET LANDSCAPE ══ */
+@media(orientation:landscape) and (min-height:601px){
+  .card-comp,.card-rend,.card-deuda{grid-column:span 1;min-height:240px;}
+  .card-back{grid-column:span 3;min-height:240px;}
+  .card-pie{grid-column:span 2;min-height:220px;}
 }
 
 @media print{
@@ -265,31 +263,38 @@ body{font-family:'Montserrat',sans-serif;background:#F0F3F7;color:#1A2540;}
 
   <!-- PROPUESTA -->
   <div id="page-propuesta" class="page">
-    <div class="prop-titlebar">
-      <div class="prop-title-left">
-        <div class="prop-accent"></div>
-        <span class="prop-title">Estrategia Portafolio</span>
-      </div>
+    <!-- TOOLBAR FUERA del dashboard — NO se exporta -->
+    <div class="prop-titlebar" id="prop-toolbar">
+      <div></div>
       <div class="prop-right">
         <span style="font-size:11px;color:var(--gray);font-family:'Inter',sans-serif;">Exportar PDF</span>
         <button class="btn-dl" id="btn-pdf" title="Descargar PDF">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         </button>
-        <img src="/VALMEX2.png" style="height:30px;width:auto;" alt="">
       </div>
     </div>
-    <div class="prop-rule"></div>
 
+    <!-- DASHBOARD — título y logo ADENTRO, sí se exportan -->
     <div class="prop-grid" id="prop-dash">
+
+      <!-- Titlebar DENTRO del dashboard -->
+      <div class="prop-dash-title">
+        <div class="prop-title-left">
+          <div class="prop-accent"></div>
+          <span class="prop-title">Estrategia Portafolio</span>
+        </div>
+        <img src="/VALMEX2.png" style="height:32px;width:auto;" alt="VALMEX">
+      </div>
+      <div class="prop-rule-full"></div>
       <!-- FILA 1 -->
       <div class="prop-row1">
         <!-- Composición -->
-        <div class="pcard">
+        <div class="pcard card-comp">
           <div class="ph">Composición</div>
           <div class="pb" style="padding:8px 6px;"><canvas id="c-comp"></canvas></div>
         </div>
         <!-- Rendimientos Hoy -->
-        <div class="pcard">
+        <div class="pcard card-rend">
           <div class="ph">Rendimientos</div>
           <div class="pb" style="padding:8px;">
             <div class="rh-grid">
@@ -303,7 +308,7 @@ body{font-family:'Montserrat',sans-serif;background:#F0F3F7;color:#1A2540;}
           </div>
         </div>
         <!-- Deuda -->
-        <div class="pcard">
+        <div class="pcard card-deuda">
           <div class="ph">Drilldown Deuda</div>
           <div class="pb" style="padding:10px;">
             <div class="deuda-inner">
@@ -314,7 +319,7 @@ body{font-family:'Montserrat',sans-serif;background:#F0F3F7;color:#1A2540;}
           </div>
         </div>
         <!-- Línea -->
-        <div class="pcard linea">
+        <div class="pcard card-back">
           <div class="ph">Backtesting</div>
           <div class="pb" style="padding:10px;"><canvas id="c-linea"></canvas></div>
         </div>
@@ -322,15 +327,15 @@ body{font-family:'Montserrat',sans-serif;background:#F0F3F7;color:#1A2540;}
 
       <!-- FILA 2 -->
       <div class="prop-row2">
-        <div class="pcard">
+        <div class="pcard card-pie">
           <div class="ph">Clase de activos</div>
           <div class="pb" style="padding:6px;"><canvas id="c-clase"></canvas></div>
         </div>
-        <div class="pcard">
+        <div class="pcard card-pie">
           <div class="ph">Exposición geográfica RV</div>
           <div class="pb" style="padding:6px;"><canvas id="c-geo"></canvas></div>
         </div>
-        <div class="pcard">
+        <div class="pcard card-pie">
           <div class="ph">Exposición Sectorial RV</div>
           <div class="pb" style="padding:6px;"><canvas id="c-sector"></canvas></div>
         </div>
@@ -525,7 +530,7 @@ charts.comp2 = new Chart(document.getElementById('c-comp2'),{
 // PDF Export
 document.getElementById('btn-pdf').addEventListener('click',async()=>{
   const {jsPDF}=window.jspdf;
-  const el=document.getElementById('page-propuesta');
+  const el=document.getElementById('prop-dash');
   const cv=await html2canvas(el,{scale:2,useCORS:true,backgroundColor:'#F0F3F7'});
   const img=cv.toDataURL('image/png');
   const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'letter'});
