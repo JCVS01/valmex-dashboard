@@ -589,28 +589,28 @@ document.getElementById('btn-pdf').addEventListener('click',async()=>{
   const {jsPDF}=window.jspdf;
   const el=document.getElementById('prop-dash');
 
-  // Carta horizontal sin márgenes: 279.4 x 215.9 mm
-  const MARGIN=0, AREA_W=279.4, AREA_H=215.9;
+  // Guardar estilos actuales (web fluido)
+  const origW=el.style.width, origH=el.style.height, origGap=el.style.gap;
+  const origPad=el.style.padding;
 
-  const cv = await html2canvas(el, {
-    scale: 3, useCORS: true, backgroundColor: '#ffffff',
-    logging: false
+  // Aplicar dimensiones fijas para captura (US Letter landscape @ 96dpi)
+  el.style.width='962px'; el.style.height='724px';
+  el.style.gap='8px'; el.style.padding='14px 16px 10px';
+  await new Promise(r=>setTimeout(r,120));
+
+  const cv=await html2canvas(el,{
+    scale:4, useCORS:true, backgroundColor:'#ffffff',
+    width:962, height:724, logging:false
   });
+
+  // Restaurar estilos web
+  el.style.width=origW; el.style.height=origH;
+  el.style.gap=origGap; el.style.padding=origPad;
+
   const img=cv.toDataURL('image/png');
-
-  // Mantener proporción dentro del área útil
-  const imgRatio=cv.width/cv.height;
-  const areaRatio=AREA_W/AREA_H;
-  let imgW,imgH;
-  if(imgRatio>areaRatio){imgW=AREA_W;imgH=AREA_W/imgRatio;}
-  else{imgH=AREA_H;imgW=AREA_H*imgRatio;}
-
-  // Centrar con márgenes exactos
-  const offsetX=MARGIN+(AREA_W-imgW)/2;
-  const offsetY=MARGIN+(AREA_H-imgH)/2;
-
   const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'letter'});
-  pdf.addImage(img,'PNG',offsetX,offsetY,imgW,imgH);
+  const pw=pdf.internal.pageSize.getWidth(), ph=pdf.internal.pageSize.getHeight();
+  pdf.addImage(img,'PNG',0,0,pw,ph);
   pdf.save('PROPUESTA DE INVERSIÓN VALMEX.pdf');
 });
 </script>
