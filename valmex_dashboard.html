@@ -42,16 +42,40 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
 .mobile-logout:hover{color:#fff;background:rgba(255,255,255,.10);}
 
 /* ── CONTAINER / PAGES ── */
-.container{max-width:1400px;margin:0 auto;padding:24px 20px;} #page-presentacion{margin:-24px -20px;} #page-propuesta{display:none;flex-direction:column;} #page-propuesta.active{display:flex;min-height:calc(100vh - 76px - 48px);}
-.page{display:none;}.page.active{display:block;}
+.container{max-width:1400px;margin:0 auto;padding:24px 20px;background:#fff;} #page-presentacion{margin:-24px -20px;}
+#page-propuesta{display:none;}
+#page-propuesta.active{display:block;}
+/* US Letter landscape: 962x724px usable area (279.4x215.9mm @ 96dpi, margins 1.27cm) */
+.prop-dash-scaler{
+  width:100%;
+  overflow:hidden;
+  display:flex;
+  justify-content:center;
+}
+#prop-dash{
+  width:962px;
+  height:724px;
+  flex-shrink:0;
+  background:#fff;
+  box-shadow:0 4px 32px rgba(0,0,0,0.12);
+  border-radius:4px;
+  overflow:hidden;
+  padding:14px 16px 10px;
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:8px;
+  align-content:start;
+  transform-origin:top center;
+}
+.page{display:none;background:#fff;}.page.active{display:block;background:#fff;}
 
 /* ── BOTÓN DESCARGA ── */
 .btn-dl{width:36px;height:36px;border-radius:8px;background:var(--navy);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;transition:background .18s;text-decoration:none;flex-shrink:0;}
 .btn-dl:hover{background:var(--sky);}
 
 /* ── PRESENTACIÓN ── */
-.pres-card{background:#fff;border-radius:14px;border:1px solid var(--silver);box-shadow:0 4px 20px rgba(0,32,92,.08);overflow:hidden;}
-.pres-hdr{background:#F7F9FC;border-bottom:1px solid var(--silver);padding:6px 14px;display:flex;align-items:center;justify-content:space-between;}
+.pres-card{background:#fff;border-radius:0;border:none;box-shadow:none;overflow:hidden;}
+.pres-hdr{background:#fff;border-bottom:1px solid var(--silver);padding:6px 14px;display:flex;align-items:center;justify-content:space-between;}
 .pres-hdr h2{font-size:12px;font-weight:600;color:var(--navy);}
 .pres-body{width:100%;height:calc(100vh - 76px - 48px - 34px);overflow:hidden;line-height:0;position:relative;}
 .pres-body iframe{width:100%;height:100%;border:none;display:block;}
@@ -59,49 +83,49 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
 /* ── PROPUESTA ── */
 .prop-titlebar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
 .prop-title-left{display:flex;align-items:center;gap:10px;}
-.prop-accent{width:clamp(8px,0.8vw,14px);height:clamp(28px,3vw,48px);background:var(--sky);border-radius:3px;flex-shrink:0;}
-.prop-title{font-size:clamp(18px,2.2vw,36px);font-weight:900;letter-spacing:.3px;color:var(--navy);text-transform:uppercase;}
+.prop-accent{width:8px;height:28px;background:var(--sky);border-radius:3px;flex-shrink:0;}
+.prop-title{font-size:22px;font-weight:900;letter-spacing:.3px;color:var(--navy);text-transform:uppercase;}
 .prop-rule{height:2px;background:var(--navy);border-radius:2px;margin-bottom:14px;}
 .prop-right{display:flex;align-items:center;gap:12px;}
-.prop-dash-title{display:flex;align-items:center;justify-content:space-between;padding:clamp(10px,1.2vw,20px) 12px clamp(6px,0.8vw,14px);}
+.prop-dash-title{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:4px 2px 6px;}
 
 /* Grid — desktop: 2 filas */
 /* Prop grid */
 /* Un solo grid de 6 columnas para toda la propuesta */
-.prop-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;align-items:stretch;}
+.prop-grid{display:contents;}
 .prop-dash-title{grid-column:1/-1;}
-.prop-rule-full{grid-column:1/-1;height:2px;background:var(--navy);border-radius:2px;}
+.prop-rule-full{grid-column:1/-1;height:2px;background:var(--navy);border-radius:2px;margin-bottom:0.3%;}
 /* Fila 1 */
 .prop-row1{display:contents;}
-.card-comp{grid-column:span 1;min-height:350px;}
-.card-rend{grid-column:span 1;min-height:480px;}
-.card-deuda{grid-column:span 1;min-height:300px;}
-.card-back{grid-column:span 3;min-height:400px;}
+.card-comp{grid-column:span 1;height:282px;}
+.card-rend{grid-column:span 1;height:282px;}
+.card-deuda{grid-column:span 1;height:282px;}
+.card-back{grid-column:span 3;height:282px;}
 /* Fila 2 — cada pie = 2 cols exactas del mismo grid */
 .prop-row2{display:contents;}
-.card-pie{grid-column:span 2;min-height:450px;}
+.card-pie{grid-column:span 2;height:330px;}
 
 /* Card base */
 .pcard{background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 4px 14px rgba(0,0,0,.06);}
-.pcard>.ph{background:var(--navy);color:#fff;padding:7px 12px;font-weight:700;font-size:11.5px;letter-spacing:.2px;flex-shrink:0;text-align:center;}
+.pcard>.ph{background:var(--navy);color:#fff;padding:5px 10px;font-weight:700;font-size:11px;letter-spacing:.2px;flex-shrink:0;text-align:center;}
 .pcard>.pb{padding:10px;flex:1 1 auto;display:flex;background:#fff;overflow:hidden;}
 .pcard canvas{width:100%!important;height:100%!important;display:block;}
 
 /* Rendimientos hoy */
 .rh-grid{width:100%;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:1fr;gap:6px;}
 .rh-block{background:#fff;border:1px solid rgba(0,0,0,.10);border-radius:8px;padding:7px;text-align:center;display:flex;flex-direction:column;justify-content:center;}
-.rh-pill{display:inline-block;background:var(--navy);color:#fff;padding:3px 7px;border-radius:6px;font-weight:800;font-size:9.5px;margin-bottom:4px;}
-.rh-val{font-size:17px;font-weight:900;color:#111;}
+.rh-pill{display:inline-block;background:var(--navy);color:#fff;padding:2px 6px;border-radius:6px;font-weight:800;font-size:9px;margin-bottom:3px;}
+.rh-val{font-size:15px;font-weight:900;color:#111;}
 .rh-val.pos{color:#16A34A;}.rh-val.neg{color:#DC2626;}.rh-val.flat{color:var(--sky);}
 
 /* Deuda */
 .deuda-inner{display:flex;flex-direction:column;gap:8px;width:100%;justify-content:center;}
-.deuda-row{background:#f7f9fc;border-radius:8px;padding:8px 10px;border-left:3px solid var(--navy);}
+.deuda-row{background:#fff;border:1px solid var(--silver);border-radius:7px;padding:7px 9px;border-left:3px solid var(--navy);}
 .deuda-lbl{font-size:9px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;display:block;}
-.deuda-val{font-size:13px;font-weight:800;color:var(--navy);}
+.deuda-val{font-size:12px;font-weight:800;color:var(--navy);}
 
 /* Nota */
-.prop-note{font-size:10px;color:var(--gray);margin-top:8px;font-family:'Inter',sans-serif;font-style:italic;}
+.prop-note{font-size:9px;color:var(--gray);margin-top:6px;font-family:'Inter',sans-serif;font-style:italic;}
 
 /* ── CONFIGURACIÓN ── */
 .cfg-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:820px;margin:0 auto;}
@@ -190,8 +214,8 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
 
 /* ══ TABLET LANDSCAPE ══ */
 @media(orientation:landscape) and (min-height:601px){
-  .card-comp,.card-rend,.card-deuda{grid-column:span 1;min-height:240px;}
-  .card-back{grid-column:span 3;min-height:240px;}
+  .card-comp,.card-rend,.card-deuda{grid-column:span 1;}
+  .card-back{grid-column:span 3;}
   .card-pie{grid-column:span 2;min-height:220px;}
 }
 
@@ -275,7 +299,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
     </div>
 
     <!-- DASHBOARD — título y logo ADENTRO, sí se exportan -->
-    <div class="prop-grid" id="prop-dash">
+    <div class="prop-dash-scaler"><div class="prop-grid" id="prop-dash">
 
       <!-- Titlebar DENTRO del dashboard -->
       <div class="prop-dash-title">
@@ -283,7 +307,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
           <div class="prop-accent"></div>
           <span class="prop-title">Estrategia Portafolio</span>
         </div>
-        <img src="/VALMEX2.png" style="height:clamp(32px,4vw,60px);width:auto;" alt="VALMEX">
+        <img src="/VALMEX2.png" style="height:38px;width:auto;" alt="VALMEX">
       </div>
       <div class="prop-rule-full"></div>
       <!-- FILA 1 -->
@@ -341,6 +365,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
         </div>
       </div>
     </div>
+    </div><!-- /.prop-dash-scaler -->
     <p class="prop-note">*Rendimientos con plazo menor a un año están expresados en términos efectivos y los rendimientos mayores a un año en términos anualizados. Los rendimientos se encuentran actualizados al 31/12/2025.</p>
   </div>
 
@@ -405,12 +430,24 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
 <script>
 // ── NAVEGACIÓN ──
 const PAGES = ['presentacion','propuesta','configuracion','comparativa','elite'];
+function scaleDash() {
+  const dash = document.getElementById('prop-dash');
+  const scaler = dash ? dash.parentElement : null;
+  if (!dash || !scaler) return;
+  const available = scaler.offsetWidth;
+  const scale = Math.min(1, available / 962);
+  dash.style.transform = 'scale('+scale+')';
+  dash.style.marginBottom = (724 * scale - 724) + 'px';
+}
+window.addEventListener('resize', scaleDash);
+window.addEventListener('load', scaleDash);
+
 function showPage(name, el) {
   PAGES.forEach(id => document.getElementById('page-'+id).classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
   document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
   if (el) el.classList.add('active');
-  if (name === 'propuesta') setTimeout(() => Object.values(charts).forEach(c => c && c.resize && c.resize()), 80);
+  if (name === 'propuesta') { setTimeout(() => { Object.values(charts).forEach(c => c && c.resize && c.resize()); scaleDash(); }, 80); }
   window.scrollTo(0,0);
 }
 function openMobileNav()  { document.getElementById('mobile-nav').style.display='block'; document.body.style.overflow='hidden'; }
@@ -522,19 +559,33 @@ charts.comp2 = new Chart(document.getElementById('c-comp2'),{
   }
 });
 
-// PDF Export
+// PDF Export — US Letter horizontal, márgenes 1.27cm
 document.getElementById('btn-pdf').addEventListener('click',async()=>{
   const {jsPDF}=window.jspdf;
   const el=document.getElementById('prop-dash');
-  const cv=await html2canvas(el,{scale:2,useCORS:true,backgroundColor:'#F0F3F7'});
+
+  // Carta horizontal: 279.4 x 215.9 mm | Margen 12.7mm | Área útil: 254 x 190.5mm
+  const MARGIN=12.7, AREA_W=254, AREA_H=190.5;
+
+  const cv=await html2canvas(el,{
+    scale:4, useCORS:true, backgroundColor:'#ffffff',
+    width:el.offsetWidth, height:el.offsetHeight, logging:false
+  });
   const img=cv.toDataURL('image/png');
+
+  // Mantener proporción dentro del área útil
+  const imgRatio=cv.width/cv.height;
+  const areaRatio=AREA_W/AREA_H;
+  let imgW,imgH;
+  if(imgRatio>areaRatio){imgW=AREA_W;imgH=AREA_W/imgRatio;}
+  else{imgH=AREA_H;imgW=AREA_H*imgRatio;}
+
+  // Centrar con márgenes exactos
+  const offsetX=MARGIN+(AREA_W-imgW)/2;
+  const offsetY=MARGIN+(AREA_H-imgH)/2;
+
   const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'letter'});
-  const pw=pdf.internal.pageSize.getWidth(),ph=pdf.internal.pageSize.getHeight();
-  const ratio=cv.width/cv.height;
-  let iw=pw, ih=pw/ratio;
-  if(ih>ph){ih=ph;iw=ph*ratio;}
-  const mx=(pw-iw)/2, my=(ph-ih)/2;
-  pdf.addImage(img,'PNG',mx,my,iw,ih);
+  pdf.addImage(img,'PNG',offsetX,offsetY,imgW,imgH);
   pdf.save('PROPUESTA DE INVERSIÓN VALMEX.pdf');
 });
 </script>
