@@ -260,11 +260,11 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
       <div class="advisor-avatar" id="mobile-avatar">--</div>
       <span style="color:#fff;font-size:14px;font-weight:600;" id="mobile-name"></span>
     </div>
-    <button class="mobile-tab" onclick="showPage('presentacion');closeMobileNav()">Presentación</button>
-    <button class="mobile-tab" onclick="showPage('configuracion');closeMobileNav()">Configuración</button>
-    <button class="mobile-tab" onclick="showPage('propuesta');closeMobileNav()">Propuesta</button>
-    <button class="mobile-tab" onclick="showPage('comparativa');closeMobileNav()">Comparativa</button>
-    <button class="mobile-tab" onclick="showPage('elite');closeMobileNav()">VALMEX Elite</button>
+    <button class="mobile-tab" onclick="showPage('presentacion',this);closeMobileNav()">Presentación</button>
+    <button class="mobile-tab" onclick="showPage('configuracion',this);closeMobileNav()">Configuración</button>
+    <button class="mobile-tab" onclick="showPage('propuesta',this);closeMobileNav()">Propuesta</button>
+    <button class="mobile-tab" onclick="showPage('comparativa',this);closeMobileNav()">Comparativa</button>
+    <button class="mobile-tab" onclick="showPage('elite',this);closeMobileNav()">VALMEX Elite</button>
     <button class="mobile-logout" onclick="window.location.href='/logout'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h7"/><polyline points="17 15 20 12 17 9"/><line x1="20" y1="12" x2="9" y2="12"/></svg> Cerrar sesión</button>
   </div>
 </div>
@@ -445,11 +445,55 @@ window.addEventListener('resize', scaleDash);
 window.addEventListener('load', scaleDash);
 
 function showPage(name, el) {
+  // 1. Activar página correcta
   PAGES.forEach(id => document.getElementById('page-'+id).classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
+
+  // 2. Nav desktop: quitar active de todos los nav-tab
   document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
-  if (el) el.classList.add('active');
-  if (name === 'propuesta') { setTimeout(() => { Object.values(charts).forEach(c => c && c.resize && c.resize()); scaleDash(); }, 80); }
+
+  // 3. Nav móvil: quitar active de todos los mobile-tab
+  document.querySelectorAll('.mobile-tab').forEach(b => b.classList.remove('active'));
+
+  // 4. Marcar el elemento que se clickeó (desktop o móvil)
+  if (el && (el.classList.contains('nav-tab') || el.classList.contains('mobile-tab'))) {
+    el.classList.add('active');
+  }
+
+  // 5. Sincronizar el tab equivalente en el otro menú
+  const nameMap = {
+    'presentacion': 'presentación',
+    'configuracion': 'configuración',
+    'propuesta': 'propuesta',
+    'comparativa': 'comparativa',
+    'elite': 'valmex elite'
+  };
+  const label = nameMap[name] || name;
+  // Si vino del desktop, marcar en móvil
+  if (el && el.classList.contains('nav-tab')) {
+    document.querySelectorAll('.mobile-tab').forEach(b => {
+      if (b.textContent.trim().toLowerCase() === label) b.classList.add('active');
+    });
+  }
+  // Si vino del móvil, marcar en desktop
+  if (el && el.classList.contains('mobile-tab')) {
+    document.querySelectorAll('.nav-tab').forEach(b => {
+      if (b.textContent.trim().toLowerCase() === label) b.classList.add('active');
+    });
+  }
+
+  // 6. Logo = pestaña Presentación
+  const logo = document.getElementById('logo-tab');
+  if (name === 'presentacion') logo.classList.add('logo-active');
+  else logo.classList.remove('logo-active');
+
+  // 7. Resize charts si es propuesta
+  if (name === 'propuesta') {
+    setTimeout(() => {
+      Object.values(charts).forEach(c => c && c.resize && c.resize());
+      if (typeof scaleDash === 'function') scaleDash();
+    }, 80);
+  }
   window.scrollTo(0,0);
 }
 function openMobileNav()  { document.getElementById('mobile-nav').style.display='block'; document.body.style.overflow='hidden'; }
