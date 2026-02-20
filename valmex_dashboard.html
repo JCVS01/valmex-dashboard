@@ -430,8 +430,12 @@ function scaleDash() {
   const dash = document.getElementById('prop-dash');
   const scaler = dash ? dash.parentElement : null;
   if (!dash || !scaler) return;
-  const available = scaler.offsetWidth;
-  const scale = available / 962;
+  const availW = scaler.offsetWidth;
+  // Available height = viewport minus topbar(72) minus toolbar(~44) minus note(~30)
+  const availH = window.innerHeight - 72 - 44 - 30;
+  const scaleW = availW / 962;
+  const scaleH = availH / 724;
+  const scale = Math.min(scaleW, scaleH);
   dash.style.transform = 'scale('+scale+')';
   dash.style.transformOrigin = 'top left';
   dash.style.marginBottom = (724 * scale - 724) + 'px';
