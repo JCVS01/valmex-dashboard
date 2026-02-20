@@ -42,7 +42,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
 .mobile-logout:hover{color:#fff;background:rgba(255,255,255,.10);}
 
 /* ── CONTAINER / PAGES ── */
-.container{max-width:1400px;margin:0 auto;padding:24px 20px;background:#fff;} #page-presentacion{margin:-24px -20px;}
+.container{max-width:1400px;margin:0 auto;padding:24px 20px;background:#fff;} #page-propuesta{margin:-24px -20px;padding:0 20px 20px;} #page-presentacion{margin:-24px -20px;}
 #page-propuesta{display:none;}
 #page-propuesta.active{display:block;}
 /* US Letter landscape: 962x724px usable area (279.4x215.9mm @ 96dpi, margins 1.27cm) */
@@ -86,7 +86,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
 .prop-accent{width:8px;height:28px;background:var(--sky);border-radius:3px;flex-shrink:0;}
 .prop-title{font-size:22px;font-weight:900;letter-spacing:.3px;color:var(--navy);text-transform:uppercase;}
 .prop-rule{height:2px;background:var(--navy);border-radius:2px;margin-bottom:14px;}
-.prop-right{display:flex;align-items:center;gap:12px;}
+.prop-right{display:flex;align-items:center;gap:12px;} #prop-toolbar{padding:8px 0 4px;margin-bottom:0;}
 .prop-dash-title{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:4px 2px 6px;}
 
 /* Grid — desktop: 2 filas */
@@ -280,7 +280,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
         </a>
       </div>
       <div class="pres-body">
-        <iframe src="/PC.pdf#toolbar=0&navpanes=0&scrollbar=0&view=FitH" title="Presentación Comercial" style="width:125%;height:125%;transform:scale(0.8);transform-origin:top left;border:none;display:block;"></iframe>
+        <iframe src="/PC.pdf#toolbar=0&navpanes=0&scrollbar=0&view=FitH" title="Presentación Comercial"></iframe>
       </div>
     </div>
   </div>
@@ -564,8 +564,8 @@ document.getElementById('btn-pdf').addEventListener('click',async()=>{
   const {jsPDF}=window.jspdf;
   const el=document.getElementById('prop-dash');
 
-  // Carta horizontal: 279.4 x 215.9 mm | Margen 12.7mm | Área útil: 254 x 190.5mm
-  const MARGIN=12.7, AREA_W=254, AREA_H=190.5;
+  // Carta horizontal sin márgenes: 279.4 x 215.9 mm
+  const MARGIN=0, AREA_W=279.4, AREA_H=215.9;
 
   const cv=await html2canvas(el,{
     scale:4, useCORS:true, backgroundColor:'#ffffff',
