@@ -608,8 +608,10 @@ document.getElementById('btn-pdf').addEventListener('click',async()=>{
   el.style.gap=origGap; el.style.padding=origPad;
 
   const img=cv.toDataURL('image/png');
+  // US Letter horizontal: 279.4 x 215.9 mm, sin márgenes, llena toda la hoja
   const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'letter'});
-  const pw=pdf.internal.pageSize.getWidth(), ph=pdf.internal.pageSize.getHeight();
+  const pw=pdf.internal.pageSize.getWidth();  // 279.4mm
+  const ph=pdf.internal.pageSize.getHeight(); // 215.9mm
   pdf.addImage(img,'PNG',0,0,pw,ph);
   pdf.save('PROPUESTA DE INVERSIÓN VALMEX.pdf');
 });
