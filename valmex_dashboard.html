@@ -10,8 +10,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Montserrat',sans-serif;background:#F0F3F7;color:#1A2540;}
-:root{--navy:#00205C;--sky:#41BBC9;--blue:#3DA5E0;--silver:#D3DDE6;--gray:#5B6670;--white:#fff;--bg:#F0F3F7;}
+body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
+:root{--navy:#00205C;--sky:#41BBC9;--blue:#3DA5E0;--silver:#D3DDE6;--gray:#5B6670;--white:#fff;--bg:#FFFFFF;}
 
 /* ── TOPBAR ── */
 .topbar{background:var(--navy);width:100%;box-shadow:0 2px 12px rgba(0,0,0,.25);}
@@ -59,11 +59,11 @@ body{font-family:'Montserrat',sans-serif;background:#F0F3F7;color:#1A2540;}
 /* ── PROPUESTA ── */
 .prop-titlebar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
 .prop-title-left{display:flex;align-items:center;gap:10px;}
-.prop-accent{width:10px;height:28px;background:var(--sky);border-radius:3px;flex-shrink:0;}
-.prop-title{font-size:20px;font-weight:900;letter-spacing:.3px;color:var(--navy);text-transform:uppercase;}
+.prop-accent{width:clamp(8px,0.8vw,14px);height:clamp(28px,3vw,48px);background:var(--sky);border-radius:3px;flex-shrink:0;}
+.prop-title{font-size:clamp(18px,2.2vw,36px);font-weight:900;letter-spacing:.3px;color:var(--navy);text-transform:uppercase;}
 .prop-rule{height:2px;background:var(--navy);border-radius:2px;margin-bottom:14px;}
 .prop-right{display:flex;align-items:center;gap:12px;}
-.prop-dash-title{display:flex;align-items:center;justify-content:space-between;padding:10px 0 4px;}
+.prop-dash-title{display:flex;align-items:center;justify-content:space-between;padding:clamp(10px,1.2vw,20px) 12px clamp(6px,0.8vw,14px);}
 
 /* Grid — desktop: 2 filas */
 /* Prop grid */
@@ -283,7 +283,7 @@ body{font-family:'Montserrat',sans-serif;background:#F0F3F7;color:#1A2540;}
           <div class="prop-accent"></div>
           <span class="prop-title">Estrategia Portafolio</span>
         </div>
-        <img src="/VALMEX2.png" style="height:32px;width:auto;" alt="VALMEX">
+        <img src="/VALMEX2.png" style="height:clamp(32px,4vw,60px);width:auto;" alt="VALMEX">
       </div>
       <div class="prop-rule-full"></div>
       <!-- FILA 1 -->
@@ -425,12 +425,7 @@ fetch('/me')
     document.getElementById('user-name').textContent   = user.nombre;
     document.getElementById('mobile-avatar').textContent = user.iniciales;
     document.getElementById('mobile-name').textContent   = user.nombre;
-    if (user.rol === 'vista') {
-      document.querySelectorAll('.nav-tab,.mobile-tab').forEach(btn => {
-        if (['Configuración','VALMEX Elite'].includes(btn.textContent.trim()))
-          btn.style.display = 'none';
-      });
-    }
+    // Todos los usuarios tienen acceso completo
   }).catch(()=>{});
 
 // ── CHARTS ──
