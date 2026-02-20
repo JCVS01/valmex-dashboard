@@ -44,22 +44,16 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
 /* ── CONTAINER / PAGES ── */
 .container{max-width:1400px;margin:0 auto;padding:24px 20px;background:#fff;} #page-presentacion{margin:-24px -20px;height:calc(100vh - 72px);flex-direction:column;} #page-propuesta{margin:-24px -20px;padding:0;width:100vw;}
 
-/* US Letter landscape: 962x724px — escalado via transform para la web */
-.prop-dash-scaler{width:100vw;overflow:hidden;display:block;}
+/* Dashboard fluido — igual que otras pestañas */
+.prop-dash-scaler{width:100%;}
 #prop-dash{
-  width:962px;
-  height:724px;
-  flex-shrink:0;
+  width:100%;
   background:#fff;
-  box-shadow:0 4px 32px rgba(0,0,0,0.10);
-  border-radius:4px;
-  overflow:hidden;
-  padding:14px 16px 10px;
+  padding:12px 16px;
   display:grid;
   grid-template-columns:repeat(6,1fr);
-  gap:8px;
+  gap:16px;
   align-content:start;
-  transform-origin:top center;
 }
 .page{display:none;background:#fff;}.page.active{display:block;background:#fff;} #page-presentacion.active{display:flex;} #page-propuesta.active{display:flex;flex-direction:column;}
 
@@ -426,23 +420,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
 <script>
 // ── NAVEGACIÓN ──
 const PAGES = ['presentacion','propuesta','configuracion','comparativa','elite'];
-function scaleDash() {
-  const dash = document.getElementById('prop-dash');
-  const scaler = dash ? dash.parentElement : null;
-  if (!dash || !scaler) return;
-  const availW = scaler.offsetWidth;
-  // Available height = viewport minus topbar(72) minus toolbar(~44) minus note(~30)
-  const availH = window.innerHeight - 72 - 44 - 30;
-  const scaleW = availW / 962;
-  const scaleH = availH / 724;
-  const scale = Math.min(scaleW, scaleH);
-  dash.style.transform = 'scale('+scale+')';
-  dash.style.transformOrigin = 'top left';
-  dash.style.marginBottom = (724 * scale - 724) + 'px';
-  scaler.style.height = (724 * scale) + 'px';
-}
-window.addEventListener('resize', scaleDash);
-window.addEventListener('load', scaleDash);
+
 
 function showPage(name, el) {
   // 1. Activar página correcta
@@ -491,7 +469,7 @@ function showPage(name, el) {
   if (name === 'propuesta') {
     setTimeout(() => {
       Object.values(charts).forEach(c => c && c.resize && c.resize());
-      if (typeof scaleDash === 'function') scaleDash();
+      
     }, 80);
   }
   window.scrollTo(0,0);
@@ -614,21 +592,10 @@ document.getElementById('btn-pdf').addEventListener('click',async()=>{
   // Carta horizontal sin márgenes: 279.4 x 215.9 mm
   const MARGIN=0, AREA_W=279.4, AREA_H=215.9;
 
-  // Resetear transform sin tocar layout — html2canvas captura el elemento real
-  const origTransform = el.style.transform;
-  el.style.transform = 'none';
-  const scaler = el.parentElement;
-  const origOverflow = scaler.style.overflow;
-  scaler.style.overflow = 'visible';
-
   const cv = await html2canvas(el, {
-    scale: 4, useCORS: true, backgroundColor: '#ffffff',
-    width: 962, height: 724, logging: false,
-    x: 0, y: 0
+    scale: 3, useCORS: true, backgroundColor: '#ffffff',
+    logging: false
   });
-
-  el.style.transform = origTransform;
-  scaler.style.overflow = origOverflow;
   const img=cv.toDataURL('image/png');
 
   // Mantener proporción dentro del área útil
