@@ -4,9 +4,60 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VALMEX | Dashboard Asesor</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js">
+// ── FECHA DINÁMICA (n-1 hábil, n-3 si es lunes) ──
+(function(){
+  const hoy = new Date();
+  const dia = hoy.getDay(); // 0=dom, 1=lun, ... 6=sab
+  let offset = 1;
+  if(dia === 1) offset = 3;      // lunes → viernes
+  else if(dia === 0) offset = 2; // domingo → viernes
+  else if(dia === 6) offset = 1; // sábado → viernes (raro pero cubierto)
+  const fecha = new Date(hoy);
+  fecha.setDate(hoy.getDate() - offset);
+  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const str = fecha.getDate() + ' de ' + meses[fecha.getMonth()] + ' de ' + fecha.getFullYear();
+  const el = document.getElementById('fecha-actualizacion');
+  if(el) el.textContent = str;
+})();
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js">
+// ── FECHA DINÁMICA (n-1 hábil, n-3 si es lunes) ──
+(function(){
+  const hoy = new Date();
+  const dia = hoy.getDay(); // 0=dom, 1=lun, ... 6=sab
+  let offset = 1;
+  if(dia === 1) offset = 3;      // lunes → viernes
+  else if(dia === 0) offset = 2; // domingo → viernes
+  else if(dia === 6) offset = 1; // sábado → viernes (raro pero cubierto)
+  const fecha = new Date(hoy);
+  fecha.setDate(hoy.getDate() - offset);
+  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const str = fecha.getDate() + ' de ' + meses[fecha.getMonth()] + ' de ' + fecha.getFullYear();
+  const el = document.getElementById('fecha-actualizacion');
+  if(el) el.textContent = str;
+})();
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js">
+// ── FECHA DINÁMICA (n-1 hábil, n-3 si es lunes) ──
+(function(){
+  const hoy = new Date();
+  const dia = hoy.getDay(); // 0=dom, 1=lun, ... 6=sab
+  let offset = 1;
+  if(dia === 1) offset = 3;      // lunes → viernes
+  else if(dia === 0) offset = 2; // domingo → viernes
+  else if(dia === 6) offset = 1; // sábado → viernes (raro pero cubierto)
+  const fecha = new Date(hoy);
+  fecha.setDate(hoy.getDate() - offset);
+  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const str = fecha.getDate() + ' de ' + meses[fecha.getMonth()] + ' de ' + fecha.getFullYear();
+  const el = document.getElementById('fecha-actualizacion');
+  if(el) el.textContent = str;
+})();
+
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -71,8 +122,8 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
 /* ── PROPUESTA ── */
 .prop-titlebar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
 .prop-title-left{display:flex;align-items:center;gap:10px;}
-.prop-accent{width:8px;height:28px;background:var(--sky);border-radius:3px;flex-shrink:0;}
-.prop-title{font-size:22px;font-weight:900;letter-spacing:.3px;color:var(--navy);text-transform:uppercase;}
+.prop-accent{width:8px;height:36px;background:var(--sky);border-radius:3px;flex-shrink:0;}
+.prop-title{font-size:32px;font-weight:900;letter-spacing:.3px;color:var(--navy);text-transform:uppercase;}
 .prop-rule{height:2px;background:var(--navy);border-radius:2px;margin-bottom:14px;}
 .prop-right{display:flex;align-items:center;gap:12px;} 
 .prop-dash-title{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:4px 2px 6px;}
@@ -85,35 +136,35 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
 .prop-rule-full{grid-column:1/-1;height:2px;background:var(--navy);border-radius:2px;margin-bottom:0.3%;}
 /* Fila 1 */
 .prop-row1{display:contents;}
-.card-comp{grid-column:span 1;height:282px;}
-.card-rend{grid-column:span 1;height:282px;}
-.card-deuda{grid-column:span 1;height:282px;}
-.card-back{grid-column:span 3;height:282px;}
+.card-comp{grid-column:span 1;height:306px;}
+.card-rend{grid-column:span 1;height:306px;}
+.card-deuda{grid-column:span 1;height:306px;}
+.card-back{grid-column:span 3;height:306px;}
 /* Fila 2 — cada pie = 2 cols exactas del mismo grid */
 .prop-row2{display:contents;}
-.card-pie{grid-column:span 2;height:330px;}
+.card-pie{grid-column:span 2;height:306px;}
 
 /* Card base */
 .pcard{background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 4px 14px rgba(0,0,0,.06);}
-.pcard>.ph{background:var(--navy);color:#fff;padding:5px 10px;font-weight:700;font-size:11px;letter-spacing:.2px;flex-shrink:0;text-align:center;}
+.pcard>.ph{background:var(--navy);color:#fff;padding:10px 14px;font-weight:700;font-size:14px;letter-spacing:.3px;flex-shrink:0;text-align:center;}
 .pcard>.pb{padding:10px;flex:1 1 auto;display:flex;background:#fff;overflow:hidden;}
 .pcard canvas{width:100%!important;height:100%!important;display:block;}
 
 /* Rendimientos hoy */
-.rh-grid{width:100%;height:100%;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,1fr);gap:6px;}
-.rh-block{background:#fff;border:1px solid var(--silver);border-radius:7px;padding:7px 9px;border-left:3px solid var(--navy);display:flex;flex-direction:column;justify-content:center;}
-.rh-pill{font-size:9px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;display:block;font-family:'Montserrat',sans-serif;}
-.rh-val{font-size:13px;font-weight:800;color:var(--navy);font-family:'Montserrat',sans-serif;}
+.rh-grid{width:100%;height:100%;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,1fr);gap:4px;}
+.rh-block{background:#fff;border:1px solid var(--silver);border-radius:7px;padding:6px 10px;border-left:4px solid var(--navy);display:flex;flex-direction:column;justify-content:center;overflow:hidden;}
+.rh-pill{font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;display:block;font-family:'Montserrat',sans-serif;white-space:nowrap;}
+.rh-val{font-size:20px;font-weight:800;color:var(--navy);font-family:'Montserrat',sans-serif;line-height:1.1;white-space:nowrap;}
 .rh-val.pos{color:#16A34A;}.rh-val.neg{color:#DC2626;}.rh-val.flat{color:var(--sky);}
 
 /* Deuda */
 .deuda-inner{display:flex;flex-direction:column;gap:8px;width:100%;justify-content:center;}
-.deuda-row{background:#fff;border:1px solid var(--silver);border-radius:7px;padding:7px 9px;border-left:3px solid var(--navy);}
-.deuda-lbl{font-size:9px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;display:block;}
-.deuda-val{font-size:12px;font-weight:800;color:var(--navy);}
+.deuda-row{background:#fff;border:1px solid var(--silver);border-radius:7px;padding:10px 12px;border-left:4px solid var(--navy);}
+.deuda-lbl{font-size:12px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;display:block;}
+.deuda-val{font-size:20px;font-weight:800;color:var(--navy);line-height:1.2;}
 
 /* Nota */
-.prop-note{font-size:9px;color:var(--gray);margin-top:6px;font-family:'Inter',sans-serif;font-style:italic;}
+.prop-note{font-size:11px;color:var(--gray);margin-top:8px;font-family:'Montserrat',sans-serif;font-style:italic;}
 
 /* ── CONFIGURACIÓN ── */
 .cfg-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:820px;margin:0 auto;}
@@ -122,8 +173,8 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
 .cfg-hdr h3{font-size:11px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.8px;}
 .cfg-body{padding:18px;}
 .fg{margin-bottom:12px;}
-.fg label{display:block;font-size:10px;font-weight:600;color:var(--gray);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;font-family:'Inter',sans-serif;}
-.fg input,.fg select{width:100%;padding:9px 12px;border:1.5px solid var(--silver);border-radius:7px;font-size:13px;font-family:'Inter',sans-serif;color:#1A2540;background:#fff;outline:none;transition:border-color .18s;}
+.fg label{display:block;font-size:10px;font-weight:600;color:var(--gray);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;font-family:'Montserrat',sans-serif;}
+.fg input,.fg select{width:100%;padding:9px 12px;border:1.5px solid var(--silver);border-radius:7px;font-size:13px;font-family:'Montserrat',sans-serif;color:#1A2540;background:#fff;outline:none;transition:border-color .18s;}
 .fg input:focus,.fg select:focus{border-color:var(--sky);}
 .btn-primary{padding:9px 22px;background:var(--navy);color:#fff;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Montserrat',sans-serif;transition:background .18s;}
 .btn-primary:hover{background:var(--sky);color:var(--navy);}
@@ -138,12 +189,12 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
 .elite-hero{background:linear-gradient(130deg,var(--navy) 0%,#0A3580 100%);border-radius:14px;padding:36px 40px;display:flex;align-items:center;gap:28px;box-shadow:0 8px 32px rgba(0,32,92,.22);}
 .elite-icon{width:58px;height:58px;background:#C9A84C;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
 .elite-text h2{font-size:20px;font-weight:800;color:#fff;margin-bottom:6px;}
-.elite-text p{font-size:13px;color:rgba(255,255,255,.76);font-family:'Inter',sans-serif;line-height:1.6;}
+.elite-text p{font-size:13px;color:rgba(255,255,255,.76);font-family:'Montserrat',sans-serif;line-height:1.6;}
 .elite-features{margin-top:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
 .ef-card{background:#fff;border:1px solid var(--silver);border-radius:10px;padding:16px;}
 .ef-icon{width:34px;height:34px;border-radius:8px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:8px;}
 .ef-card h4{font-size:11px;font-weight:700;color:var(--navy);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;}
-.ef-card p{font-size:11px;color:var(--gray);font-family:'Inter',sans-serif;line-height:1.5;}
+.ef-card p{font-size:11px;color:var(--gray);font-family:'Montserrat',sans-serif;line-height:1.5;}
 
 /* ══ TABLET PORTRAIT (≤1024px vertical) ══ */
 @media(max-width:1024px) and (orientation:portrait){
@@ -281,7 +332,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
     <div class="prop-titlebar" id="prop-toolbar">
       <div></div>
       <div class="prop-right">
-        <span style="font-size:11px;color:var(--gray);font-family:'Inter',sans-serif;">Exportar PDF</span>
+        <span style="font-size:11px;color:var(--gray);font-family:'Montserrat',sans-serif;">Exportar PDF</span>
         <button class="btn-dl" id="btn-pdf" title="Descargar PDF">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         </button>
@@ -354,9 +405,11 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
           <div class="pb" style="padding:6px;"><canvas id="c-sector"></canvas></div>
         </div>
       </div>
+      <div style="grid-column:1/-1;padding:4px 4px 2px;border-top:1px solid rgba(0,32,92,0.12);margin-top:2px;">
+        <p class="prop-note" id="prop-note-text">*Rendimientos con plazo menor a un año están expresados en términos efectivos y los rendimientos mayores a un año en términos anualizados. Los rendimientos se encuentran actualizados al <span id="fecha-actualizacion"></span>.</p>
+      </div>
     </div>
     </div><!-- /.prop-dash-scaler -->
-    <p class="prop-note">*Rendimientos con plazo menor a un año están expresados en términos efectivos y los rendimientos mayores a un año en términos anualizados. Los rendimientos se encuentran actualizados al 31/12/2025.</p>
   </div>
 
   <!-- CONFIGURACIÓN -->
@@ -507,8 +560,8 @@ charts.comp = new Chart(document.getElementById('c-comp'),{
       data:[34.37,22.52,10.00,10.00,6.90,6.90,5.00,4.31],
       backgroundColor:'#3DA5E0',
       borderRadius:3,
-      barPercentage:.55,
-      categoryPercentage:.85
+      barPercentage:.82,
+      categoryPercentage:.92
     }]
   },
   options:{
@@ -517,20 +570,32 @@ charts.comp = new Chart(document.getElementById('c-comp'),{
       callbacks:{label:ctx=>' '+ctx.raw+'%'},
       backgroundColor:'#00205C',titleFont:{size:10},bodyFont:{size:10},padding:8,cornerRadius:6
     }},
-    layout:{padding:{right:44,top:4,bottom:4}},
+    layout:{padding:{right:8,left:8,top:4,bottom:4}},
     scales:{
-      x:{display:false,max:42,grid:{display:false}},
-      y:{grid:{display:false},ticks:{font:{size:9,weight:'700',family:'Montserrat'},color:'#00205C'},border:{display:false}}
+      x:{display:false,max:36,grid:{display:false}},
+      y:{grid:{display:false},ticks:{font:{size:13,weight:'700',family:'Montserrat'},color:'#00205C'},border:{display:false},afterFit(scale){scale.width=82;}}
     }
   },
   plugins:[{id:'pct',afterDatasetsDraw(chart){
     const {ctx,scales:{x,y}}=chart; ctx.save();
     chart.data.datasets[0].data.forEach((val,i)=>{
       const bar=chart.getDatasetMeta(0).data[i];
-      ctx.fillStyle='#00205C';
-      ctx.font='700 9px Montserrat,sans-serif';
+      const barRight=x.getPixelForValue(val);
+      const barLeft=x.getPixelForValue(0);
+      const barWidth=barRight-barLeft;
+      const label=val.toFixed(2)+'%';
+      ctx.font='700 13px Montserrat,sans-serif';
       ctx.textBaseline='middle';
-      ctx.fillText(val.toFixed(2)+'%', x.getPixelForValue(val)+6, bar.y);
+      const textW=ctx.measureText(label).width;
+      if(barWidth > textW+12){
+        ctx.fillStyle='#00205C';
+        ctx.textAlign='right';
+        ctx.fillText(label, barRight-6, bar.y);
+      } else {
+        ctx.fillStyle='#00205C';
+        ctx.textAlign='left';
+        ctx.fillText(label, barRight+6, bar.y);
+      }
     });
     ctx.restore();
   }}]
@@ -576,19 +641,49 @@ charts.linea = new Chart(document.getElementById('c-linea'),{
     responsive:true,maintainAspectRatio:false,
     interaction:{mode:'index',intersect:false},
     plugins:{
-      legend:{position:'bottom',labels:{boxWidth:8,font:{size:9,family:'Montserrat',weight:'600'},padding:14,usePointStyle:true,pointStyleWidth:8,color:'#00205C'}},
+      legend:{position:'bottom',labels:{boxWidth:8,font:{size:13,family:'Montserrat',weight:'600'},padding:16,usePointStyle:true,pointStyleWidth:12,color:'#00205C'}},
       tooltip:{backgroundColor:'#00205C',titleFont:{size:10,weight:'600'},bodyFont:{size:10},padding:10,cornerRadius:6,callbacks:{label:ctx=>' '+ctx.dataset.label+': '+ctx.raw}}
     },
+    layout:{padding:{right:30,top:18}},
     scales:{
-      x:{grid:{display:false},ticks:{font:{size:9,family:'Montserrat'},color:'#00205C'},border:{display:false}},
-      y:{min:90,grid:{color:'rgba(0,32,92,0.06)'},ticks:{font:{size:9,family:'Montserrat'},color:'#00205C'},border:{display:false}}
+      x:{grid:{display:false},ticks:{font:{size:13,family:'Montserrat'},color:'#00205C'},border:{display:false}},
+      y:{min:90,grid:{color:'rgba(0,32,92,0.06)'},ticks:{font:{size:13,family:'Montserrat'},color:'#00205C'},border:{display:false}}
     }
-  }
+  },
+  plugins:[{
+    id:'endLabels',
+    afterDatasetsDraw(chart){
+      const {ctx}=chart;
+      ctx.save();
+      // Calcular posiciones y ajustar si se enciman
+      const pts = chart.data.datasets.map((ds,i)=>{
+        const meta=chart.getDatasetMeta(i);
+        const lastPt=meta.data[meta.data.length-1];
+        return {x:lastPt.x, y:lastPt.y, val:ds.data[ds.data.length-1], color:ds.borderColor};
+      });
+      // Si los dos valores están muy cerca, separarlos
+      if(Math.abs(pts[0].y - pts[1].y) < 18){
+        pts[0].y = Math.min(pts[0].y, pts[1].y) - 9;
+        pts[1].y = Math.min(pts[0].y, pts[1].y) + 18;
+      }
+      pts.forEach(p=>{
+        ctx.fillStyle=p.color;
+        ctx.font='bold 12px Montserrat,sans-serif';
+        ctx.textAlign='left';
+        ctx.textBaseline='middle';
+        ctx.fillText(p.val, p.x+6, p.y);
+      });
+      ctx.restore();
+    }
+  }]
 });
 
 // Donuts
-function donut(id,labels,data,colors){
+function donut(id,labels,data,colors,radius,compact){
   const isMobile = window.innerWidth<=600 && window.innerHeight>window.innerWidth;
+  const lblSize = 12;
+  const lblPad  = compact ? 8 : 10;
+  const lblPSW  = compact ? 10 : 12;
   return new Chart(document.getElementById(id),{
     type:'doughnut',
     data:{labels,datasets:[{
@@ -597,7 +692,8 @@ function donut(id,labels,data,colors){
       borderWidth:2,
       borderColor:'#fff',
       hoverOffset:8,
-      hoverBorderWidth:3
+      hoverBorderWidth:3,
+      ...(radius?{radius}:{})
     }]},
     options:{
       responsive:true,maintainAspectRatio:false,cutout:'65%',
@@ -605,12 +701,12 @@ function donut(id,labels,data,colors){
         legend:{
           position:isMobile?'bottom':'right',
           labels:{
-            boxWidth:8,
-            font:{size:9,family:'Montserrat',weight:'600'},
-            padding:10,
+            boxWidth:lblPSW,
+            font:{size:lblSize,family:'Montserrat',weight:'600'},
+            padding:lblPad,
             color:'#00205C',
             usePointStyle:true,
-            pointStyleWidth:8
+            pointStyleWidth:lblPSW
           }
         },
         tooltip:{
@@ -630,10 +726,10 @@ function donut(id,labels,data,colors){
         ctx.save();
         chart.getDatasetMeta(0).data.forEach((arc,i)=>{
           const val=data.datasets[0].data[i];
-          if(val<3) return; // no mostrar si es muy pequeño
+          if(val<4) return; // no mostrar si es muy pequeño
           const {x,y}=arc.tooltipPosition();
           ctx.fillStyle='#fff';
-          ctx.font='bold 9px Montserrat,sans-serif';
+          ctx.font='bold 13px Montserrat,sans-serif';
           ctx.textAlign='center';
           ctx.textBaseline='middle';
           ctx.fillText(val.toFixed(1)+'%',x,y);
@@ -643,9 +739,15 @@ function donut(id,labels,data,colors){
     }]
   });
 }
-charts.clase  = donut('c-clase', ['Deuda Local','RV Global','Deuda Global'],[76.9,18.8,4.3],['#00205C','#3DA5E0','#F59E0B']);
-charts.geo    = donut('c-geo',   ['Norte-América','Eurozona','Europa','América Latina','Otros emergentes','Asia Emergente','Japón','Asia-Pacífico'],[65.49,12.81,7.66,3.89,3.25,2.37,2.3,2.23]);
-charts.sector = donut('c-sector',['Tecnología','Financiero','Salud','Comunicaciones','Industriales','Consumo discrecional','Consumo básico','Materiales','Energía'],[32.57,15.25,12.64,8.51,8.4,7.93,5.13,4.2,3.0]);
+// Crear sector primero (tiene más leyenda, dona más pequeña = referencia)
+charts.sector = donut('c-sector',['Tecnología','Financiero','Salud','Comunicaciones','Industriales','Consumo discrecional','Consumo básico','Materiales','Energía'],[32.57,15.25,12.64,8.51,8.4,7.93,5.13,4.2,3.0],null,null,true);
+// Leer el radio real del sector y aplicarlo a las otras 2 donas
+requestAnimationFrame(()=>{
+  const sectorMeta = charts.sector.getDatasetMeta(0);
+  const refRadius = sectorMeta.data[0] ? sectorMeta.data[0].outerRadius : null;
+  charts.clase  = donut('c-clase', ['Deuda Local','RV Global','Deuda Global'],[76.9,18.8,4.3],['#00205C','#3DA5E0','#F59E0B'],refRadius);
+  charts.geo    = donut('c-geo',   ['Norte-América','Eurozona','Europa','América Latina','Otros emergentes','Asia Emergente','Japón','Asia-Pacífico'],[65.49,12.81,7.66,3.89,3.25,2.37,2.3,2.23],null,refRadius);
+});
 
 // Comparativa
 charts.comp2 = new Chart(document.getElementById('c-comp2'),{
@@ -672,32 +774,69 @@ document.getElementById('btn-pdf').addEventListener('click',async()=>{
   const {jsPDF}=window.jspdf;
   const el=document.getElementById('prop-dash');
 
-  // Guardar estilos actuales (web fluido)
-  const origW=el.style.width, origH=el.style.height, origGap=el.style.gap;
-  const origPad=el.style.padding;
+  // ── FORZAR SIEMPRE VERSIÓN DESKTOP ──
+  // 1. Inyectar estilos desktop temporales via <style>
+  const tmpStyle=document.createElement('style');
+  tmpStyle.id='pdf-override';
+  tmpStyle.textContent=`
+    #prop-dash {
+      width:1280px!important;
+      min-width:1280px!important;
+      display:grid!important;
+      grid-template-columns:repeat(6,1fr)!important;
+      gap:16px!important;
+      padding:12px 16px!important;
+    }
+    #prop-dash .card-comp,
+    #prop-dash .card-rend,
+    #prop-dash .card-deuda { grid-column:span 1!important; height:306px!important; }
+    #prop-dash .card-back  { grid-column:span 3!important; height:306px!important; }
+    #prop-dash .card-pie   { grid-column:span 2!important; height:306px!important; }
+    #prop-dash .prop-dash-title { grid-column:1/-1!important; }
+    #prop-dash .prop-rule-full  { grid-column:1/-1!important; }
+  `;
+  document.head.appendChild(tmpStyle);
 
-  // Aplicar dimensiones fijas para captura (US Letter landscape @ 96dpi)
-  el.style.width='962px'; el.style.height='724px';
-  el.style.gap='8px'; el.style.padding='14px 16px 10px';
-  await new Promise(r=>setTimeout(r,120));
+  // 2. Resize solo los charts NO-donut (backtesting, composición, comparativa)
+  ['comp','linea','comp2'].forEach(k=>{ if(charts[k]&&charts[k].resize) charts[k].resize(); });
+  await new Promise(r=>setTimeout(r,250));
 
+  // 3. Capturar
   const cv=await html2canvas(el,{
-    scale:4, useCORS:true, backgroundColor:'#ffffff',
-    width:962, height:724, logging:false
+    scale:4, useCORS:true, backgroundColor:'#ffffff', logging:false,
+    scrollX:0, scrollY:0, width:1280
   });
 
-  // Restaurar estilos web
-  el.style.width=origW; el.style.height=origH;
-  el.style.gap=origGap; el.style.padding=origPad;
+  // 4. Restaurar
+  tmpStyle.remove();
+  ['comp','linea','comp2'].forEach(k=>{ if(charts[k]&&charts[k].resize) charts[k].resize(); });
 
+  // 5. Generar PDF
   const img=cv.toDataURL('image/png');
-  // US Letter horizontal: 279.4 x 215.9 mm, sin márgenes, llena toda la hoja
   const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'letter'});
-  const pw=pdf.internal.pageSize.getWidth();  // 279.4mm
-  const ph=pdf.internal.pageSize.getHeight(); // 215.9mm
-  pdf.addImage(img,'PNG',0,0,pw,ph);
+  const pw=pdf.internal.pageSize.getWidth();
+  const ph=pdf.internal.pageSize.getHeight();
+  const marginTop=6, marginBot=9;
+  pdf.addImage(img,'PNG',0,marginTop,pw,ph-marginTop-marginBot);
   pdf.save('PROPUESTA DE INVERSIÓN VALMEX.pdf');
 });
+
+// ── FECHA DINÁMICA (n-1 hábil, n-3 si es lunes) ──
+(function(){
+  const hoy = new Date();
+  const dia = hoy.getDay(); // 0=dom, 1=lun, ... 6=sab
+  let offset = 1;
+  if(dia === 1) offset = 3;      // lunes → viernes
+  else if(dia === 0) offset = 2; // domingo → viernes
+  else if(dia === 6) offset = 1; // sábado → viernes (raro pero cubierto)
+  const fecha = new Date(hoy);
+  fecha.setDate(hoy.getDate() - offset);
+  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const str = fecha.getDate() + ' de ' + meses[fecha.getMonth()] + ' de ' + fecha.getFullYear();
+  const el = document.getElementById('fecha-actualizacion');
+  if(el) el.textContent = str;
+})();
+
 </script>
 </body>
 </html>
