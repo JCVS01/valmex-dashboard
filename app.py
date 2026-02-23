@@ -9,7 +9,8 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 USERS = {
     "jvilla":    {"nombre": "José Carlos Villa", "password": "valmex", "rol": "admin", "iniciales": "JV"},
     "emartino":  {"nombre": "Emilio Martino",    "password": "valmex", "rol": "vista", "iniciales": "EM"},
-    "oscargar":  {"nombre": "Oscar García",       "password": "valmex", "rol": "vista", "iniciales": "OG"}
+    "oscargar":  {"nombre": "Oscar García",       "password": "valmex", "rol": "vista", "iniciales": "OG"},
+    "obernal":  {"nombre": "Olivia Bernal",       "password": "valmex", "rol": "vista", "iniciales": "OB"}
 }
 
 @app.route("/")
