@@ -34,10 +34,33 @@ FONDOS_USD = {"VXTBILL", "VXCOBER", "VLMXDME"}
 # ─────────────────────────────────────────────────────────────────────────────
 # ESCALA CREDITICIA S&P — ponderación numérica global
 # ─────────────────────────────────────────────────────────────────────────────
-CREDIT_SCALE = ["AAA", "AA", "A", "BBB", "BB", "B", "<B", "NR"]
+CREDIT_SCALE = ["AAA", "AA+", "AA", "AA-", "A+", "A", "A-", "BBB+", "BBB", "BBB-", "BB+", "BB", "BB-", "B+", "B", "B-", "<B", "NR"]
 CREDIT_SCORE = {r: i for i, r in enumerate(CREDIT_SCALE)}
 
-def weighted_credit_rating(cred_acc: dict) -> str:
+# Mapeo escala local México → escala global S&P
+# Fuente: equivalencias estándar Moody's/S&P para emisores soberanos MX
+MX_LOCAL_TO_GLOBAL = {
+    "AAA": "BBB",
+    "AA":  "BBB-",
+    "A":   "BB+",
+    "BBB": "BB",
+    "BB":  "BB-",
+    "B":   "B+",
+    "<B":  "B",
+    "NR":  "NR",
+}
+
+def weighted_credit_rating(cred_acc: dict, local_to_global: bool = False) -> str:
+    """Calcula la calificación crediticia ponderada estilo S&P.
+    Si local_to_global=True, convierte primero escala local MX a global.
+    """
+    if local_to_global:
+        converted = {}
+        for rating, weight in cred_acc.items():
+            global_rating = MX_LOCAL_TO_GLOBAL.get(rating, rating)
+            converted[global_rating] = converted.get(global_rating, 0) + weight
+        cred_acc = converted
+
     total_weight = sum(cred_acc.values())
     if total_weight <= 0:
         return "—"
@@ -288,7 +311,7 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str) -> dict:
             "has_mxn":  has_mxn,
             "dur_mxn":  round(dur_mxn_num / bond_mxn_denom, 2) if has_mxn else 0,
             "ytm_mxn":  round(ytm_mxn_num / bond_mxn_denom, 2) if has_mxn else 0,
-            "cred_mxn": weighted_credit_rating(cred_mxn) if cred_mxn else "—",
+            "cred_mxn": weighted_credit_rating(cred_mxn, local_to_global=True) if cred_mxn else "—",
             "has_usd":  has_usd,
             "dur_usd":  round(dur_usd_num / bond_usd_denom, 2) if has_usd else 0,
             "ytm_usd":  round(ytm_usd_num / bond_usd_denom, 2) if has_usd else 0,
