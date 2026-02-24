@@ -116,7 +116,6 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
 .prop-note{font-size:11px;color:var(--gray);margin-top:8px;font-family:'Montserrat',sans-serif;font-style:italic;}
 
 /* ── CONFIGURACIÓN ── */
-/* ── CONFIGURACIÓN ── */
 .cfg-layout{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:stretch;}
 .cfg-card{background:#fff;border:1px solid var(--silver);border-radius:12px;box-shadow:0 2px 14px rgba(0,32,92,.08);overflow:hidden;display:flex;flex-direction:column;}
 .cfg-hdr{background:var(--navy);padding:12px 18px;text-align:center;}
@@ -435,7 +434,6 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
       <div class="cfg-card">
         <div class="cfg-hdr"><h3>Cartera Actual</h3></div>
         <div class="cfg-body">
-          
           <div class="fondos-list">
 <div class="fsec-hdr">Deuda</div>
 <div class="fondo-row actual"><span class="fondo-nombre">VXREPO1</span><input class="fondo-input" type="text" placeholder="$0.00" id="act-VXREPO1" oninput="onActual('VXREPO1')"><span class="fondo-pct" id="act-pct-VXREPO1">0.00%</span></div>
@@ -475,7 +473,6 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
       <div class="cfg-card">
         <div class="cfg-hdr"><h3>Cartera Propuesta</h3></div>
         <div class="cfg-body">
-          
           <div class="fondos-list">
 <div class="fsec-hdr">Deuda</div>
 <div class="fondo-row propuesta"><span class="fondo-nombre">VXREPO1</span><input class="fondo-input" type="text" placeholder="0.00%" id="prop-VXREPO1" oninput="onProp('VXREPO1')"><span class="fondo-monto" id="prop-monto-VXREPO1">$0.00</span></div>
@@ -548,7 +545,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   const hoy=new Date().toISOString().split('T')[0];
   const fi=document.getElementById('cfg-fecha-fin');
   if(fi) fi.value=hoy;
-  // Allow backspace/delete on prop inputs by stripping % first
   document.querySelectorAll('[id^="prop-"]').forEach(el=>{
     if(el.tagName==='INPUT'){
       el.addEventListener('keydown',function(e){
@@ -572,7 +568,6 @@ function formatMonto(el){
   const p=v.split('.');
   p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
   el.value='$'+(p.length>1?p[0]+'.'+p[1].slice(0,2):p[0]);
-  // Recalcular todo al cambiar monto contrato
   ALL_FUNDS.forEach(f=>{ const el=document.getElementById('act-'+f); if(el&&el.value) onActual(f); });
   ALL_FUNDS.forEach(f=>{ const el=document.getElementById('prop-'+f); if(el&&el.value) onProp(f); });
 }
@@ -601,7 +596,6 @@ function onProp(f){
   let v=el.value.replace(/[^0-9.]/g,'');
   if(!v){el.value='';const mEl=document.getElementById('prop-monto-'+f);if(mEl)mEl.textContent='$0.00';calcTotalPropuesta();return;}
   el.value=v+'%';
-  // Reposition cursor before %
   const pos=v.length;
   setTimeout(()=>{try{el.setSelectionRange(pos,pos);}catch(e){}},0);
   const pct=parseFloat(v)||0;
@@ -642,11 +636,11 @@ function guardarPropuesta(){
 // ── FECHA DINÁMICA (n-1 hábil, n-3 si es lunes) ──
 (function(){
   const hoy = new Date();
-  const dia = hoy.getDay(); // 0=dom, 1=lun, ... 6=sab
+  const dia = hoy.getDay();
   let offset = 1;
-  if(dia === 1) offset = 3;      // lunes → viernes
-  else if(dia === 0) offset = 2; // domingo → viernes
-  else if(dia === 6) offset = 1; // sábado → viernes (raro pero cubierto)
+  if(dia === 1) offset = 3;
+  else if(dia === 0) offset = 2;
+  else if(dia === 6) offset = 1;
   const fecha = new Date(hoy);
   fecha.setDate(hoy.getDate() - offset);
   const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
@@ -658,24 +652,14 @@ function guardarPropuesta(){
 // ── NAVEGACIÓN ──
 const PAGES = ['presentacion','propuesta','configuracion','comparativa','elite'];
 
-
 function showPage(name, el) {
-  // 1. Activar página correcta
   PAGES.forEach(id => document.getElementById('page-'+id).classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
-
-  // 2. Nav desktop: quitar active de todos los nav-tab
   document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
-
-  // 3. Nav móvil: quitar active de todos los mobile-tab
   document.querySelectorAll('.mobile-tab').forEach(b => b.classList.remove('active'));
-
-  // 4. Marcar el elemento que se clickeó (desktop o móvil)
   if (el && (el.classList.contains('nav-tab') || el.classList.contains('mobile-tab'))) {
     el.classList.add('active');
   }
-
-  // 5. Sincronizar el tab equivalente en el otro menú
   const nameMap = {
     'presentacion': 'presentación',
     'configuracion': 'configuración',
@@ -684,29 +668,22 @@ function showPage(name, el) {
     'elite': 'valmex elite'
   };
   const label = nameMap[name] || name;
-  // Si vino del desktop, marcar en móvil
   if (el && el.classList.contains('nav-tab')) {
     document.querySelectorAll('.mobile-tab').forEach(b => {
       if (b.textContent.trim().toLowerCase() === label) b.classList.add('active');
     });
   }
-  // Si vino del móvil, marcar en desktop
   if (el && el.classList.contains('mobile-tab')) {
     document.querySelectorAll('.nav-tab').forEach(b => {
       if (b.textContent.trim().toLowerCase() === label) b.classList.add('active');
     });
   }
-
-  // 6. Logo = pestaña Presentación
   const logo = document.getElementById('logo-tab');
   if (name === 'presentacion') logo.classList.add('logo-active');
   else logo.classList.remove('logo-active');
-
-  // 7. Resize charts si es propuesta
   if (name === 'propuesta') {
     setTimeout(() => {
       Object.values(charts).forEach(c => c && c.resize && c.resize());
-      
     }, 80);
   }
   window.scrollTo(0,0);
@@ -724,7 +701,6 @@ fetch('/me')
     document.getElementById('user-name').textContent   = user.nombre;
     document.getElementById('mobile-avatar').textContent = user.iniciales;
     document.getElementById('mobile-name').textContent   = user.nombre;
-    // Todos los usuarios tienen acceso completo
   }).catch(()=>{});
 
 // ── CHARTS ──
@@ -785,7 +761,7 @@ charts.comp = new Chart(document.getElementById('c-comp'),{
   }}]
 });
 
-// Línea 2016-2024
+// Línea backtesting
 charts.linea = new Chart(document.getElementById('c-linea'),{
   type:'line',
   data:{
@@ -839,13 +815,11 @@ charts.linea = new Chart(document.getElementById('c-linea'),{
     afterDatasetsDraw(chart){
       const {ctx}=chart;
       ctx.save();
-      // Calcular posiciones y ajustar si se enciman
       const pts = chart.data.datasets.map((ds,i)=>{
         const meta=chart.getDatasetMeta(i);
         const lastPt=meta.data[meta.data.length-1];
         return {x:lastPt.x, y:lastPt.y, val:ds.data[ds.data.length-1], color:ds.borderColor};
       });
-      // Si los dos valores están muy cerca, separarlos
       if(Math.abs(pts[0].y - pts[1].y) < 18){
         pts[0].y = Math.min(pts[0].y, pts[1].y) - 9;
         pts[1].y = Math.min(pts[0].y, pts[1].y) + 18;
@@ -862,7 +836,7 @@ charts.linea = new Chart(document.getElementById('c-linea'),{
   }]
 });
 
-// Donuts
+// ── DONUTS ──
 function donut(id,labels,data,colors,radius,compact){
   const isMobile = window.innerWidth<=600 && window.innerHeight>window.innerWidth;
   const lblSize = 12;
@@ -910,7 +884,7 @@ function donut(id,labels,data,colors,radius,compact){
         ctx.save();
         chart.getDatasetMeta(0).data.forEach((arc,i)=>{
           const val=data.datasets[0].data[i];
-          if(val<4) return; // no mostrar si es muy pequeño
+          if(val<4) return;
           const {x,y}=arc.tooltipPosition();
           ctx.fillStyle='#fff';
           ctx.font='bold 13px Montserrat,sans-serif';
@@ -923,9 +897,8 @@ function donut(id,labels,data,colors,radius,compact){
     }]
   });
 }
-// Crear sector primero (tiene más leyenda, dona más pequeña = referencia)
+
 charts.sector = donut('c-sector',['Tecnología','Financiero','Salud','Comunicaciones','Industriales','Consumo discrecional','Consumo básico','Materiales','Energía'],[32.57,15.25,12.64,8.51,8.4,7.93,5.13,4.2,3.0],null,null,true);
-// Leer el radio real del sector y aplicarlo a las otras 2 donas
 requestAnimationFrame(()=>{
   const sectorMeta = charts.sector.getDatasetMeta(0);
   const refRadius = sectorMeta.data[0] ? sectorMeta.data[0].outerRadius : null;
@@ -953,13 +926,10 @@ charts.comp2 = new Chart(document.getElementById('c-comp2'),{
   }
 });
 
-// PDF Export — US Letter horizontal, márgenes 1.27cm
+// PDF Export
 document.getElementById('btn-pdf').addEventListener('click',async()=>{
   const {jsPDF}=window.jspdf;
   const el=document.getElementById('prop-dash');
-
-  // ── FORZAR SIEMPRE VERSIÓN DESKTOP ──
-  // 1. Inyectar estilos desktop temporales via <style>
   const tmpStyle=document.createElement('style');
   tmpStyle.id='pdf-override';
   tmpStyle.textContent=`
@@ -980,22 +950,14 @@ document.getElementById('btn-pdf').addEventListener('click',async()=>{
     #prop-dash .prop-rule-full  { grid-column:1/-1!important; }
   `;
   document.head.appendChild(tmpStyle);
-
-  // 2. Resize solo los charts NO-donut (backtesting, composición, comparativa)
   ['comp','linea','comp2'].forEach(k=>{ if(charts[k]&&charts[k].resize) charts[k].resize(); });
   await new Promise(r=>setTimeout(r,250));
-
-  // 3. Capturar
   const cv=await html2canvas(el,{
     scale:4, useCORS:true, backgroundColor:'#ffffff', logging:false,
     scrollX:0, scrollY:0, width:1280
   });
-
-  // 4. Restaurar
   tmpStyle.remove();
   ['comp','linea','comp2'].forEach(k=>{ if(charts[k]&&charts[k].resize) charts[k].resize(); });
-
-  // 5. Generar PDF
   const img=cv.toDataURL('image/png');
   const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'letter'});
   const pw=pdf.internal.pageSize.getWidth();
@@ -1094,7 +1056,8 @@ async function cargarPortafolio() {
 }
 
 function aplicarDatos(data, valor) {
-  // Rendimientos
+
+  // ── Rendimientos ──
   const r = data.rendimientos;
   const fmtR = v => (v == null) ? '—' : (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
   const orden = [r.mtd, r.r3m, r.ytd, r.r1y, r.r2y, r.r3y];
@@ -1105,40 +1068,55 @@ function aplicarDatos(data, valor) {
     }
   });
 
-  // Composición (barras horizontales)
+  // ── Composición (barras horizontales) — CAMBIO 1: solo nombre del fondo, sin serie ──
   if (charts.comp && data.composicion?.length) {
     const top8 = data.composicion.slice(0, 8);
-    charts.comp.data.labels           = top8.map(f => `${f.fondo} ${f.serie}`);
+    charts.comp.data.labels           = top8.map(f => f.fondo);   // ← sin serie
     charts.comp.data.datasets[0].data = top8.map(f => f.pct);
     charts.comp.options.scales.x.max  = Math.max(...top8.map(f => f.pct)) * 1.18;
     charts.comp.update('none');
   }
 
-  // Clase de activos (donut)
-  if (charts.clase && data.clase_activos) {
-    const c = data.clase_activos;
-    const lbls = [], vals = [];
-    c.labels.forEach((l, i) => { if (c.values[i] > 0) { lbls.push(l); vals.push(c.values[i]); } });
-    charts.clase.data.labels           = lbls;
-    charts.clase.data.datasets[0].data = vals;
+  // ── Clase de activos — CAMBIO 2: limpiar antes de actualizar ──
+  if (charts.clase) {
+    charts.clase.data.labels = [];
+    charts.clase.data.datasets[0].data = [];
     charts.clase.update('none');
+    if (data.clase_activos) {
+      const c = data.clase_activos;
+      const lbls = [], vals = [];
+      c.labels.forEach((l, i) => { if (c.values[i] > 0) { lbls.push(l); vals.push(c.values[i]); } });
+      charts.clase.data.labels = lbls;
+      charts.clase.data.datasets[0].data = vals;
+    }
+    charts.clase.update();
   }
 
-  // Exposición geográfica (donut)
-  if (charts.geo && data.geo?.labels?.length) {
-    charts.geo.data.labels           = data.geo.labels;
-    charts.geo.data.datasets[0].data = data.geo.values;
+  // ── Exposición geográfica — CAMBIO 3: limpiar, manejar caso sin datos ──
+  if (charts.geo) {
+    charts.geo.data.labels = [];
+    charts.geo.data.datasets[0].data = [];
     charts.geo.update('none');
+    if (data.geo?.labels?.length) {
+      charts.geo.data.labels = data.geo.labels;
+      charts.geo.data.datasets[0].data = data.geo.values;
+    }
+    charts.geo.update();
   }
 
-  // Exposición sectorial (donut)
-  if (charts.sector && data.sectores?.labels?.length) {
-    charts.sector.data.labels           = data.sectores.labels;
-    charts.sector.data.datasets[0].data = data.sectores.values;
+  // ── Exposición sectorial — CAMBIO 3: limpiar, manejar caso sin datos ──
+  if (charts.sector) {
+    charts.sector.data.labels = [];
+    charts.sector.data.datasets[0].data = [];
     charts.sector.update('none');
+    if (data.sectores?.labels?.length) {
+      charts.sector.data.labels = data.sectores.labels;
+      charts.sector.data.datasets[0].data = data.sectores.values;
+    }
+    charts.sector.update();
   }
 
-  // Drilldown Deuda
+  // ── Drilldown Deuda ──
   if (data.deuda) {
     const rows = document.querySelectorAll('#page-propuesta .deuda-row');
     const d = data.deuda;
@@ -1151,7 +1129,7 @@ function aplicarDatos(data, valor) {
     }
   }
 
-  // Título dentro del dashboard
+  // ── Título dentro del dashboard ──
   const propTitle = document.querySelector('.prop-title');
   if (propTitle) {
     const labelMap = {
@@ -1181,23 +1159,6 @@ function guardarPropuesta() {
       setTimeout(() => cargarPortafolio(), 300);
     }
   };
-})();
-
-
-// ── FECHA DINÁMICA (n-1 hábil, n-3 si es lunes) ──
-(function(){
-  const hoy = new Date();
-  const dia = hoy.getDay(); // 0=dom, 1=lun, ... 6=sab
-  let offset = 1;
-  if(dia === 1) offset = 3;      // lunes → viernes
-  else if(dia === 0) offset = 2; // domingo → viernes
-  else if(dia === 6) offset = 1; // sábado → viernes (raro pero cubierto)
-  const fecha = new Date(hoy);
-  fecha.setDate(hoy.getDate() - offset);
-  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  const str = fecha.getDate() + ' de ' + meses[fecha.getMonth()] + ' de ' + fecha.getFullYear();
-  const el = document.getElementById('fecha-actualizacion');
-  if(el) el.textContent = str;
 })();
 
 </script>
