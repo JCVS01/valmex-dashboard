@@ -189,7 +189,7 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str) -> dict:
 
     r1m = r3m = r6m = ytd = r1y = r2y = r3y = 0.0
     stock_t = bond_t = cash_t = 0.0
-    geo_acc = {}; sec_acc = {}
+    geo_acc = {}; sec_acc = {}; supersec_acc = {}
     lista = []
 
     # Acumuladores separados MXN / USD
@@ -264,6 +264,20 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str) -> dict:
                             cred_usd[cq_lbl] = cred_usd.get(cq_lbl, 0) + contribution
                         else:
                             cred_mxn[cq_lbl] = cred_mxn.get(cq_lbl, 0) + contribution
+
+                # Super-sectores de deuda
+                supersector_map = {
+                    "GBSR-SuperSectorCashandEquivalentsNet": "Efectivo y Equiv.",
+                    "GBSR-SuperSectorCorporateNet":          "Corporativo",
+                    "GBSR-SuperSectorGovernmentNet":         "Gubernamental",
+                    "GBSR-SuperSectorMunicipalNet":          "Municipal",
+                    "GBSR-SuperSectorSecuritizedNet":        "Bursatilizado",
+                    "GBSR-SuperSectorDerivativeNet":         "Derivados",
+                }
+                for ss_key, ss_lbl in supersector_map.items():
+                    v = safe_float(d.get(ss_key))
+                    if v > 0:
+                        supersec_acc[ss_lbl] = supersec_acc.get(ss_lbl, 0) + v * bond_w
 
         # ── Geo y sectores: fondos RV puros + Ciclo de Vida ──
         if (is_rv or is_ciclo) and stock > 0:
@@ -371,8 +385,9 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str) -> dict:
             "values":[round(bond_t,2),round(stock_t,2),round(cash_t,2)],
         },
         "composicion": sorted(lista, key=lambda x: -x["pct"]),
-        "geo":      filter_pct(geo_acc, translate=GEO_TRANSLATE),
-        "sectores": filter_pct(sec_acc, translate=SEC_TRANSLATE),
+        "geo":          filter_pct(geo_acc, translate=GEO_TRANSLATE),
+        "sectores":     filter_pct(sec_acc, translate=SEC_TRANSLATE),
+        "supersectores": filter_pct(supersec_acc),
         "deuda": {
             "has_mxn":  has_mxn,
             "dur_mxn":  round(dur_mxn_num / bond_mxn_denom, 2) if has_mxn else 0,
