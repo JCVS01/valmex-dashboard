@@ -422,6 +422,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
           </div>
           <div class="fg"><label>Serie del Cliente</label>
             <select id="cfg-serie">
+              <option selected>Serie A</option>
               <option>Persona Física - B1FI/B1</option>
               <option>Persona Física con Fee - B0FI/B0</option>
               <option>Plan Personal de Retiro - B1NC/B1CF</option>
@@ -877,7 +878,7 @@ function showSpinner(show) {
 async function cargarPortafolio() {
   const sel   = document.getElementById('prop-selector');
   const valor = sel ? sel.value : 'perfil_3';
-  const tipoCliente = document.getElementById('cfg-serie')?.value || 'Persona Física - B1FI/B1';
+  const tipoCliente = document.getElementById('cfg-serie')?.value || 'Serie A';
   let body = { tipo_cliente: tipoCliente };
 
   if (valor.startsWith('perfil_')) {
