@@ -359,8 +359,8 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
               <div class="dd-block" id="dd-ytm-mxn"><span class="rh-pill">YTM</span><span class="rh-val" id="dd-val-ytm-mxn">—</span></div>
               <div class="dd-block" id="dd-ytm-usd"><span class="rh-pill">YTM</span><span class="rh-val" id="dd-val-ytm-usd">—</span></div>
               <!-- Calificación -->
-              <div class="dd-block" id="dd-cred-mxn"><span class="rh-pill">Calif. Global</span><span class="rh-val" id="dd-val-cred-mxn">—</span></div>
-              <div class="dd-block" id="dd-cred-usd"><span class="rh-pill">Calif. Global</span><span class="rh-val" id="dd-val-cred-usd">—</span></div>
+              <div class="dd-block" id="dd-cred-mxn"><span class="rh-pill">C.Credit.</span><span class="rh-val" id="dd-val-cred-mxn">—</span></div>
+              <div class="dd-block" id="dd-cred-usd"><span class="rh-pill">C.Credit.</span><span class="rh-val" id="dd-val-cred-usd">—</span></div>
             </div>
           </div>
         </div>
@@ -1001,7 +1001,7 @@ function aplicarDatos(data, valor) {
       if (empty || !val || val === '—') {
         el.innerHTML = '—';
       } else {
-        el.innerHTML = val + '<span style="font-size:11px;font-weight:700;font-family:Montserrat,sans-serif;text-transform:uppercase;letter-spacing:.5px;color:var(--gray);margin-left:3px;">años</span>';
+        el.innerHTML = val + '<br><span style="font-size:11px;font-weight:700;font-family:Montserrat,sans-serif;text-transform:uppercase;letter-spacing:.5px;color:var(--gray);">años</span>';
       }
       const block = el.closest('.dd-block');
       if (block) block.classList.toggle('empty', !!empty);
