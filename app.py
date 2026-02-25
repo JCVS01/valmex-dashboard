@@ -291,10 +291,31 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str) -> dict:
         items = sorted(d.items(), key=lambda x: -x[1])[:n]
         return {"labels":[i[0] for i in items],"values":[round(i[1]/t*100,2) for i in items]}
 
+    GEO_TRANSLATE = {
+        "united states":     "Estados Unidos",
+        "canada":            "Canadá",
+        "latin america":     "América Latina",
+        "united kingdom":    "Reino Unido",
+        "eurozone":          "Eurozona",
+        "europe - ex euro":  "Europa ex-Euro",
+        "europe - emerging": "Europa Emergente",
+        "africa":            "África",
+        "middle east":       "Medio Oriente",
+        "japan":             "Japón",
+        "australasia":       "Australasia",
+        "asia - developed":  "Asia Desarrollada",
+        "asia - emerging":   "Asia Emergente",
+        "greater asia":      "Gran Asia",
+        "greater europe":    "Gran Europa",
+        "americas":          "Américas",
+        "north america":     "Norteamérica",
+    }
+
     def filter_pct(d, min_pct=1.0):
         t = sum(d.values()) or 1
         items = sorted([(k, v) for k, v in d.items() if v/t*100 >= min_pct], key=lambda x: -x[1])
-        return {"labels":[i[0] for i in items],"values":[round(i[1]/t*100,2) for i in items]}
+        translated = [(GEO_TRANSLATE.get(k.lower(), k), v) for k, v in items]
+        return {"labels":[i[0] for i in translated],"values":[round(i[1]/t*100,2) for i in translated]}
 
     has_mxn = bond_mxn_denom > 0
     has_usd = bond_usd_denom > 0
