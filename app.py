@@ -27,9 +27,13 @@ PERFILES = {
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# FONDOS USD para drilldown separado
+# CLASIFICACIÓN DE FONDOS
 # ─────────────────────────────────────────────────────────────────────────────
-FONDOS_USD = {"VXTBILL", "VXCOBER", "VLMXDME"}
+FONDOS_DEUDA_MXN = {"VXREPO1", "VXGUBCP", "VXUDIMP", "VXDEUDA", "VXGUBLP", "VLMXETF"}
+FONDOS_DEUDA_USD = {"VXTBILL", "VXCOBER", "VLMXDME"}
+FONDOS_DEUDA     = FONDOS_DEUDA_MXN | FONDOS_DEUDA_USD
+FONDOS_RV        = {"VALMXA", "VALMX20", "VALMX28", "VALMXVL", "VALMXES", "VLMXTEC", "VLMXESG", "VALMXHC", "VXINFRA"}
+FONDOS_CICLO     = {"VLMXJUB", "VLMXP24", "VLMXP31", "VLMXP38", "VLMXP45", "VLMXP52", "VLMXP59"}
 
 # ─────────────────────────────────────────────────────────────────────────────
 # ESCALA CREDITICIA S&P — ponderación numérica global
@@ -224,38 +228,45 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str) -> dict:
         bond_t  += bond  * w
         cash_t  += cash  * w
 
-        # ── Drilldown deuda separado MXN / USD ──
-        # Peso real de la parte de deuda de este fondo en el portafolio
-        bond_w = (bond / 100.0) * w  # fracción del portafolio que es deuda de este fondo
-        is_usd = fondo in FONDOS_USD
+        # ── Clasificación del fondo ──
+        is_usd       = fondo in FONDOS_DEUDA_USD
+        is_deuda_mxn = fondo in FONDOS_DEUDA_MXN
+        is_deuda     = fondo in FONDOS_DEUDA
+        is_rv        = fondo in FONDOS_RV
+        is_ciclo     = fondo in FONDOS_CICLO
 
-        if bond > 0 and bond_w > 0:
-            dur_val = safe_float(d.get("PS-EffectiveDuration"))
-            ytm_val = safe_float(d.get("PS-YieldToMaturity"))  # ya viene en % ej: 7.96
-            if is_usd:
-                dur_usd_num   += dur_val * bond_w
-                ytm_usd_num   += ytm_val * bond_w
-                bond_usd_denom += bond_w
-            else:
-                dur_mxn_num   += dur_val * bond_w
-                ytm_mxn_num   += ytm_val * bond_w
-                bond_mxn_denom += bond_w
-
-        # Calificación crediticia ponderada por deuda
-        for cq_key, cq_lbl in [
-            ("CQB-AAA","AAA"),("CQB-AA","AA"),("CQB-A","A"),
-            ("CQB-BBB","BBB"),("CQB-BB","BB"),("CQB-B","B"),
-            ("CQB-BelowB","<B"),("CQB-NotRated","NR"),
-        ]:
-            v = safe_float(d.get(cq_key))
-            if v > 0 and bond_w > 0:
-                contribution = v * bond_w
+        # ── Drilldown deuda: solo fondos de deuda MXN/USD (no RV puro) ──
+        # Ciclo de vida participa en drilldown MXN
+        if (is_deuda or is_ciclo) and bond > 0:
+            bond_w = (bond / 100.0) * w
+            if bond_w > 0:
+                dur_val = safe_float(d.get("PS-EffectiveDuration"))
+                ytm_val = safe_float(d.get("PS-YieldToMaturity"))
                 if is_usd:
-                    cred_usd[cq_lbl] = cred_usd.get(cq_lbl, 0) + contribution
+                    dur_usd_num    += dur_val * bond_w
+                    ytm_usd_num    += ytm_val * bond_w
+                    bond_usd_denom += bond_w
                 else:
-                    cred_mxn[cq_lbl] = cred_mxn.get(cq_lbl, 0) + contribution
+                    dur_mxn_num    += dur_val * bond_w
+                    ytm_mxn_num    += ytm_val * bond_w
+                    bond_mxn_denom += bond_w
 
-        if stock > 0:
+                # Calificación crediticia
+                for cq_key, cq_lbl in [
+                    ("CQB-AAA","AAA"),("CQB-AA","AA"),("CQB-A","A"),
+                    ("CQB-BBB","BBB"),("CQB-BB","BB"),("CQB-B","B"),
+                    ("CQB-BelowB","<B"),("CQB-NotRated","NR"),
+                ]:
+                    v = safe_float(d.get(cq_key))
+                    if v > 0:
+                        contribution = v * bond_w
+                        if is_usd:
+                            cred_usd[cq_lbl] = cred_usd.get(cq_lbl, 0) + contribution
+                        else:
+                            cred_mxn[cq_lbl] = cred_mxn.get(cq_lbl, 0) + contribution
+
+        # ── Geo y sectores: fondos RV puros + Ciclo de Vida ──
+        if (is_rv or is_ciclo) and stock > 0:
             geo_raw = d.get("RE-RegionalExposure", [])
             GEO_EXCLUDE = {"emerging market", "developed country", "emerging markets", "developed countries"}
             if isinstance(geo_raw, list):
@@ -265,13 +276,18 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str) -> dict:
                     if region and val > 0 and region.lower() not in GEO_EXCLUDE:
                         geo_acc[region] = geo_acc.get(region, 0) + val * (stock * w / 100)
 
-        if stock > 0:
             sector_map = {
-                "GR-TechnologyNet":"Tecnología","GR-FinancialServicesNet":"Financiero",
-                "GR-HealthcareNet":"Salud","GR-CommunicationServicesNet":"Comunicaciones",
-                "GR-IndustrialsNet":"Industriales","GR-ConsumerCyclicalNet":"Consumo discrecional",
-                "GR-ConsumerDefensiveNet":"Consumo básico","GR-BasicMaterialsNet":"Materiales",
-                "GR-EnergyNet":"Energía","GR-RealEstateNet":"Bienes raíces","GR-UtilitiesNet":"Utilidades",
+                "GR-TechnologyNet":           "Technology",
+                "GR-FinancialServicesNet":    "Financial Services",
+                "GR-HealthcareNet":           "Healthcare",
+                "GR-CommunicationServicesNet":"Communication Services",
+                "GR-IndustrialsNet":          "Industrials",
+                "GR-ConsumerCyclicalNet":     "Consumer Cyclical",
+                "GR-ConsumerDefensiveNet":    "Consumer Defensive",
+                "GR-BasicMaterialsNet":       "Basic Materials",
+                "GR-EnergyNet":               "Energy",
+                "GR-RealEstateNet":           "Real Estate",
+                "GR-UtilitiesNet":            "Utilities",
             }
             for key, nombre in sector_map.items():
                 v = safe_float(d.get(key))
@@ -311,11 +327,34 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str) -> dict:
         "north america":     "Norteamérica",
     }
 
-    def filter_pct(d, min_pct=1.0):
+    SEC_TRANSLATE = {
+        "technology":             "Tecnología",
+        "financial services":     "Financiero",
+        "healthcare":             "Salud",
+        "communication services": "Comunicaciones",
+        "industrials":            "Industriales",
+        "consumer cyclical":      "Consumo Discrecional",
+        "consumer defensive":     "Consumo Básico",
+        "basic materials":        "Materiales",
+        "energy":                 "Energía",
+        "real estate":            "Bienes Raíces",
+        "utilities":              "Utilidades",
+    }
+
+    def filter_pct(d, min_pct=1.0, translate=None):
         t = sum(d.values()) or 1
-        items = sorted([(k, v) for k, v in d.items() if v/t*100 >= min_pct], key=lambda x: -x[1])
-        translated = [(GEO_TRANSLATE.get(k.lower(), k), v) for k, v in items]
-        return {"labels":[i[0] for i in translated],"values":[round(i[1]/t*100,2) for i in translated]}
+        main  = []
+        otros = 0.0
+        for k, v in sorted(d.items(), key=lambda x: -x[1]):
+            pct = v / t * 100
+            label = (translate or {}).get(k.lower(), k)
+            if pct >= min_pct:
+                main.append((label, pct))
+            else:
+                otros += pct
+        if otros > 0:
+            main.append(("Otros", round(otros, 2)))
+        return {"labels":[i[0] for i in main],"values":[round(i[1],2) for i in main]}
 
     has_mxn = bond_mxn_denom > 0
     has_usd = bond_usd_denom > 0
@@ -332,8 +371,8 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str) -> dict:
             "values":[round(bond_t,2),round(stock_t,2),round(cash_t,2)],
         },
         "composicion": sorted(lista, key=lambda x: -x["pct"]),
-        "geo":      filter_pct(geo_acc),
-        "sectores": top_n(sec_acc),
+        "geo":      filter_pct(geo_acc, translate=GEO_TRANSLATE),
+        "sectores": filter_pct(sec_acc, translate=SEC_TRANSLATE),
         "deuda": {
             "has_mxn":  has_mxn,
             "dur_mxn":  round(dur_mxn_num / bond_mxn_denom, 2) if has_mxn else 0,
