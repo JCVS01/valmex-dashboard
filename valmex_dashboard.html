@@ -379,7 +379,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
           <div class="pb" style="padding:6px;"><canvas id="c-clase"></canvas></div>
         </div>
         <div class="pcard card-pie">
-          <div class="ph">Tipo de Deuda</div>
+          <div class="ph" id="ph-geo">Exposición Geográfica RV</div>
           <div class="pb" style="padding:6px;"><canvas id="c-geo"></canvas></div>
         </div>
         <div class="pcard card-pie">
@@ -957,12 +957,18 @@ function aplicarDatos(data, valor) {
     charts.clase.update();
   }
 
-  // ── Tipo de Deuda (supersectores) ──
+  // ── Pie central: Geo RV si hay RV, Tipo de Deuda si solo deuda ──
   if (charts.geo) {
     charts.geo.data.labels = [];
     charts.geo.data.datasets[0].data = [];
     charts.geo.update('none');
-    if (data.supersectores?.labels?.length) {
+    const phGeo = document.getElementById('ph-geo');
+    if (data.has_rv && data.geo?.labels?.length) {
+      if (phGeo) phGeo.textContent = 'Exposición Geográfica RV';
+      charts.geo.data.labels = data.geo.labels;
+      charts.geo.data.datasets[0].data = data.geo.values;
+    } else if (!data.has_rv && data.supersectores?.labels?.length) {
+      if (phGeo) phGeo.textContent = 'Tipo de Deuda';
       charts.geo.data.labels = data.supersectores.labels;
       charts.geo.data.datasets[0].data = data.supersectores.values;
     }
