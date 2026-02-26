@@ -386,9 +386,10 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str) -> dict:
             "values":[round(bond_t,2),round(stock_t,2),round(cash_t,2)],
         },
         "composicion": sorted(lista, key=lambda x: -x["pct"]),
-        "geo":          filter_pct(geo_acc, translate=GEO_TRANSLATE),
-        "sectores":     filter_pct(sec_acc, translate=SEC_TRANSLATE),
+        "geo":           filter_pct(geo_acc, translate=GEO_TRANSLATE),
+        "sectores":      filter_pct(sec_acc, translate=SEC_TRANSLATE),
         "supersectores": filter_pct(supersec_acc),
+        "has_rv":        stock_t > 0,
         "deuda": {
             "has_mxn":  has_mxn,
             "dur_mxn":  round(dur_mxn_num / bond_mxn_denom, 2) if has_mxn else 0,
