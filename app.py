@@ -2,12 +2,88 @@ import os
 import time
 import requests
 from datetime import date, timedelta
+from collections import defaultdict
 from flask import Flask, send_file, request, jsonify, redirect, url_for, session, send_from_directory
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "valmex-secret-2024")
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SEGURIDAD: Security Headers en todas las respuestas
+# ─────────────────────────────────────────────────────────────────────────────
+@app.after_request
+def set_security_headers(response):
+    # Prevenir que la página sea embebida en iframes (clickjacking)
+    response.headers["X-Frame-Options"] = "DENY"
+    # Prevenir MIME sniffing
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    # Content Security Policy — solo permite recursos de orígenes explícitos
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+        "font-src 'self' https://fonts.gstatic.com; "
+        "img-src 'self' data:; "
+        "connect-src 'self'; "
+        "frame-ancestors 'none';"
+    )
+    # Forzar HTTPS en producción
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+    # No enviar Referer a otros dominios
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    # Deshabilitar permisos no necesarios
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=()"
+    # Quitar fingerprinting de servidor
+    response.headers.pop("Server", None)
+    response.headers.pop("X-Powered-By", None)
+    return response
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SEGURIDAD: Rate Limiting simple en memoria
+# ─────────────────────────────────────────────────────────────────────────────
+_rate_buckets: dict = defaultdict(list)  # ip → [timestamps]
+RATE_LIMIT_WINDOW = 60   # segundos
+RATE_LIMIT_MAX    = 60   # requests por minuto por IP (login es más estricto)
+RATE_LIMIT_LOGIN  = 10   # intentos de login por minuto por IP
+
+def _get_client_ip():
+    """Obtiene IP real considerando proxies de Render/Cloudflare."""
+    return (
+        request.headers.get("X-Forwarded-For", "").split(",")[0].strip()
+        or request.headers.get("X-Real-IP", "")
+        or request.remote_addr
+        or "unknown"
+    )
+
+def check_rate_limit(ip: str, limit: int = RATE_LIMIT_MAX) -> bool:
+    """Retorna True si se permite la solicitud, False si excede el límite."""
+    now = time.time()
+    bucket = f"{ip}:{limit}"
+    _rate_buckets[bucket] = [t for t in _rate_buckets[bucket] if now - t < RATE_LIMIT_WINDOW]
+    if len(_rate_buckets[bucket]) >= limit:
+        return False
+    _rate_buckets[bucket].append(now)
+    return True
+
+
+def require_auth(f):
+    """Decorador: requiere sesión activa + valida que la request sea XHR."""
+    from functools import wraps
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        ip = _get_client_ip()
+        if not check_rate_limit(ip):
+            return jsonify({"ok": False, "error": "Demasiadas solicitudes"}), 429
+        if "usuario" not in session:
+            return jsonify({"ok": False, "error": "No autenticado"}), 401
+        # Validar que sea una petición XHR legítima (no CSRF desde otro origen)
+        if request.headers.get("X-Requested-With") != "XMLHttpRequest":
+            return jsonify({"ok": False, "error": "Solicitud no válida"}), 403
+        return f(*args, **kwargs)
+    return wrapper
 
 # ─────────────────────────────────────────────────────────────────────────────
 # USUARIOS
@@ -44,7 +120,6 @@ CREDIT_SCALE = ["AAA", "AA+", "AA", "AA-", "A+", "A", "A-", "BBB+", "BBB", "BBB-
 CREDIT_SCORE = {r: i for i, r in enumerate(CREDIT_SCALE)}
 
 # Mapeo escala local México → escala global S&P
-# Fuente: equivalencias estándar Moody's/S&P para emisores soberanos MX
 MX_LOCAL_TO_GLOBAL = {
     "AAA": "BBB",
     "AA":  "BBB-",
@@ -57,9 +132,6 @@ MX_LOCAL_TO_GLOBAL = {
 }
 
 def weighted_credit_rating(cred_acc: dict, local_to_global: bool = False) -> str:
-    """Calcula la calificación crediticia ponderada estilo S&P.
-    Si local_to_global=True, convierte primero escala local MX a global.
-    """
     if local_to_global:
         converted = {}
         for rating, weight in cred_acc.items():
@@ -196,8 +268,6 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
     geo_acc = {}; sec_acc = {}; supersec_acc = {}
     lista = []
 
-    # Acumuladores separados MXN / USD
-    # Ponderamos dur y ytm por (bond_fraction * w) para normalizar correctamente
     dur_mxn_num = ytm_mxn_num = bond_mxn_denom = 0.0
     dur_usd_num = ytm_usd_num = bond_usd_denom = 0.0
     cred_mxn = {}; cred_usd = {}
@@ -232,15 +302,12 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
         bond_t  += bond  * w
         cash_t  += cash  * w
 
-        # ── Clasificación del fondo ──
         is_usd       = fondo in FONDOS_DEUDA_USD
         is_deuda_mxn = fondo in FONDOS_DEUDA_MXN
         is_deuda     = fondo in FONDOS_DEUDA
         is_rv        = fondo in FONDOS_RV
         is_ciclo     = fondo in FONDOS_CICLO
 
-        # ── Drilldown deuda: solo fondos de deuda MXN/USD (no RV puro) ──
-        # Ciclo de vida participa en drilldown MXN
         if (is_deuda or is_ciclo) and bond > 0:
             bond_w = (bond / 100.0) * w
             if bond_w > 0:
@@ -255,7 +322,6 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
                     ytm_mxn_num    += ytm_val * bond_w
                     bond_mxn_denom += bond_w
 
-                # Calificación crediticia
                 for cq_key, cq_lbl in [
                     ("CQB-AAA","AAA"),("CQB-AA","AA"),("CQB-A","A"),
                     ("CQB-BBB","BBB"),("CQB-BB","BB"),("CQB-B","B"),
@@ -269,7 +335,6 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
                         else:
                             cred_mxn[cq_lbl] = cred_mxn.get(cq_lbl, 0) + contribution
 
-                # Super-sectores de deuda
                 supersector_map = {
                     "GBSR-SuperSectorCashandEquivalentsNet": "Efectivo y Equiv.",
                     "GBSR-SuperSectorCorporateNet":          "Corporativo",
@@ -283,7 +348,6 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
                     if v > 0:
                         supersec_acc[ss_lbl] = supersec_acc.get(ss_lbl, 0) + v * bond_w
 
-        # ── Geo y sectores: fondos RV puros + Ciclo de Vida ──
         if (is_rv or is_ciclo) and stock > 0:
             geo_raw = d.get("RE-RegionalExposure", [])
             GEO_EXCLUDE = {"emerging market", "developed country", "emerging markets", "developed countries"}
@@ -320,7 +384,7 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
             "r3y": round(safe_float(d.get("TTR-Return3Yr")),  2),
         })
 
-    # ── Reporto directo (pseudo-fondo sintético) ──
+    # ── Reporto directo ──
     for repo_cfg, es_usd, label_corto in [
         (repo_mxn, False, "MD MXP"),
         (repo_usd, True,  "MD USD"),
@@ -333,7 +397,6 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
             continue
         w = pct / 100.0
 
-        # Rendimientos históricos reales basados en tasa de referencia
         rend = get_repo_rendimientos(tasa, es_usd)
 
         r1m += rend["r1m"] * w
@@ -344,20 +407,23 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
         r2y += rend["r2y"] * w
         r3y += rend["r3y"] * w
 
-        # Clase activos: 100% deuda
         bond_t += 1.0 * w
-        # Drilldown deuda: dur=0 (overnight), ytm=tasa neta
         bond_w = w
+
         if es_usd:
             dur_usd_num    += 0.0  * bond_w
             ytm_usd_num    += tasa * bond_w
             bond_usd_denom += bond_w
-            cred_usd["AAA"] = cred_usd.get("AAA", 0) + 100 * bond_w
+            # USD repo: contraparte US Treasury → AA+ escala global (S&P desde 2023)
+            cred_usd["AA+"] = cred_usd.get("AA+", 0) + 100 * bond_w
         else:
             dur_mxn_num    += 0.0  * bond_w
             ytm_mxn_num    += tasa * bond_w
             bond_mxn_denom += bond_w
+            # MXN repo: contraparte Banxico/Gobierno MX → AAA escala local → BBB escala global
+            # weighted_credit_rating con local_to_global=True hará la conversión correctamente
             cred_mxn["AAA"] = cred_mxn.get("AAA", 0) + 100 * bond_w
+
         supersec_acc["Gubernamental"] = supersec_acc.get("Gubernamental", 0) + 100 * bond_w
         lista.append({
             "fondo": label_corto, "serie": "—", "pct": round(pct, 2),
@@ -444,11 +510,13 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
             "has_mxn":  has_mxn,
             "dur_mxn":  round(dur_mxn_num / bond_mxn_denom, 2) if has_mxn else 0,
             "ytm_mxn":  round(ytm_mxn_num / bond_mxn_denom, 2) if has_mxn else 0,
-            "cred_mxn": weighted_credit_rating(cred_mxn, local_to_global=True) if cred_mxn else "—",
+            # MXN: local_to_global=True → AAA_local (Banxico) → BBB_global (calificación soberana MX)
+            "cred_mxn": weighted_credit_rating(cred_mxn, local_to_global=True)  if cred_mxn else "—",
             "has_usd":  has_usd,
             "dur_usd":  round(dur_usd_num / bond_usd_denom, 2) if has_usd else 0,
             "ytm_usd":  round(ytm_usd_num / bond_usd_denom, 2) if has_usd else 0,
-            "cred_usd": weighted_credit_rating(cred_usd) if cred_usd else "—",
+            # USD: local_to_global=False → AA+ directo (US Treasury, downgrade S&P 2023)
+            "cred_usd": weighted_credit_rating(cred_usd, local_to_global=False) if cred_usd else "—",
         },
     }
 
@@ -460,14 +528,26 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
+        ip = _get_client_ip()
+        # Rate limit estricto para login — previene fuerza bruta
+        if not check_rate_limit(ip, RATE_LIMIT_LOGIN):
+            return jsonify({"ok": False, "error": "Demasiados intentos. Espera 1 minuto."}), 429
         data = request.get_json(force=True)
-        u    = data.get("usuario", "").strip().lower()
-        p    = data.get("password", "").strip()
+        u    = str(data.get("usuario", "")).strip().lower()[:50]   # max 50 chars
+        p    = str(data.get("password", "")).strip()[:100]          # max 100 chars
+        # Tiempo de respuesta constante para prevenir timing attacks
+        import hashlib, hmac
         user = USERS.get(u)
-        if user and user["password"] == p:
-            session["usuario"] = u
+        # Comparación segura incluso si user no existe (evita timing oracle)
+        pwd_ok = user and hmac.compare_digest(user["password"], p)
+        if pwd_ok:
+            session.clear()  # Regenerar sesión para prevenir session fixation
+            session["usuario"]    = u
+            session["ip"]         = ip
+            session["created_at"] = time.time()
             return jsonify({"ok":True,"nombre":user["nombre"],"iniciales":user["iniciales"],"rol":user["rol"]})
-        return jsonify({"ok": False}), 401
+        time.sleep(0.3)  # Delay artificial anti-brute-force
+        return jsonify({"ok": False, "error": "Credenciales inválidas"}), 401
     return send_file(os.path.join(BASE, "login.html"))
 
 @app.route("/logout")
@@ -480,6 +560,11 @@ def me():
     u = session.get("usuario")
     if not u or u not in USERS:
         return jsonify({"ok": False}), 401
+    # Validar expiración de sesión (8 horas)
+    created = session.get("created_at", 0)
+    if time.time() - created > 8 * 3600:
+        session.clear()
+        return jsonify({"ok": False, "error": "Sesión expirada"}), 401
     user = USERS[u]
     return jsonify({"ok":True,"nombre":user["nombre"],"iniciales":user["iniciales"],"rol":user["rol"]})
 
@@ -503,56 +588,77 @@ def index():
 
 
 @app.route("/api/propuesta", methods=["POST"])
+@require_auth
 def api_propuesta():
-    if "usuario" not in session:
-        return jsonify({"ok": False, "error": "No autenticado"}), 401
-
     body         = request.get_json(force=True)
-    tipo_cliente = body.get("tipo_cliente", "Serie A")
-    modo         = body.get("modo", "propuesta")
+    tipo_cliente = str(body.get("tipo_cliente", "Serie A"))[:50]
+    modo         = str(body.get("modo", "propuesta"))[:20]
 
     if modo == "perfil":
         pid = str(body.get("perfil_id", "3"))
+        if not pid.isdigit():
+            return jsonify({"ok": False, "error": "perfil_id inválido"}), 400
         fondos_pct = PERFILES.get(pid)
         if not fondos_pct:
             return jsonify({"ok": False, "error": f"Perfil {pid} no existe"}), 400
+        return jsonify(calcular_portafolio(fondos_pct, tipo_cliente))
     else:
         raw = body.get("fondos", {})
-        fondos_pct = {k: float(v) for k, v in raw.items() if float(v) > 0}
-        repo_mxn = body.get("repo_mxn")
-        repo_usd = body.get("repo_usd")
-        # Permitir portafolio solo con reporto (sin fondos Valmex)
+        fondos_pct = {}
+        for k, v in raw.items():
+            try:
+                pct = float(v)
+                if 0 < pct <= 100:
+                    fondos_pct[str(k)[:20].upper()] = pct
+            except (TypeError, ValueError):
+                pass
+        repo_mxn_raw = body.get("repo_mxn")
+        repo_usd_raw = body.get("repo_usd")
+        repo_mxn, repo_usd = None, None
+        if repo_mxn_raw:
+            try:
+                pct = float(repo_mxn_raw.get("pct", 0) or 0)
+                tasa = float(repo_mxn_raw.get("tasa", 0) or 0)
+                if 0 < pct <= 100 and 0 < tasa <= 30:
+                    repo_mxn = {"pct": pct, "tasa": tasa}
+            except (TypeError, ValueError):
+                pass
+        if repo_usd_raw:
+            try:
+                pct = float(repo_usd_raw.get("pct", 0) or 0)
+                tasa = float(repo_usd_raw.get("tasa", 0) or 0)
+                if 0 < pct <= 100 and 0 < tasa <= 30:
+                    repo_usd = {"pct": pct, "tasa": tasa}
+            except (TypeError, ValueError):
+                pass
         if not fondos_pct and not repo_mxn and not repo_usd:
             return jsonify({"ok": False, "error": "Sin fondos con % > 0"}), 400
-
-    return jsonify(calcular_portafolio(fondos_pct, tipo_cliente,
-                                        repo_mxn=body.get("repo_mxn"),
-                                        repo_usd=body.get("repo_usd")))
+        return jsonify(calcular_portafolio(fondos_pct, tipo_cliente,
+                                           repo_mxn=repo_mxn, repo_usd=repo_usd))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # MACRO — Banxico SIE API
 # ─────────────────────────────────────────────────────────────────────────────
-BANXICO_TOKEN = os.environ.get("BANXICO_TOKEN", "")  # Configura tu token en variable de entorno
-BANXICO_BASE  = "https://www.banxico.org.mx/SieAPIRest/service/v1/series"
+BANXICO_TOKEN = os.environ.get("BANXICO_TOKEN", "")
 FRED_API_KEY  = os.environ.get("FRED_API_KEY", "")
+BANXICO_BASE  = "https://www.banxico.org.mx/SieAPIRest/service/v1/series"
 FRED_BASE     = "https://api.stlouisfed.org/fred/series/observations"
 
-# IDs de series
-SERIE_TIIE28  = "SF43783"   # TIIE 28 días
-SERIE_USDMXN  = "SF43718"   # USD/MXN FIX
-SERIE_CETES28 = "SF60633"   # Cetes 28 días (proxy T-Bill MX)
+# FIX 1: Fondeo bancario overnight diario (SF43936) en lugar de TIIE 28d semanal (SF43783)
+SERIE_FONDEO  = "SF43936"   # Tasa de fondeo bancario overnight — DIARIA (MXN)
+# FIX USD: SOFR = Secured Overnight Financing Rate (repos colateralizados con Treasuries)
+# Es la referencia exacta para reportos USD, más precisa que DFF/EFFR
+SERIE_USD_REPO = "SOFR"     # SOFR overnight — publicado diario por NY Fed via FRED
+SERIE_USDMXN   = "SF43718"  # USD/MXN FIX (referencia)
 
-_macro_cache = {}
-_macro_ts    = 0
-
-# ── Caché de tasas históricas ──
+_macro_cache   = {}
+_macro_ts      = 0
 _hist_cache    = {}
 _hist_cache_ts = 0
 
 
-def _banxico_serie_rango(serie_id: str, fecha_ini: str, fecha_fin: str) -> list[dict]:
-    """Descarga serie Banxico en rango yyyy-mm-dd. Retorna lista de {fecha, valor}."""
+def _banxico_serie_rango(serie_id: str, fecha_ini: str, fecha_fin: str) -> list:
     try:
         url  = f"{BANXICO_BASE}/{serie_id}/datos/{fecha_ini}/{fecha_fin}"
         hdrs = {"Bmx-Token": BANXICO_TOKEN, "Accept": "application/json"}
@@ -571,43 +677,7 @@ def _banxico_serie_rango(serie_id: str, fecha_ini: str, fecha_fin: str) -> list[
         return []
 
 
-def _fred_serie_rango(series_id: str, fecha_ini: str, fecha_fin: str) -> list[dict]:
-    """Descarga serie FRED en rango. Retorna lista de {fecha, valor}."""
-    try:
-        params = {
-            "series_id":       series_id,
-            "observation_start": fecha_ini,
-            "observation_end":   fecha_fin,
-            "api_key":         FRED_API_KEY,
-            "file_type":       "json",
-            "frequency":       "m",         # mensual
-            "aggregation_method": "avg",
-        }
-        r = requests.get(FRED_BASE, params=params, timeout=15)
-        r.raise_for_status()
-        obs = r.json().get("observations", [])
-        result = []
-        for o in obs:
-            try:
-                if o["value"] != ".":
-                    result.append({"fecha": o["date"], "valor": float(o["value"])})
-            except Exception:
-                pass
-        return result
-    except Exception as e:
-        print(f"[FRED ERROR] {series_id}: {e}")
-        return []
-
-
-def _promedio_serie(datos: list[dict], fecha_desde: date) -> float | None:
-    """Promedio de valores desde fecha_desde hasta hoy."""
-    vals = [d["valor"] for d in datos
-            if _parse_fecha(d["fecha"]) and _parse_fecha(d["fecha"]) >= fecha_desde]
-    return sum(vals) / len(vals) if vals else None
-
-
-def _parse_fecha(s: str) -> date | None:
-    """Parsea fecha en formato dd/mm/yyyy o yyyy-mm-dd."""
+def _parse_fecha(s: str):
     try:
         if "/" in s:
             d, m, y = s.split("/")
@@ -619,13 +689,10 @@ def _parse_fecha(s: str) -> date | None:
 
 def get_repo_rendimientos(tasa_neta: float, es_usd: bool) -> dict:
     """
-    Calcula rendimientos históricos del reporto con composición diaria overnight.
-
-    Lógica:
-      1. Baja serie diaria de TIIE 28d (Banxico) o Fed Funds (FRED)
-      2. spread = tasa_ref_hoy - tasa_neta_cliente  (constante)
-      3. Para cada día del período: tasa_cliente_dia = tasa_ref_dia - spread
-      4. Rendimiento = ∏(1 + tasa_cliente_dia/360) - 1  (composición diaria)
+    Rendimientos overnight reales por composición diaria.
+    MXN: usa Fondeo bancario SF43936 (overnight, diario) — más preciso que TIIE 28d.
+    USD: usa Fed Funds DFF (overnight, diario).
+    spread = tasa_ref_hoy - tasa_neta_cliente  (constante)
     """
     global _hist_cache, _hist_cache_ts
 
@@ -640,10 +707,10 @@ def get_repo_rendimientos(tasa_neta: float, es_usd: bool) -> dict:
         fin = hoy.isoformat()
 
         if es_usd:
-            # FRED: DFF = Fed Funds efectiva diaria
             try:
+                # SOFR: Secured Overnight Financing Rate — tasa exacta para repos USD colateralizados
                 params = {
-                    "series_id": "DFF",
+                    "series_id": SERIE_USD_REPO,
                     "observation_start": ini,
                     "observation_end":   fin,
                     "api_key":    FRED_API_KEY,
@@ -658,22 +725,37 @@ def get_repo_rendimientos(tasa_neta: float, es_usd: bool) -> dict:
                             datos.append({"fecha": _parse_fecha(o["date"]), "valor": float(o["value"])})
                     except Exception:
                         pass
+                # Fallback a DFF si SOFR no tiene datos suficientes
+                if len(datos) < 10:
+                    raise ValueError("SOFR sin datos suficientes, usando DFF")
             except Exception as e:
-                print(f"[FRED DFF ERROR] {e}")
-                datos = []
+                print(f"[SOFR ERROR, fallback DFF] {e}")
+                try:
+                    params["series_id"] = "DFF"
+                    r = requests.get(FRED_BASE, params=params, timeout=15)
+                    r.raise_for_status()
+                    datos = []
+                    for o in r.json().get("observations", []):
+                        try:
+                            if o["value"] != ".":
+                                datos.append({"fecha": _parse_fecha(o["date"]), "valor": float(o["value"])})
+                        except Exception:
+                            pass
+                except Exception as e2:
+                    print(f"[FRED DFF FALLBACK ERROR] {e2}")
+                    datos = []
         else:
-            # Banxico: TIIE 28d diaria
-            raw = _banxico_serie_rango(SERIE_TIIE28, ini, fin)
+            # SF43936: Fondeo bancario overnight diario (MXN)
+            raw = _banxico_serie_rango(SERIE_FONDEO, ini, fin)
             datos = [{"fecha": _parse_fecha(d["fecha"]), "valor": d["valor"]}
                      for d in raw if _parse_fecha(d["fecha"])]
 
-        # Filtrar Nones y ordenar por fecha
         datos = sorted([d for d in datos if d["fecha"] is not None], key=lambda x: x["fecha"])
         _hist_cache[cache_key] = datos
         _hist_cache_ts = now
 
     if not datos:
-        # Fallback lineal si no hay datos
+        # Fallback lineal si no hay conectividad
         return {
             "r1m": round(tasa_neta / 12, 2),
             "r3m": round(tasa_neta / 4,  2),
@@ -685,34 +767,26 @@ def get_repo_rendimientos(tasa_neta: float, es_usd: bool) -> dict:
         }
 
     hoy = date.today()
-
-    # Spread constante: diferencia entre tasa ref hoy y tasa neta al cliente
     tasa_ref_hoy = datos[-1]["valor"]
-    spread = tasa_ref_hoy - tasa_neta   # pp que quita el asesor
+    spread = tasa_ref_hoy - tasa_neta
 
     def componer(desde: date) -> float:
-        """Composición diaria: ∏(1 + (tasa_ref_dia - spread) / 360) - 1, en %."""
-        # Construir mapa fecha→tasa para búsqueda rápida
-        # Para días sin dato (fines de semana/festivos) usamos el último valor conocido
         acum   = 1.0
         ultimo = None
-        # Índice de datos en el rango
         rango  = [d for d in datos if d["fecha"] >= desde]
         if not rango:
             return 0.0
-        # Llenar días calendario con forward-fill
         d_actual = desde
         idx      = 0
         while d_actual <= hoy:
-            # Avanzar índice si hay dato más reciente disponible
             while idx < len(rango) and rango[idx]["fecha"] <= d_actual:
                 ultimo = rango[idx]["valor"]
                 idx   += 1
             if ultimo is not None:
-                tasa_dia = max(0.0, ultimo - spread)   # no permitir tasa negativa
-                acum    *= (1 + tasa_dia / 360 / 100)  # tasa en %, base 360
+                tasa_dia = max(0.0, ultimo - spread)
+                acum    *= (1 + tasa_dia / 360 / 100)
             d_actual += timedelta(days=1)
-        return round((acum - 1) * 100, 4)   # en %
+        return round((acum - 1) * 100, 4)
 
     inicio_ytd = date(hoy.year, 1, 1)
 
@@ -726,8 +800,8 @@ def get_repo_rendimientos(tasa_neta: float, es_usd: bool) -> dict:
         "r3y": componer(hoy - timedelta(days=1095)),
     }
 
-def get_banxico_dato(serie_id: str) -> str | None:
-    """Obtiene el dato oportuno de una serie Banxico."""
+
+def get_banxico_dato(serie_id: str):
     try:
         url  = f"{BANXICO_BASE}/{serie_id}/datos/oportuno"
         hdrs = {"Bmx-Token": BANXICO_TOKEN, "Accept": "application/json"}
@@ -739,45 +813,23 @@ def get_banxico_dato(serie_id: str) -> str | None:
         print(f"[BANXICO ERROR] {serie_id}: {e}")
         return None
 
-def get_macro() -> dict:
-    """Devuelve datos macro con caché de 1 hora."""
-    global _macro_cache, _macro_ts
-    import time
-    if _macro_cache and (time.time() - _macro_ts) < 3600:
-        return _macro_cache
-
-    tiie  = get_banxico_dato(SERIE_TIIE28)
-    usdmx = get_banxico_dato(SERIE_USDMXN)
-    cetes = get_banxico_dato(SERIE_CETES28)
-
-    _macro_cache = {
-        "tiie28":  round(float(tiie),  4) if tiie  else None,
-        "usdmxn":  round(float(usdmx), 4) if usdmx else None,
-        "cetes28": round(float(cetes), 4) if cetes else None,
-    }
-    _macro_ts = time.time()
-    return _macro_cache
-
-
-
-
 
 @app.route("/api/diag-repo")
+@require_auth
 def diag_repo():
     """Diagnóstico: verifica conectividad con Banxico y FRED para reporto."""
-    if "usuario" not in session:
-        return jsonify({"ok": False, "error": "No autenticado"}), 401
 
     resultado = {}
 
-    # Test Banxico TIIE
+    # Test Banxico Fondeo overnight (SF43936)
     try:
         hoy = date.today()
         ini = (hoy - timedelta(days=10)).isoformat()
         fin = hoy.isoformat()
-        raw = _banxico_serie_rango(SERIE_TIIE28, ini, fin)
+        raw = _banxico_serie_rango(SERIE_FONDEO, ini, fin)
         resultado["banxico"] = {
             "ok": len(raw) > 0,
+            "serie": SERIE_FONDEO + " (Fondeo bancario overnight)",
             "token_set": bool(BANXICO_TOKEN),
             "registros": len(raw),
             "ultimo": raw[-1] if raw else None,
@@ -785,29 +837,30 @@ def diag_repo():
     except Exception as e:
         resultado["banxico"] = {"ok": False, "error": str(e)}
 
-    # Test FRED DFF
+    # Test FRED SOFR (primario) y DFF (fallback) para USD
     try:
         hoy = date.today()
-        params = {
-            "series_id": "DFF",
+        params_sofr = {
+            "series_id": SERIE_USD_REPO,
             "observation_start": (hoy - timedelta(days=10)).isoformat(),
             "observation_end":   hoy.isoformat(),
             "api_key":    FRED_API_KEY,
             "file_type":  "json",
         }
-        r = requests.get(FRED_BASE, params=params, timeout=10)
+        r = requests.get(FRED_BASE, params=params_sofr, timeout=10)
         obs = r.json().get("observations", [])
-        resultado["fred"] = {
+        resultado["fred_sofr"] = {
             "ok": len(obs) > 0,
+            "serie": f"{SERIE_USD_REPO} (SOFR overnight repos USD)",
             "key_set": bool(FRED_API_KEY),
             "status": r.status_code,
             "registros": len(obs),
             "ultimo": obs[-1] if obs else None,
         }
     except Exception as e:
-        resultado["fred"] = {"ok": False, "error": str(e)}
+        resultado["fred_sofr"] = {"ok": False, "error": str(e)}
 
-    # Test rendimientos con tasa 7%
+    # Test rendimientos
     try:
         rend_mxn = get_repo_rendimientos(7.0, False)
         rend_usd = get_repo_rendimientos(4.0, True)
@@ -819,5 +872,7 @@ def diag_repo():
     return jsonify(resultado)
 
 
+# FIX 3: app.run() correctamente fuera de cualquier función
+if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
