@@ -185,7 +185,8 @@ def resolve_serie(fondo, tipo_cliente):
     return list(disponibles.keys())[0] if disponibles else "A"
 
 
-def calcular_portafolio(fondos_pct: dict, tipo_cliente: str) -> dict:
+def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
+                        repo_mxn: dict = None, repo_usd: dict = None) -> dict:
     universe = load_ms_universe()
 
     r1m = r3m = r6m = ytd = r1y = r2y = r3y = 0.0
@@ -315,6 +316,51 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str) -> dict:
             "r3m": round(safe_float(d.get("TTR-Return3Mth")), 2),
             "r1y": round(safe_float(d.get("TTR-Return1Yr")),  2),
             "r3y": round(safe_float(d.get("TTR-Return3Yr")),  2),
+        })
+
+    # ── Reporto directo (pseudo-fondo sintético) ──
+    # Reporto MXN: deuda gubernamental overnight en MXN, dur≈0, ytm=tasa capturada
+    for repo_cfg, es_usd, label in [
+        (repo_mxn, False, "Reporto MXN"),
+        (repo_usd, True,  "Reporto USD"),
+    ]:
+        if not repo_cfg:
+            continue
+        pct  = float(repo_cfg.get("pct", 0))
+        tasa = float(repo_cfg.get("tasa", 0))
+        if pct <= 0:
+            continue
+        w = pct / 100.0
+        # Rendimientos: tasa neta ≈ rendimiento anual (overnight compuesto)
+        # Para MTD/3M/YTD estimamos proporcionalmente (tasa/12, tasa/4, tasa*YTD_factor)
+        r1m += (tasa / 12.0) * w
+        r3m += (tasa / 4.0)  * w
+        r6m += (tasa / 2.0)  * w
+        ytd += (tasa / 12.0) * w   # aprox 1 mes al inicio del año
+        r1y += tasa           * w
+        r2y += tasa           * w
+        r3y += tasa           * w
+        # Clase activos: 100% deuda
+        bond_t += 1.0 * w
+        # Drilldown deuda: dur=0 (overnight), ytm=tasa
+        bond_w = w   # bond_fraction=1.0
+        if es_usd:
+            dur_usd_num    += 0.0    * bond_w   # dur = 0
+            ytm_usd_num    += tasa   * bond_w
+            bond_usd_denom += bond_w
+            cred_usd["AAA"] = cred_usd.get("AAA", 0) + 100 * bond_w
+        else:
+            dur_mxn_num    += 0.0    * bond_w
+            ytm_mxn_num    += tasa   * bond_w
+            bond_mxn_denom += bond_w
+            cred_mxn["AAA"] = cred_mxn.get("AAA", 0) + 100 * bond_w
+        supersec_acc["Gubernamental"] = supersec_acc.get("Gubernamental", 0) + 100 * bond_w
+        lista.append({
+            "fondo": label, "serie": "—", "pct": round(pct, 2),
+            "r1m": round(tasa / 12.0, 2),
+            "r3m": round(tasa / 4.0,  2),
+            "r1y": round(tasa,         2),
+            "r3y": round(tasa,         2),
         })
 
     def top_n(d, n=8):
@@ -469,10 +515,15 @@ def api_propuesta():
     else:
         raw = body.get("fondos", {})
         fondos_pct = {k: float(v) for k, v in raw.items() if float(v) > 0}
-        if not fondos_pct:
+        repo_mxn = body.get("repo_mxn")
+        repo_usd = body.get("repo_usd")
+        # Permitir portafolio solo con reporto (sin fondos Valmex)
+        if not fondos_pct and not repo_mxn and not repo_usd:
             return jsonify({"ok": False, "error": "Sin fondos con % > 0"}), 400
 
-    return jsonify(calcular_portafolio(fondos_pct, tipo_cliente))
+    return jsonify(calcular_portafolio(fondos_pct, tipo_cliente,
+                                        repo_mxn=body.get("repo_mxn"),
+                                        repo_usd=body.get("repo_usd")))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -522,154 +573,7 @@ def get_macro() -> dict:
     return _macro_cache
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# RIESGO — calcular métricas del portafolio desde Morningstar
-# ─────────────────────────────────────────────────────────────────────────────
-MATURITY_MAP = {
-    "MPF-Maturity1": "< 1 año",
-    "MPF-Maturity3": "1-3 años",
-    "MPF-Maturity5": "3-5 años",
-    "MPF-Maturity7": "5-7 años",
-    "MPF-Maturity10": "7-10 años",
-    "MPF-Maturity15": "10-15 años",
-    "MPF-Maturity20": "15-20 años",
-    "MPF-Maturity20Plus": "> 20 años",
-}
 
-def calcular_riesgo(fondos_pct: dict, tipo_cliente: str) -> dict:
-    universe = load_ms_universe()
-
-    std1 = std3 = sharpe1 = sharpe3 = beta1 = beta3 = 0.0
-    mat_acc = {}
-
-    for fondo, pct in fondos_pct.items():
-        if pct <= 0:
-            continue
-        serie  = resolve_serie(fondo, tipo_cliente)
-        ticker = f"{fondo} {serie}"
-        d      = universe.get(ticker, {})
-        if not d:
-            for s in ["B1FI","B0FI","B1CF","B1NC","B1CO","B0CO","B1","B0","A"]:
-                t2 = f"{fondo} {s}"
-                if t2 in universe:
-                    d = universe[t2]; break
-
-        w    = pct / 100.0
-        bond = safe_float(d.get("AAB-BondNet"))
-        is_deuda_fondo = fondo in FONDOS_DEUDA or fondo in FONDOS_CICLO
-
-        std1    += safe_float(d.get("RK-StandardDeviation1Yr"))  * w
-        std3    += safe_float(d.get("RK-StandardDeviation3Yr"))  * w
-        sharpe1 += safe_float(d.get("RK-SharpeRatio1Yr"))        * w
-        sharpe3 += safe_float(d.get("RK-SharpeRatio3Yr"))        * w
-        beta1   += safe_float(d.get("RK-Beta1Yr"))               * w
-        beta3   += safe_float(d.get("RK-Beta3Yr"))               * w
-
-        # Maturity profile — solo fondos de deuda
-        if is_deuda_fondo and bond > 0:
-            bond_w = (bond / 100.0) * w
-            for mpf_key, mpf_lbl in MATURITY_MAP.items():
-                v = safe_float(d.get(mpf_key))
-                if v > 0:
-                    mat_acc[mpf_lbl] = mat_acc.get(mpf_lbl, 0) + v * bond_w
-
-    # Normalizar maturity a %
-    mat_total = sum(mat_acc.values()) or 1
-    maturity = {
-        "labels": list(MATURITY_MAP.values()),
-        "values": [round(mat_acc.get(lbl, 0) / mat_total * 100, 2) for lbl in MATURITY_MAP.values()],
-    }
-
-    # Semáforo por fondo: rendimiento 1A vs benchmark
-    macro    = get_macro()
-    tiie28   = macro.get("tiie28")   or 0
-    cetes28  = macro.get("cetes28")  or 0
-    ACWI_1Y  = 18.5  # placeholder — actualizar si tienes feed de ACWI
-
-    semaforo = []
-    for fondo, pct in sorted(fondos_pct.items(), key=lambda x: -x[1]):
-        if pct <= 0:
-            continue
-        serie  = resolve_serie(fondo, tipo_cliente)
-        ticker = f"{fondo} {serie}"
-        d      = universe.get(ticker, {})
-        if not d:
-            for s in ["B1FI","B0FI","B1CF","B1NC","B1CO","B0CO","B1","B0","A"]:
-                t2 = f"{fondo} {s}"
-                if t2 in universe:
-                    d = universe[t2]; break
-
-        r1y = safe_float(d.get("TTR-Return1Yr"))
-
-        # Elegir benchmark según tipo de fondo
-        if fondo in FONDOS_DEUDA_USD:
-            bench     = cetes28   # proxy T-Bill USD en MXN context
-            bench_lbl = "T-Bill"
-        elif fondo in FONDOS_RV or fondo in FONDOS_CICLO:
-            bench     = ACWI_1Y
-            bench_lbl = "ACWI"
-        else:
-            bench     = tiie28
-            bench_lbl = "TIIE 28d"
-
-        diff = r1y - bench
-        color = "green" if diff >= 0.5 else ("yellow" if diff >= -0.5 else "red")
-
-        semaforo.append({
-            "fondo":     fondo,
-            "pct":       round(pct, 2),
-            "r1y":       round(r1y, 2),
-            "bench":     round(bench, 2),
-            "bench_lbl": bench_lbl,
-            "diff":      round(diff, 2),
-            "color":     color,
-        })
-
-    return {
-        "ok":      True,
-        "riesgo": {
-            "std1":    round(std1,    2),
-            "std3":    round(std3,    2),
-            "sharpe1": round(sharpe1, 4),
-            "sharpe3": round(sharpe3, 4),
-            "beta1":   round(beta1,   4),
-            "beta3":   round(beta3,   4),
-        },
-        "maturity":  maturity,
-        "semaforo":  semaforo,
-        "macro":     macro,
-    }
-
-
-@app.route("/api/macro")
-def api_macro():
-    if "usuario" not in session:
-        return jsonify({"ok": False}), 401
-    m = get_macro()
-    return jsonify({"ok": True, **m})
-
-
-@app.route("/api/comparativa", methods=["POST"])
-def api_comparativa():
-    if "usuario" not in session:
-        return jsonify({"ok": False, "error": "No autenticado"}), 401
-
-    body         = request.get_json(force=True)
-    tipo_cliente = body.get("tipo_cliente", "Serie A")
-    modo         = body.get("modo", "propuesta")
-
-    if modo == "perfil":
-        pid = str(body.get("perfil_id", "3"))
-        fondos_pct = PERFILES.get(pid)
-        if not fondos_pct:
-            return jsonify({"ok": False, "error": f"Perfil {pid} no existe"}), 400
-    else:
-        raw = body.get("fondos", {})
-        fondos_pct = {k: float(v) for k, v in raw.items() if float(v) > 0}
-        if not fondos_pct:
-            return jsonify({"ok": False, "error": "Sin fondos con % > 0"}), 400
-
-    return jsonify(calcular_riesgo(fondos_pct, tipo_cliente))
 
 
 if __name__ == "__main__":
