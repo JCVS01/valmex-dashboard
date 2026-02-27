@@ -50,7 +50,7 @@ def check_rate_limit(ip: str, limit: int = RATE_LIMIT_MAX) -> bool:
 
 
 def require_auth(f):
-    """Decorador: requiere sesión activa + valida que la request sea XHR."""
+    """Decorador: requiere sesión activa + rate limiting."""
     from functools import wraps
     @wraps(f)
     def wrapper(*args, **kwargs):
@@ -59,9 +59,6 @@ def require_auth(f):
             return jsonify({"ok": False, "error": "Demasiadas solicitudes"}), 429
         if "usuario" not in session:
             return jsonify({"ok": False, "error": "No autenticado"}), 401
-        # Validar que sea una petición XHR legítima (no CSRF desde otro origen)
-        if request.headers.get("X-Requested-With") != "XMLHttpRequest":
-            return jsonify({"ok": False, "error": "Solicitud no válida"}), 403
         return f(*args, **kwargs)
     return wrapper
 
@@ -540,9 +537,9 @@ def me():
     u = session.get("usuario")
     if not u or u not in USERS:
         return jsonify({"ok": False}), 401
-    # Validar expiración de sesión (8 horas)
-    created = session.get("created_at", 0)
-    if time.time() - created > 8 * 3600:
+    # Validar expiración de sesión (8 horas) — solo si created_at existe
+    created = session.get("created_at")
+    if created and time.time() - created > 8 * 3600:
         session.clear()
         return jsonify({"ok": False, "error": "Sesión expirada"}), 401
     user = USERS[u]
