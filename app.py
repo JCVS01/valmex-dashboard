@@ -15,27 +15,7 @@ app.secret_key = os.environ.get("SECRET_KEY", "valmex-secret-2024")
 # ─────────────────────────────────────────────────────────────────────────────
 @app.after_request
 def set_security_headers(response):
-    # Prevenir que la página sea embebida en iframes (clickjacking)
-    response.headers["X-Frame-Options"] = "DENY"
-    # Prevenir MIME sniffing
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    # Content Security Policy — solo permite recursos de orígenes explícitos
-    response.headers["Content-Security-Policy"] = (
-        "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; "
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-        "font-src 'self' https://fonts.gstatic.com; "
-        "img-src 'self' data:; "
-        "connect-src 'self'; "
-        "frame-ancestors 'none';"
-    )
-    # Forzar HTTPS en producción
-    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-    # No enviar Referer a otros dominios
-    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    # Deshabilitar permisos no necesarios
-    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=()"
-    # Quitar fingerprinting de servidor
+    # Solo quitar fingerprinting — sin headers que rompan la app
     response.headers.pop("Server", None)
     response.headers.pop("X-Powered-By", None)
     return response
