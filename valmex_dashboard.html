@@ -439,8 +439,8 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
         <div class="cfg-body">
           <div class="fondos-list">
 <div class="fsec-hdr">Deuda</div>
-<div class="fondo-row actual" style="border-left-color:#F59E0B;"><span class="fondo-nombre" style="color:#F59E0B;font-weight:700;">Reporto MXN</span><input class="fondo-input" type="text" placeholder="$0.00" id="act-REPO-MXN-monto" oninput="onActualRepo('MXN')"><input class="fondo-input" type="text" placeholder="Tasa (%)" id="act-REPO-MXN-tasa" oninput="onActualRepo('MXN')" style="max-width:72px;"><span class="fondo-pct" id="act-pct-REPO-MXN">0.00%</span></div>
-<div class="fondo-row actual" style="border-left-color:#F59E0B;"><span class="fondo-nombre" style="color:#F59E0B;font-weight:700;">Reporto USD</span><input class="fondo-input" type="text" placeholder="$0.00" id="act-REPO-USD-monto" oninput="onActualRepo('USD')"><input class="fondo-input" type="text" placeholder="Tasa (%)" id="act-REPO-USD-tasa" oninput="onActualRepo('USD')" style="max-width:72px;"><span class="fondo-pct" id="act-pct-REPO-USD">0.00%</span></div>
+<div class="fondo-row actual" style="border-left-color:#F59E0B;"><span class="fondo-nombre" style="color:#F59E0B;font-weight:700;">Reporto MXN</span><input class="fondo-input" type="text" placeholder="$0.00" id="act-REPO-MXN-monto" oninput="onActualRepoMonto('MXN')"><input class="fondo-input" type="text" placeholder="Tasa (%)" id="act-REPO-MXN-tasa" oninput="onActualRepoTasa('MXN')" style="max-width:72px;"><span class="fondo-pct" id="act-pct-REPO-MXN">0.00%</span></div>
+<div class="fondo-row actual" style="border-left-color:#F59E0B;"><span class="fondo-nombre" style="color:#F59E0B;font-weight:700;">Reporto USD</span><input class="fondo-input" type="text" placeholder="$0.00" id="act-REPO-USD-monto" oninput="onActualRepoMonto('USD')"><input class="fondo-input" type="text" placeholder="Tasa (%)" id="act-REPO-USD-tasa" oninput="onActualRepoTasa('USD')" style="max-width:72px;"><span class="fondo-pct" id="act-pct-REPO-USD">0.00%</span></div>
 <div class="fondo-row actual"><span class="fondo-nombre">VXREPO1</span><input class="fondo-input" type="text" placeholder="$0.00" id="act-VXREPO1" oninput="onActual('VXREPO1')"><span class="fondo-pct" id="act-pct-VXREPO1">0.00%</span></div>
 <div class="fondo-row actual"><span class="fondo-nombre">VXGUBCP</span><input class="fondo-input" type="text" placeholder="$0.00" id="act-VXGUBCP" oninput="onActual('VXGUBCP')"><span class="fondo-pct" id="act-pct-VXGUBCP">0.00%</span></div>
 <div class="fondo-row actual"><span class="fondo-nombre">VXUDIMP</span><input class="fondo-input" type="text" placeholder="$0.00" id="act-VXUDIMP" oninput="onActual('VXUDIMP')"><span class="fondo-pct" id="act-pct-VXUDIMP">0.00%</span></div>
@@ -479,8 +479,8 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
         <div class="cfg-body">
           <div class="fondos-list">
 <div class="fsec-hdr">Deuda</div>
-<div class="fondo-row propuesta" style="border-left-color:#F59E0B;"><span class="fondo-nombre" style="color:#F59E0B;font-weight:700;">Reporto MXN</span><input class="fondo-input" type="text" placeholder="0.00%" id="prop-REPO-MXN-pct" oninput="onPropRepo('MXN')"><input class="fondo-input" type="text" placeholder="Tasa (%)" id="prop-REPO-MXN-tasa" oninput="onPropRepo('MXN')" style="max-width:72px;"><span class="fondo-monto" id="prop-monto-REPO-MXN">$0.00</span></div>
-<div class="fondo-row propuesta" style="border-left-color:#F59E0B;"><span class="fondo-nombre" style="color:#F59E0B;font-weight:700;">Reporto USD</span><input class="fondo-input" type="text" placeholder="0.00%" id="prop-REPO-USD-pct" oninput="onPropRepo('USD')"><input class="fondo-input" type="text" placeholder="Tasa (%)" id="prop-REPO-USD-tasa" oninput="onPropRepo('USD')" style="max-width:72px;"><span class="fondo-monto" id="prop-monto-REPO-USD">$0.00</span></div>
+<div class="fondo-row propuesta" style="border-left-color:#F59E0B;"><span class="fondo-nombre" style="color:#F59E0B;font-weight:700;">Reporto MXN</span><input class="fondo-input" type="text" placeholder="0.00%" id="prop-REPO-MXN-pct" oninput="onPropRepoPct('MXN')"><input class="fondo-input" type="text" placeholder="Tasa (%)" id="prop-REPO-MXN-tasa" oninput="onPropRepoTasa('MXN')" style="max-width:72px;"><span class="fondo-monto" id="prop-monto-REPO-MXN">$0.00</span></div>
+<div class="fondo-row propuesta" style="border-left-color:#F59E0B;"><span class="fondo-nombre" style="color:#F59E0B;font-weight:700;">Reporto USD</span><input class="fondo-input" type="text" placeholder="0.00%" id="prop-REPO-USD-pct" oninput="onPropRepoPct('USD')"><input class="fondo-input" type="text" placeholder="Tasa (%)" id="prop-REPO-USD-tasa" oninput="onPropRepoTasa('USD')" style="max-width:72px;"><span class="fondo-monto" id="prop-monto-REPO-USD">$0.00</span></div>
 <div class="fondo-row propuesta"><span class="fondo-nombre">VXREPO1</span><input class="fondo-input" type="text" placeholder="0.00%" id="prop-VXREPO1" oninput="onProp('VXREPO1')"><span class="fondo-monto" id="prop-monto-VXREPO1">$0.00</span></div>
 <div class="fondo-row propuesta"><span class="fondo-nombre">VXGUBCP</span><input class="fondo-input" type="text" placeholder="0.00%" id="prop-VXGUBCP" oninput="onProp('VXGUBCP')"><span class="fondo-monto" id="prop-monto-VXGUBCP">$0.00</span></div>
 <div class="fondo-row propuesta"><span class="fondo-nombre">VXUDIMP</span><input class="fondo-input" type="text" placeholder="0.00%" id="prop-VXUDIMP" oninput="onProp('VXUDIMP')"><span class="fondo-monto" id="prop-monto-VXUDIMP">$0.00</span></div>
@@ -624,45 +624,63 @@ function getRepoPropTasa(moneda){
   return el?parseFloat(el.value.replace(/[^0-9.]/g,''))||0:0;
 }
 
-function onActualRepo(moneda){
-  const monto=getRepoActualMonto(moneda);
-  const contrato=getMonto();
-  const pEl=document.getElementById('act-pct-REPO-'+moneda);
-  if(pEl) pEl.textContent=contrato>0&&monto>0?(monto/contrato*100).toFixed(2)+'%':'0.00%';
-  // formatear monto
+// Handler separado: campo MONTO del reporto actual
+function onActualRepoMonto(moneda){
   const mEl=document.getElementById('act-REPO-'+moneda+'-monto');
   if(mEl&&mEl.value){
     const v=mEl.value.replace(/[^0-9.]/g,'');
     if(v){const p=v.split('.');p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');mEl.value='$'+(p.length>1?p[0]+'.'+p[1].slice(0,2):p[0]);}
   }
-  // formatear tasa con %
+  const monto=getRepoActualMonto(moneda);
+  const contrato=getMonto();
+  const pEl=document.getElementById('act-pct-REPO-'+moneda);
+  if(pEl) pEl.textContent=contrato>0&&monto>0?(monto/contrato*100).toFixed(2)+'%':'0.00%';
+  calcTotalActual();
+}
+
+// Handler separado: campo TASA del reporto actual
+function onActualRepoTasa(moneda){
   const tEl=document.getElementById('act-REPO-'+moneda+'-tasa');
   if(tEl&&tEl.value){
     const v=tEl.value.replace(/[^0-9.]/g,'');
     if(v){tEl.value=v+'%';const pos=v.length;setTimeout(()=>{try{tEl.setSelectionRange(pos,pos);}catch(e){}},0);}
+    else tEl.value='';
   }
-  calcTotalActual();
+  // Limpiar borde rojo si ya puso tasa
+  if(getRepoActualTasa(moneda)>0) tEl.style.border='';
 }
 
-function onPropRepo(moneda){
+// Mantener onActualRepo como alias por compatibilidad (ya no se usa en HTML pero por si acaso)
+function onActualRepo(moneda){ onActualRepoMonto(moneda); }
+
+// Handler separado: campo PCT del reporto propuesta
+function onPropRepoPct(moneda){
+  const pEl=document.getElementById('prop-REPO-'+moneda+'-pct');
+  if(pEl&&pEl.value){
+    const v=pEl.value.replace(/[^0-9.]/g,'');
+    if(v){pEl.value=v+'%';const pos=v.length;setTimeout(()=>{try{pEl.setSelectionRange(pos,pos);}catch(e){}},0);}
+    else pEl.value='';
+  }
   const pct=getRepoPropPct(moneda);
   const contrato=getMonto();
   const mEl=document.getElementById('prop-monto-REPO-'+moneda);
   if(mEl) mEl.textContent=contrato>0&&pct>0?'$'+(pct/100*contrato).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}):'$0.00';
-  // formatear % field
-  const pEl=document.getElementById('prop-REPO-'+moneda+'-pct');
-  if(pEl&&pEl.value){
-    const v=pEl.value.replace(/[^0-9.%]/g,'');
-    if(v) pEl.value=v.replace('%','')+' %';
-  }
-  // formatear tasa con %
+  calcTotalPropuesta();
+}
+
+// Handler separado: campo TASA del reporto propuesta
+function onPropRepoTasa(moneda){
   const tEl=document.getElementById('prop-REPO-'+moneda+'-tasa');
   if(tEl&&tEl.value){
     const v=tEl.value.replace(/[^0-9.]/g,'');
     if(v){tEl.value=v+'%';const pos=v.length;setTimeout(()=>{try{tEl.setSelectionRange(pos,pos);}catch(e){}},0);}
+    else tEl.value='';
   }
-  calcTotalPropuesta();
+  if(getRepoPropTasa(moneda)>0) tEl.style.border='';
 }
+
+// Alias por compatibilidad
+function onPropRepo(moneda){ onPropRepoPct(moneda); }
 
 function calcTotalActual(){
   let t=0;
