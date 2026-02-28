@@ -352,7 +352,7 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
             bt_repo[f] = bt_repo.get(f, 0.0) + pt["valor"] * w
 
         # Clase activos: suma a Efectivo (equivalente a AAB-CashNet=100 de los fondos)
-        cash_t += 100.0 * w   # AAB-CashNet viene como "100" (no decimal), consistente con fondos
+        cash_t += 100.0 * w
         # Drilldown deuda: dur=0 (overnight), ytm=tasa neta
         bond_w = w
         if es_usd:
@@ -446,6 +446,8 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
         "geo":           filter_pct(geo_acc, translate=GEO_TRANSLATE),
         "sectores":      filter_pct(sec_acc, translate=SEC_TRANSLATE),
         "supersectores": filter_pct(supersec_acc),
+        "_debug_supersec": {k: round(v,4) for k,v in supersec_acc.items()},
+        "_debug_clase": {"bond_t": round(bond_t,4), "cash_t": round(cash_t,4), "stock_t": round(stock_t,4)},
         "has_rv":        stock_t > 0,
         "bt_repo":       sorted(
             [{"fecha": f, "valor": round(v, 4)} for f, v in bt_repo.items()],
