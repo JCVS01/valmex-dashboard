@@ -382,8 +382,8 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
           <div class="ph" id="ph-geo">Exposición Geográfica RV</div>
           <div class="pb" style="padding:6px;"><canvas id="c-geo"></canvas></div>
         </div>
-        <div class="pcard card-pie">
-          <div class="ph">Exposición Sectorial RV</div>
+        <div class="pcard card-pie" id="pcard-sector">
+          <div class="ph" id="ph-sector">Exposición Sectorial RV</div>
           <div class="pb" style="padding:6px;"><canvas id="c-sector"></canvas></div>
         </div>
       </div>
@@ -1257,14 +1257,19 @@ function aplicarDatos(data, valor) {
 
   // ── Sectores ──
   if (charts.sector) {
+    const pcardSector = document.getElementById('pcard-sector');
     charts.sector.data.labels = [];
     charts.sector.data.datasets[0].data = [];
     charts.sector.update('none');
-    if (data.sectores?.labels?.length) {
+    if (data.has_rv && data.sectores?.labels?.length) {
       const { labels, values, colors } = sortedPie(data.sectores.labels, data.sectores.values);
       charts.sector.data.labels = labels;
       charts.sector.data.datasets[0].data = values;
       charts.sector.data.datasets[0].backgroundColor = colors;
+      if (pcardSector) pcardSector.style.display = '';
+    } else {
+      // Sin RV: ocultar pie sectorial completamente
+      if (pcardSector) pcardSector.style.display = 'none';
     }
     charts.sector.update();
   }
