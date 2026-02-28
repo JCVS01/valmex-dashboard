@@ -259,18 +259,20 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
                     bond_mxn_denom += w
 
                 # Calificación crediticia: CQB-* ya es % del fondo completo → ponderar por w
-                for cq_key, cq_lbl in [
-                    ("CQB-AAA","AAA"),("CQB-AA","AA"),("CQB-A","A"),
-                    ("CQB-BBB","BBB"),("CQB-BB","BB"),("CQB-B","B"),
-                    ("CQB-BelowB","<B"),("CQB-NotRated","NR"),
-                ]:
-                    v = safe_float(d.get(cq_key))
-                    if v > 0:
-                        contribution = v * w
-                        if is_usd:
-                            cred_usd[cq_lbl] = cred_usd.get(cq_lbl, 0) + contribution
-                        else:
-                            cred_mxn[cq_lbl] = cred_mxn.get(cq_lbl, 0) + contribution
+                # Fondos MXN: Morningstar usa escala local MX → ajuste Valmex: todo entra como BBB
+                # Fondos USD: ya en escala global → se usa tal cual
+                if is_usd:
+                    for cq_key, cq_lbl in [
+                        ("CQB-AAA","AAA"),("CQB-AA","AA"),("CQB-A","A"),
+                        ("CQB-BBB","BBB"),("CQB-BB","BB"),("CQB-B","B"),
+                        ("CQB-BelowB","<B"),("CQB-NotRated","NR"),
+                    ]:
+                        v = safe_float(d.get(cq_key))
+                        if v > 0:
+                            cred_usd[cq_lbl] = cred_usd.get(cq_lbl, 0) + v * w
+                else:
+                    # Ajuste institucional Valmex: fondos MXN → BBB en escala global
+                    cred_mxn["BBB"] = cred_mxn.get("BBB", 0) + 100 * w
 
                 # Super-sectores: son % del fondo completo (misma escala que AAB-BondNet/CashNet)
                 # Se ponderan por w (peso en portafolio), NO por bond_w
@@ -358,15 +360,15 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
         # Drilldown deuda: dur=0 (overnight), ytm=tasa neta
         bond_w = w
         if es_usd:
-            dur_usd_num    += 0.0  * bond_w
-            ytm_usd_num    += tasa * bond_w
-            bond_usd_denom += bond_w
-            cred_usd["AA+"] = cred_usd.get("AA+", 0) + 100 * bond_w
+            dur_usd_num    += 0.0  * w
+            ytm_usd_num    += tasa * w
+            bond_usd_denom += w
+            cred_usd["AA+"] = cred_usd.get("AA+", 0) + 100 * w   # T-bills / gobierno USD
         else:
-            dur_mxn_num    += 0.0  * bond_w
-            ytm_mxn_num    += tasa * bond_w
-            bond_mxn_denom += bond_w
-            cred_mxn["BBB"] = cred_mxn.get("BBB", 0) + 100 * bond_w
+            dur_mxn_num    += 0.0  * w
+            ytm_mxn_num    += tasa * w
+            bond_mxn_denom += w
+            cred_mxn["BBB"] = cred_mxn.get("BBB", 0) + 100 * w   # Ajuste Valmex: igual que fondos MXN
         supersec_acc["Reporto"] = supersec_acc.get("Reporto", 0) + 100 * bond_w
         lista.append({
             "fondo": label_corto, "serie": "—", "pct": round(pct, 2),
@@ -458,7 +460,7 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
             "has_mxn":  has_mxn,
             "dur_mxn":  round(dur_mxn_num / bond_mxn_denom, 2) if has_mxn else 0,
             "ytm_mxn":  round(ytm_mxn_num / bond_mxn_denom, 2) if has_mxn else 0,
-            "cred_mxn": weighted_credit_rating(cred_mxn, local_to_global=True) if cred_mxn else "—",
+            "cred_mxn": weighted_credit_rating(cred_mxn) if cred_mxn else "—",
             "has_usd":  has_usd,
             "dur_usd":  round(dur_usd_num / bond_usd_denom, 2) if has_usd else 0,
             "ytm_usd":  round(ytm_usd_num / bond_usd_denom, 2) if has_usd else 0,
