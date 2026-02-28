@@ -33,7 +33,7 @@ PERFILES = {
 # ─────────────────────────────────────────────────────────────────────────────
 FONDOS_DEUDA_MXN = {"VXREPO1", "VXGUBCP", "VXUDIMP", "VXDEUDA", "VXGUBLP", "VLMXETF"}
 FONDOS_DEUDA_USD = {"VXTBILL", "VXCOBER", "VLMXDME"}
-FONDOS_CRED_GLOBAL = {"VLMXETF", "VLMXDME"}  # Calificación crediticia en escala global: CQB-* tal cual, sin ajuste BBB
+FONDOS_CRED_GLOBAL = {"VLMXETF"}  # Deuda MXN con calificación S&P USA (sin ajuste BBB): dur/ytm van a columna MX
 SP_RATING_MXN = "BBB"  # S&P Global Ratings: México
 SP_RATING_USD = "AA+"   # S&P Global Ratings: USA
 
