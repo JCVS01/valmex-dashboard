@@ -273,7 +273,7 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
 
                 # Super-sectores de deuda
                 supersector_map = {
-                    "GBSR-SuperSectorCashandEquivalentsNet": "Efectivo y Equiv.",
+                    "GBSR-SuperSectorCashandEquivalentsNet": "Reporto",
                     "GBSR-SuperSectorCorporateNet":          "Corporativo",
                     "GBSR-SuperSectorGovernmentNet":         "Gubernamental",
                     "GBSR-SuperSectorMunicipalNet":          "Municipal",
@@ -351,21 +351,21 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
             f = pt["fecha"]
             bt_repo[f] = bt_repo.get(f, 0.0) + pt["valor"] * w
 
-        # Clase activos: 100% deuda
-        bond_t += 1.0 * w
+        # Clase activos: suma a Efectivo (equivalente a AAB-CashNet=100 de los fondos)
+        cash_t += 1.0 * w
         # Drilldown deuda: dur=0 (overnight), ytm=tasa neta
         bond_w = w
         if es_usd:
             dur_usd_num    += 0.0  * bond_w
             ytm_usd_num    += tasa * bond_w
             bond_usd_denom += bond_w
-            cred_usd["AA+"] = cred_usd.get("AA+", 0) + 100 * bond_w  # Contraparte US Treasury = AA+ (S&P 2023)
+            cred_usd["AA+"] = cred_usd.get("AA+", 0) + 100 * bond_w
         else:
             dur_mxn_num    += 0.0  * bond_w
             ytm_mxn_num    += tasa * bond_w
             bond_mxn_denom += bond_w
-            cred_mxn["BBB"] = cred_mxn.get("BBB", 0) + 100 * bond_w  # Contraparte Banxico/Gob MX = BBB escala global
-        supersec_acc["Gubernamental"] = supersec_acc.get("Gubernamental", 0) + 100 * bond_w
+            cred_mxn["BBB"] = cred_mxn.get("BBB", 0) + 100 * bond_w
+        supersec_acc["Reporto"] = supersec_acc.get("Reporto", 0) + 100 * bond_w
         lista.append({
             "fondo": label_corto, "serie": "—", "pct": round(pct, 2),
             "r1m": round(rend["r1m"], 2),
@@ -440,7 +440,7 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
         },
         "clase_activos": {
             "labels":["Deuda","Renta Variable","Reporto"],
-            "values":[round(bond_t,2),round(stock_t,2),round(cash_t,2)],
+            "values":[round(bond_t*100,2), round(stock_t*100,2), round(cash_t*100,2)],
         },
         "composicion": sorted(lista, key=lambda x: -x["pct"]),
         "geo":           filter_pct(geo_acc, translate=GEO_TRANSLATE),
