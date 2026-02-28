@@ -1223,6 +1223,7 @@ function aplicarDatos(data, valor) {
       if (phGeo) phGeo.textContent = 'Tipo de Deuda';
       charts.geo.data.labels = data.supersectores.labels;
       charts.geo.data.datasets[0].data = data.supersectores.values;
+      charts.geo.data.datasets[0].backgroundColor = PAL.slice(0, data.supersectores.labels.length);
     }
     charts.geo.update();
   }
