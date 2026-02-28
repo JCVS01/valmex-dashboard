@@ -244,20 +244,21 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
         # ── Drilldown deuda: solo fondos de deuda MXN/USD (no RV puro) ──
         # Ciclo de vida participa en drilldown MXN
         if (is_deuda or is_ciclo) and bond > 0:
-            bond_w = (bond / 100.0) * w
+            bond_w = (bond / 100.0) * w   # para calificación crediticia (por tramo de deuda)
             if bond_w > 0:
                 dur_val = safe_float(d.get("PS-EffectiveDuration"))
                 ytm_val = safe_float(d.get("PS-YieldToMaturity"))
+                # Duración y YTM se ponderan por peso en portafolio (w), no por tramo de deuda
                 if is_usd:
-                    dur_usd_num    += dur_val * bond_w
-                    ytm_usd_num    += ytm_val * bond_w
-                    bond_usd_denom += bond_w
+                    dur_usd_num    += dur_val * w
+                    ytm_usd_num    += ytm_val * w
+                    bond_usd_denom += w
                 else:
-                    dur_mxn_num    += dur_val * bond_w
-                    ytm_mxn_num    += ytm_val * bond_w
-                    bond_mxn_denom += bond_w
+                    dur_mxn_num    += dur_val * w
+                    ytm_mxn_num    += ytm_val * w
+                    bond_mxn_denom += w
 
-                # Calificación crediticia
+                # Calificación crediticia: CQB-* ya es % del fondo completo → ponderar por w
                 for cq_key, cq_lbl in [
                     ("CQB-AAA","AAA"),("CQB-AA","AA"),("CQB-A","A"),
                     ("CQB-BBB","BBB"),("CQB-BB","BB"),("CQB-B","B"),
@@ -265,7 +266,7 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
                 ]:
                     v = safe_float(d.get(cq_key))
                     if v > 0:
-                        contribution = v * bond_w
+                        contribution = v * w
                         if is_usd:
                             cred_usd[cq_lbl] = cred_usd.get(cq_lbl, 0) + contribution
                         else:
