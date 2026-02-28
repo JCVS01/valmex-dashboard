@@ -553,6 +553,8 @@ FRED_BASE     = "https://api.stlouisfed.org/fred/series/observations"
 SERIE_TIIE28  = "SF43783"   # TIIE 28 días
 SERIE_USDMXN  = "SF43718"   # USD/MXN FIX
 SERIE_CETES28 = "SF60633"   # Cetes 28 días (proxy T-Bill MX)
+SERIE_FONDEO  = "SF43936"   # Fondeo bancario overnight MXN (diario) ← backtesting MXN
+SERIE_USD_REPO = "SOFR"     # SOFR overnight USD (FRED) ← backtesting USD
 
 _macro_cache = {}
 _macro_ts    = 0
