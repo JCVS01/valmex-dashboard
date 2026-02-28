@@ -967,7 +967,7 @@ requestAnimationFrame(()=>{
   const sectorMeta = charts.sector.getDatasetMeta(0);
   const refRadius = sectorMeta.data[0] ? sectorMeta.data[0].outerRadius : null;
   charts.clase  = donut('c-clase', ['Deuda','Renta Variable'],[80,20],['#00205C','#3DA5E0'],refRadius);
-  charts.geo    = donut('c-geo',   ['Norte-América','Eurozona','Europa','América Latina','Otros emergentes','Asia Emergente','Japón','Asia-Pacífico'],[65.49,12.81,7.66,3.89,3.25,2.37,2.3,2.23],null,refRadius);
+  charts.geo    = donut('c-geo',   ['Norte-América','Eurozona','Europa','América Latina','Otros emergentes','Asia Emergente','Japón','Asia-Pacífico'],[65.49,12.81,7.66,3.89,3.25,2.37,2.3,2.23],PAL.slice(0,8),refRadius);
 });
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -1189,19 +1189,26 @@ function aplicarDatos(data, valor) {
   }
 
   // ── Clase de activos — "Reporto" ya viene del backend ──
+  // Helper: ordena labels+values de mayor a menor, filtra < 0.01, asigna PAL
+  function sortedPie(labels, values) {
+    const pairs = labels.map((l, i) => [l, values[i]]).filter(p => p[1] > 0.01);
+    pairs.sort((a, b) => b[1] - a[1]);
+    return {
+      labels: pairs.map(p => p[0]),
+      values: pairs.map(p => p[1]),
+      colors: pairs.map((_, i) => PAL[i]),
+    };
+  }
+
   if (charts.clase) {
     charts.clase.data.labels = [];
     charts.clase.data.datasets[0].data = [];
     charts.clase.update('none');
     if (data.clase_activos) {
-      const c = data.clase_activos;
-      const lbls = [], vals = [], idxs = [];
-      c.labels.forEach((l, i) => {
-        if (c.values[i] > 0.01) { lbls.push(l); vals.push(c.values[i]); idxs.push(idxs.length); }
-      });
-      charts.clase.data.labels = lbls;
-      charts.clase.data.datasets[0].data = vals;
-      charts.clase.data.datasets[0].backgroundColor = PAL.slice(0, lbls.length);
+      const { labels, values, colors } = sortedPie(data.clase_activos.labels, data.clase_activos.values);
+      charts.clase.data.labels = labels;
+      charts.clase.data.datasets[0].data = values;
+      charts.clase.data.datasets[0].backgroundColor = colors;
     }
     charts.clase.update();
   }
@@ -1214,13 +1221,16 @@ function aplicarDatos(data, valor) {
     const phGeo = document.getElementById('ph-geo');
     if (data.has_rv && data.geo?.labels?.length) {
       if (phGeo) phGeo.textContent = 'Exposición Geográfica RV';
-      charts.geo.data.labels = data.geo.labels;
-      charts.geo.data.datasets[0].data = data.geo.values;
+      const { labels, values, colors } = sortedPie(data.geo.labels, data.geo.values);
+      charts.geo.data.labels = labels;
+      charts.geo.data.datasets[0].data = values;
+      charts.geo.data.datasets[0].backgroundColor = colors;
     } else if (!data.has_rv && data.supersectores?.labels?.length) {
       if (phGeo) phGeo.textContent = 'Tipo de Deuda';
-      charts.geo.data.labels = data.supersectores.labels;
-      charts.geo.data.datasets[0].data = data.supersectores.values;
-      charts.geo.data.datasets[0].backgroundColor = PAL.slice(0, data.supersectores.labels.length);
+      const { labels, values, colors } = sortedPie(data.supersectores.labels, data.supersectores.values);
+      charts.geo.data.labels = labels;
+      charts.geo.data.datasets[0].data = values;
+      charts.geo.data.datasets[0].backgroundColor = colors;
     }
     charts.geo.update();
   }
@@ -1231,8 +1241,10 @@ function aplicarDatos(data, valor) {
     charts.sector.data.datasets[0].data = [];
     charts.sector.update('none');
     if (data.sectores?.labels?.length) {
-      charts.sector.data.labels = data.sectores.labels;
-      charts.sector.data.datasets[0].data = data.sectores.values;
+      const { labels, values, colors } = sortedPie(data.sectores.labels, data.sectores.values);
+      charts.sector.data.labels = labels;
+      charts.sector.data.datasets[0].data = values;
+      charts.sector.data.datasets[0].backgroundColor = colors;
     }
     charts.sector.update();
   }
