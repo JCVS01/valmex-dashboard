@@ -352,7 +352,7 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
             bt_repo[f] = bt_repo.get(f, 0.0) + pt["valor"] * w
 
         # Clase activos: suma a Efectivo (equivalente a AAB-CashNet=100 de los fondos)
-        cash_t += 1.0 * w
+        cash_t += 100.0 * w   # AAB-CashNet viene como "100" (no decimal), consistente con fondos
         # Drilldown deuda: dur=0 (overnight), ytm=tasa neta
         bond_w = w
         if es_usd:
