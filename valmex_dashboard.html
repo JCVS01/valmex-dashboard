@@ -111,6 +111,18 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
 
 /* Nota */
 .prop-note{font-size:11px;color:var(--gray);margin-top:8px;font-family:'Montserrat',sans-serif;font-style:italic;}
+.accion-add-row{display:flex;gap:6px;align-items:center;padding:4px 4px 2px;}
+.btn-accion-add{background:var(--navy);color:#fff;border:none;border-radius:6px;width:28px;height:28px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0;}
+.btn-accion-add:hover{background:var(--blue);}
+.accion-row{display:flex;align-items:center;gap:6px;padding:3px 4px;border-left:3px solid var(--sky);margin-bottom:2px;background:#f8fafd;border-radius:0 4px 4px 0;}
+.accion-ticker{font-size:12px;font-weight:700;color:var(--navy);font-family:'Montserrat',sans-serif;min-width:70px;}
+.accion-nombre{font-size:10px;color:var(--gray);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.accion-tipo{font-size:9px;font-weight:700;padding:1px 5px;border-radius:10px;background:var(--sky);color:#fff;flex-shrink:0;}
+.accion-input{width:72px;padding:3px 6px;border:1px solid #dce3ef;border-radius:4px;font-size:12px;text-align:right;font-family:'Montserrat',sans-serif;}
+.accion-secondary{font-size:11px;color:var(--gray);min-width:54px;text-align:right;font-family:'Montserrat',sans-serif;}
+.accion-del{background:none;border:none;color:#aaa;cursor:pointer;font-size:14px;padding:0 2px;flex-shrink:0;}
+.accion-del:hover{color:#e74c3c;}
+.accion-loading{font-size:11px;color:var(--blue);font-style:italic;padding:4px;}
 
 /* ── CONFIGURACIÓN ── */
 .cfg-layout{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;align-items:stretch;}
@@ -468,6 +480,9 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
 <div class="fondo-row actual"><span class="fondo-nombre">VLMXP45</span><input class="fondo-input" type="text" placeholder="$0.00" id="act-VLMXP45" oninput="onActual('VLMXP45')"><span class="fondo-pct" id="act-pct-VLMXP45">0.00%</span></div>
 <div class="fondo-row actual"><span class="fondo-nombre">VLMXP52</span><input class="fondo-input" type="text" placeholder="$0.00" id="act-VLMXP52" oninput="onActual('VLMXP52')"><span class="fondo-pct" id="act-pct-VLMXP52">0.00%</span></div>
 <div class="fondo-row actual"><span class="fondo-nombre">VLMXP59</span><input class="fondo-input" type="text" placeholder="$0.00" id="act-VLMXP59" oninput="onActual('VLMXP59')"><span class="fondo-pct" id="act-pct-VLMXP59">0.00%</span></div>
+<div class="fsec-hdr">Acciones &amp; ETFs</div>
+<div id="act-acciones-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;grid-column:1/-1;"></div>
+<div id="act-accion-msg" style="font-size:11px;color:var(--navy);padding:2px 4px;min-height:16px;grid-column:1/-1;"></div>
           </div>
           <div class="fondo-total">Total: <span id="total-actual">$0.00</span></div>
           <button class="btn-primary" onclick="guardarActual()">Guardar Cartera Actual</button>
@@ -508,6 +523,9 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
 <div class="fondo-row propuesta"><span class="fondo-nombre">VLMXP45</span><input class="fondo-input" type="text" placeholder="0.00%" id="prop-VLMXP45" oninput="onProp('VLMXP45')"><span class="fondo-monto" id="prop-monto-VLMXP45">$0.00</span></div>
 <div class="fondo-row propuesta"><span class="fondo-nombre">VLMXP52</span><input class="fondo-input" type="text" placeholder="0.00%" id="prop-VLMXP52" oninput="onProp('VLMXP52')"><span class="fondo-monto" id="prop-monto-VLMXP52">$0.00</span></div>
 <div class="fondo-row propuesta"><span class="fondo-nombre">VLMXP59</span><input class="fondo-input" type="text" placeholder="0.00%" id="prop-VLMXP59" oninput="onProp('VLMXP59')"><span class="fondo-monto" id="prop-monto-VLMXP59">$0.00</span></div>
+<div class="fsec-hdr">Acciones &amp; ETFs</div>
+<div id="prop-acciones-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;grid-column:1/-1;"></div>
+<div id="prop-accion-msg" style="font-size:11px;color:var(--navy);padding:2px 4px;min-height:16px;grid-column:1/-1;"></div>
           </div>
           <div class="fondo-total">Total: <span id="total-propuesta">0.00%</span></div>
           <button class="btn-primary" onclick="guardarPropuesta()">Guardar Cartera Propuesta</button>
@@ -598,6 +616,7 @@ function getMonto(){
   const el=document.getElementById('cfg-monto');
   return el?parseFloat(el.value.replace(/[^0-9.]/g,''))||0:0;
 }
+function getMontoContrato(){ return getMonto(); }
 
 function onActual(f){
   const el=document.getElementById('act-'+f);
@@ -719,6 +738,8 @@ function calcTotalActual(){
   const mxnMonto = getRepoActualMonto('MXN');
   const usdMonto = getRepoActualMonto('USD');
   t += mxnMonto + usdMonto;
+  // Acciones actual
+  _slotsActual.forEach(s => { t += parseFloat((s.monto||'').replace(/[^0-9.]/g,''))||0; });
 
   // Validar tasa en tiempo real
   _validarTasaRepo('MXN', mxnMonto, getRepoActualTasa('MXN'), 'act-REPO-MXN-tasa');
@@ -744,6 +765,8 @@ function calcTotalPropuesta(){
   const mxnPct = getRepoPropPct('MXN');
   const usdPct = getRepoPropPct('USD');
   t += mxnPct + usdPct;
+  // Acciones propuesta
+  _slotsProp.forEach(s => { t += parseFloat(s.pct||0)||0; });
 
   // Validar tasa en tiempo real
   _validarTasaRepo('MXN', mxnPct, getRepoPropTasa('MXN'), 'prop-REPO-MXN-tasa');
@@ -761,6 +784,195 @@ function calcTotalPropuesta(){
 }
 
 function guardarCliente(){alert('✅ Datos del cliente guardados.');}
+// Alias para llamadas desde renderAccionProp
+function calcTotalProp() { calcTotalPropuesta(); }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ACCIONES & ETFs — Slots expandibles (6 iniciales, +3 cuando se llenan)
+// ─────────────────────────────────────────────────────────────────────────────
+// Cada slot: { ticker:'', nombre:'', tipo:'', monto:'', pct:'', loading:false, error:'' }
+const SLOTS_INICIALES = 6;
+const SLOTS_BLOQUE    = 3;
+
+let _slotsActual = Array.from({length: SLOTS_INICIALES}, () => ({ticker:'',nombre:'',tipo:'',monto:'',loading:false,error:''}));
+let _slotsProp   = Array.from({length: SLOTS_INICIALES}, () => ({ticker:'',nombre:'',tipo:'',pct:'',loading:false,error:''}));
+
+// ── Render grid ACTUAL ──
+function renderSlotsActual() {
+  const grid  = document.getElementById('act-acciones-grid');
+  if (!grid) return;
+  const monto = getMontoContrato();
+  grid.innerHTML = '';
+  _slotsActual.forEach((slot, i) => {
+    const val = parseFloat((slot.monto||'').replace(/[^0-9.]/g,'')) || 0;
+    const pct = monto > 0 && val > 0 ? (val/monto*100).toFixed(2)+'%' : '0.00%';
+    const card = document.createElement('div');
+    card.className = 'fondo-row actual';
+    card.style.borderLeftColor = slot.ticker ? 'var(--sky)' : 'var(--silver)';
+    card.innerHTML = `
+      <input class="fondo-input accion-ticker-inp" type="text"
+             placeholder="Ticker (ej. AMZN)"
+             value="${slot.ticker}"
+             style="font-size:11px;font-weight:800;color:var(--navy);text-transform:uppercase;text-align:left;padding:4px 6px;"
+             oninput="onSlotActualTicker(${i}, this.value)"
+             onblur="validarSlotActual(${i})"
+             onkeydown="if(event.key==='Enter') validarSlotActual(${i})"
+             autocomplete="off">
+      ${slot.loading ? '<span style="font-size:9px;color:var(--blue);font-style:italic;">buscando...</span>' : ''}
+      ${slot.nombre && !slot.loading ? '<span style="font-size:9px;color:var(--gray);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+slot.nombre+'">'+slot.nombre+'</span>' : ''}
+      ${slot.error ? '<span style="font-size:9px;color:#e74c3c;">'+slot.error+'</span>' : ''}
+      <input class="fondo-input" type="text" placeholder="$0.00"
+             value="${slot.monto}"
+             ${!slot.nombre ? 'disabled style="opacity:0.4;"' : ''}
+             oninput="onSlotActualMonto(${i}, this.value)"
+             autocomplete="off">
+      <span class="fondo-pct">${pct}</span>`;
+    grid.appendChild(card);
+  });
+  // Expandir si todos los slots con ticker están llenos
+  const conTicker = _slotsActual.filter(s => s.ticker).length;
+  if (conTicker >= _slotsActual.length) {
+    _slotsActual.push(...Array.from({length: SLOTS_BLOQUE}, () => ({ticker:'',nombre:'',tipo:'',monto:'',loading:false,error:''})));
+    renderSlotsActual();
+    return;
+  }
+  calcTotalActual();
+}
+
+// ── Render grid PROPUESTA ──
+function renderSlotsProp() {
+  const grid  = document.getElementById('prop-acciones-grid');
+  if (!grid) return;
+  const monto = getMontoContrato();
+  grid.innerHTML = '';
+  _slotsProp.forEach((slot, i) => {
+    const pct = parseFloat(slot.pct||0) || 0;
+    const mon = monto > 0 && pct > 0 ? '$'+(monto*pct/100).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2}) : '$0.00';
+    const card = document.createElement('div');
+    card.className = 'fondo-row propuesta';
+    card.style.borderLeftColor = slot.ticker ? 'var(--sky)' : 'var(--silver)';
+    card.innerHTML = `
+      <input class="fondo-input accion-ticker-inp" type="text"
+             placeholder="Ticker (ej. AMZN)"
+             value="${slot.ticker}"
+             style="font-size:11px;font-weight:800;color:var(--navy);text-transform:uppercase;text-align:left;padding:4px 6px;"
+             oninput="onSlotPropTicker(${i}, this.value)"
+             onblur="validarSlotProp(${i})"
+             onkeydown="if(event.key==='Enter') validarSlotProp(${i})"
+             autocomplete="off">
+      ${slot.loading ? '<span style="font-size:9px;color:var(--blue);font-style:italic;">buscando...</span>' : ''}
+      ${slot.nombre && !slot.loading ? '<span style="font-size:9px;color:var(--gray);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+slot.nombre+'">'+slot.nombre+'</span>' : ''}
+      ${slot.error ? '<span style="font-size:9px;color:#e74c3c;">'+slot.error+'</span>' : ''}
+      <input class="fondo-input" type="text" placeholder="0.00%"
+             value="${slot.pct ? slot.pct+'%' : ''}"
+             ${!slot.nombre ? 'disabled style="opacity:0.4;"' : ''}
+             oninput="onSlotPropPct(${i}, this.value)"
+             autocomplete="off">
+      <span class="fondo-monto">${mon}</span>`;
+    grid.appendChild(card);
+  });
+  // Expandir si todos los slots con ticker están llenos
+  const conTicker = _slotsProp.filter(s => s.ticker).length;
+  if (conTicker >= _slotsProp.length) {
+    _slotsProp.push(...Array.from({length: SLOTS_BLOQUE}, () => ({ticker:'',nombre:'',tipo:'',pct:'',loading:false,error:''})));
+    renderSlotsProp();
+    return;
+  }
+  calcTotalProp();
+}
+
+// ── Handlers ticker ──
+function onSlotActualTicker(i, val) {
+  _slotsActual[i].ticker  = val.toUpperCase().trim();
+  _slotsActual[i].nombre  = '';
+  _slotsActual[i].tipo    = '';
+  _slotsActual[i].error   = '';
+  renderSlotsActual();
+}
+function onSlotPropTicker(i, val) {
+  _slotsProp[i].ticker = val.toUpperCase().trim();
+  _slotsProp[i].nombre = '';
+  _slotsProp[i].tipo   = '';
+  _slotsProp[i].error  = '';
+  renderSlotsProp();
+}
+
+// ── Validar ticker contra backend al salir del campo ──
+async function validarSlotActual(i) {
+  const ticker = _slotsActual[i].ticker;
+  if (!ticker || _slotsActual[i].nombre) return; // ya validado
+  _slotsActual[i].loading = true;
+  renderSlotsActual();
+  try {
+    const r = await fetch('/api/accion/validate', {
+      method:'POST', credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ticker})
+    });
+    const d = await r.json();
+    _slotsActual[i].loading = false;
+    if (d.ok) {
+      _slotsActual[i].nombre = d.data.nombre;
+      _slotsActual[i].tipo   = d.data.tipo;
+      _slotsActual[i].error  = '';
+    } else {
+      _slotsActual[i].error  = d.error || 'No encontrado';
+      _slotsActual[i].ticker = '';
+    }
+  } catch(e) {
+    _slotsActual[i].loading = false;
+    _slotsActual[i].error   = 'Error de conexión';
+  }
+  renderSlotsActual();
+}
+
+async function validarSlotProp(i) {
+  const ticker = _slotsProp[i].ticker;
+  if (!ticker || _slotsProp[i].nombre) return;
+  _slotsProp[i].loading = true;
+  renderSlotsProp();
+  try {
+    const r = await fetch('/api/accion/validate', {
+      method:'POST', credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ticker})
+    });
+    const d = await r.json();
+    _slotsProp[i].loading = false;
+    if (d.ok) {
+      _slotsProp[i].nombre = d.data.nombre;
+      _slotsProp[i].tipo   = d.data.tipo;
+      _slotsProp[i].error  = '';
+    } else {
+      _slotsProp[i].error  = d.error || 'No encontrado';
+      _slotsProp[i].ticker = '';
+    }
+  } catch(e) {
+    _slotsProp[i].loading = false;
+    _slotsProp[i].error   = 'Error de conexión';
+  }
+  renderSlotsProp();
+}
+
+// ── Handlers monto/pct ──
+function onSlotActualMonto(i, val) {
+  let v = val.replace(/[^0-9.]/g,'');
+  const p = v.split('.');
+  p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
+  _slotsActual[i].monto = '$'+(p.length>1?p[0]+'.'+p[1].slice(0,2):p[0]);
+  renderSlotsActual();
+}
+function onSlotPropPct(i, val) {
+  _slotsProp[i].pct = val.replace(/[^0-9.]/g,'');
+  renderSlotsProp();
+}
+
+// ── Init al cargar ──
+document.addEventListener('DOMContentLoaded', () => {
+  renderSlotsActual();
+  renderSlotsProp();
+});
+
 function guardarActual(){
   const repoMXNMonto = getRepoActualMonto('MXN');
   const repoUSDMonto = getRepoActualMonto('USD');
@@ -1114,12 +1326,18 @@ async function cargarPortafolio() {
       alert('⚠️ Reporto USD: falta la tasa neta.\nIngresa la tasa que recibirá el cliente (ej. 4.20) para continuar.');
       if (sel) sel.value = 'perfil_3'; return;
     } else if (tasaUSDPEl) tasaUSDPEl.style.border = '';
-    total += repoMXNPct + repoUSDPct;
+    // Acciones & ETFs propuesta
+    const accionesPropPayload = _slotsProp
+      .filter(s => s.ticker && s.nombre && parseFloat(s.pct) > 0)
+      .map(s => ({ ticker: s.ticker, pct: parseFloat(s.pct) }));
+    const totalAcciones = accionesPropPayload.reduce((s, a) => s + a.pct, 0);
+    total += repoMXNPct + repoUSDPct + totalAcciones;
     if (total === 0) { alert('⚠️ Cartera Propuesta vacía.\nLlena los porcentajes en Configuración → Cartera Propuesta.'); if (sel) sel.value = 'perfil_3'; return; }
     if (Math.abs(total - 100) > 0.5) { alert(`⚠️ Cartera Propuesta suma ${total.toFixed(2)}%.\nDebe ser 100% para continuar.`); if (sel) sel.value = 'perfil_3'; return; }
     body.modo = 'propuesta'; body.fondos = fondos;
     if (repoMXNPct > 0) body.repo_mxn = { pct: repoMXNPct, tasa: repoMXNTasa };
     if (repoUSDPct > 0) body.repo_usd = { pct: repoUSDPct, tasa: repoUSDTasa };
+    if (accionesPropPayload.length > 0) body.acciones = accionesPropPayload;
   }
 
   showSpinner(true);
