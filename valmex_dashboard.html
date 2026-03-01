@@ -1013,9 +1013,11 @@ async function validarSlotActual(i) {
     if (d.ok) {
       // Normalizar ticker con .MX si no lo tiene
       if (!_slotsActual[i].ticker.endsWith('.MX')) _slotsActual[i].ticker += '.MX';
-      _slotsActual[i].nombre = d.data.nombre;
-      _slotsActual[i].tipo   = d.data.tipo;
-      _slotsActual[i].error  = '';
+      _slotsActual[i].nombre        = d.data.nombre;
+      _slotsActual[i].tipo          = d.data.tipo;
+      _slotsActual[i].precio_cierre = d.data.precio_cierre ?? null;
+      _slotsActual[i].moneda_precio = d.data.moneda_precio ?? d.data.moneda ?? 'MXN';
+      _slotsActual[i].error         = '';
     } else {
       _slotsActual[i].error  = d.error || 'No encontrado';
       _slotsActual[i].ticker = '';
@@ -1043,9 +1045,11 @@ async function validarSlotProp(i) {
     if (d.ok) {
       // Normalizar ticker con .MX si no lo tiene
       if (!_slotsProp[i].ticker.endsWith('.MX')) _slotsProp[i].ticker += '.MX';
-      _slotsProp[i].nombre = d.data.nombre;
-      _slotsProp[i].tipo   = d.data.tipo;
-      _slotsProp[i].error  = '';
+      _slotsProp[i].nombre        = d.data.nombre;
+      _slotsProp[i].tipo          = d.data.tipo;
+      _slotsProp[i].precio_cierre = d.data.precio_cierre ?? null;
+      _slotsProp[i].moneda_precio = d.data.moneda_precio ?? d.data.moneda ?? 'MXN';
+      _slotsProp[i].error         = '';
     } else {
       _slotsProp[i].error  = d.error || 'No encontrado';
       _slotsProp[i].ticker = '';
