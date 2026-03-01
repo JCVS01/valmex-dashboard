@@ -1,5 +1,8 @@
 import os
+import time
+import threading
 import requests
+import yfinance as yf
 from flask import Flask, send_file, request, jsonify, redirect, url_for, session, send_from_directory
 
 BASE = os.path.dirname(os.path.abspath(__file__))
@@ -321,6 +324,121 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str) -> dict:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# HISTÓRICOS MERCADO — carga y caché en memoria
+# ─────────────────────────────────────────────────────────────────────────────
+_repo_cache = {}
+_repo_lock  = threading.Lock()
+_repo_ts    = 0.0
+REPO_TTL    = 3600  # 1 hora
+
+def _fetch_hist_mxn():
+    """USD/MXN semanal desde 2000 vía Yahoo Finance (MXN=X)."""
+    try:
+        df = yf.Ticker("MXN=X").history(start="2000-01-01", interval="1wk")[["Close"]].dropna()
+        fechas  = [d.strftime("%Y-%m-%d") for d in df.index]
+        precios = [round(float(v), 4) for v in df["Close"]]
+        print(f"[HIST MXN] {len(fechas)} registros desde {fechas[0]}")
+        return {"fechas": fechas, "precios": precios}
+    except Exception as e:
+        print(f"[HIST MXN ERROR] {e}")
+        return {"fechas": [], "precios": []}
+
+def _fetch_sofr():
+    """SOFR diario desde FRED (CSV público, sin API key)."""
+    try:
+        r = requests.get(
+            "https://fred.stlouisfed.org/graph/fredgraph.csv?id=SOFR",
+            timeout=20,
+            headers={"User-Agent": "Mozilla/5.0"}
+        )
+        r.raise_for_status()
+        lines = [l for l in r.text.strip().split("\n")[1:] if l.split(",")[1].strip() not in ("", ".")]
+        fechas = [l.split(",")[0] for l in lines]
+        tasas  = [round(float(l.split(",")[1]), 4) for l in lines]
+        print(f"[FRED] SOFR: {len(fechas)} registros OK")
+        return {"fechas": fechas, "tasas": tasas}
+    except Exception as e:
+        print(f"[FRED ERROR] {e}")
+        return {"fechas": [], "tasas": []}
+
+def _fetch_hist_usd():
+    """T-Bill 3M diario desde FRED filtrado desde inicio de SOFR (2018-04-03)."""
+    try:
+        r = requests.get(
+            "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DTB3",
+            timeout=20,
+            headers={"User-Agent": "Mozilla/5.0"}
+        )
+        r.raise_for_status()
+        lines  = [l for l in r.text.strip().split("\n")[1:] if l.split(",")[1].strip() not in ("", ".")]
+        lines  = [l for l in lines if l.split(",")[0] >= "2018-04-03"]
+        fechas = [l.split(",")[0] for l in lines]
+        tasas  = [round(float(l.split(",")[1]), 4) for l in lines]
+        if fechas:
+            print(f"[HIST USD] {len(fechas)} registros desde {fechas[0]}")
+        return {"fechas": fechas, "tasas": tasas}
+    except Exception as e:
+        print(f"[HIST USD ERROR] {e}")
+        return {"fechas": [], "tasas": []}
+
+def load_repo():
+    """Carga o devuelve cacheado el repositorio de datos de mercado."""
+    global _repo_ts
+    now = time.time()
+    with _repo_lock:
+        if _repo_cache and now - _repo_ts < REPO_TTL:
+            return dict(_repo_cache)
+    mxn  = _fetch_hist_mxn()
+    sofr = _fetch_sofr()
+    usd  = _fetch_hist_usd()
+    data = {"ok": True, "mxn": mxn, "sofr": sofr, "usd": usd}
+    with _repo_lock:
+        _repo_cache.clear()
+        _repo_cache.update(data)
+        _repo_ts = time.time()
+    return data
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CACHÉ TICKERS YAHOO FINANCE
+# ─────────────────────────────────────────────────────────────────────────────
+_yf_cache     = {}
+_yf_lock      = threading.Lock()
+YF_TICKER_TTL = 900  # 15 min
+
+def yf_quote(symbol: str) -> dict:
+    """Obtiene cotización de Yahoo Finance con caché y manejo de rate-limit."""
+    now = time.time()
+    with _yf_lock:
+        cached = _yf_cache.get(symbol)
+        if cached and now - cached["ts"] < YF_TICKER_TTL:
+            return cached["data"]
+    try:
+        tk   = yf.Ticker(symbol)
+        info = tk.info
+        qt   = info.get("quoteType", "")
+        if not info or qt in ("", "NONE") or info.get("regularMarketPrice") is None and info.get("currentPrice") is None:
+            result = {"ok": False, "error": "Ticker no encontrado o sin datos", "ticker": symbol}
+        else:
+            result = {
+                "ok":         True,
+                "ticker":     symbol,
+                "nombre":     info.get("longName") or info.get("shortName") or symbol,
+                "precio":     info.get("regularMarketPrice") or info.get("currentPrice"),
+                "moneda":     info.get("currency", "MXN"),
+                "cambio_pct": round(info.get("regularMarketChangePercent") or 0.0, 4),
+                "volumen":    info.get("regularMarketVolume"),
+                "exchange":   info.get("exchange"),
+                "tipo":       qt,
+            }
+        print(f"[YF OK] {symbol}: {result.get('precio')}")
+    except Exception as e:
+        print(f"[YF ERROR] {symbol}: {e}")
+        result = {"ok": False, "error": str(e), "ticker": symbol}
+    with _yf_lock:
+        _yf_cache[symbol] = {"ts": time.time(), "data": result}
+    return result
+
+# ─────────────────────────────────────────────────────────────────────────────
 # RUTAS
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -390,6 +508,24 @@ def api_propuesta():
             return jsonify({"ok": False, "error": "Sin fondos con % > 0"}), 400
 
     return jsonify(calcular_portafolio(fondos_pct, tipo_cliente))
+
+
+@app.route("/api/diag-repo")
+def api_diag_repo():
+    if "usuario" not in session:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    return jsonify(load_repo())
+
+
+@app.route("/api/accion/validate", methods=["POST"])
+def api_accion_validate():
+    if "usuario" not in session:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    body   = request.get_json(force=True)
+    ticker = body.get("ticker", "").strip().upper()
+    if not ticker:
+        return jsonify({"ok": False, "error": "ticker requerido"}), 400
+    return jsonify(yf_quote(ticker))
 
 
 if __name__ == "__main__":
