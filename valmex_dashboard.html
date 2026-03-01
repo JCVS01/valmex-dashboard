@@ -236,9 +236,8 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
 /* ── SLOTS ACCIONES ── */
 #act-acciones-grid .fondo-row,
 #prop-acciones-grid .fondo-row {
-  min-height: 185px;
-  max-height: 185px;
-  height: 185px;
+  height: auto;
+  min-height: 112px;
   overflow: hidden;
   justify-content: flex-start;
   gap: 5px;
@@ -860,7 +859,7 @@ function renderSlotsActual() {
       : '';
     const card = document.createElement('div');
     card.className = 'fondo-row actual';
-    card.style.cssText = 'min-height:185px;max-height:185px;height:185px;overflow:hidden;gap:5px;border-left-color:' + (slot.ticker ? 'var(--sky)' : 'var(--silver)');
+    card.style.cssText = 'height:auto;min-height:' + (slot.nombre ? '152px' : '112px') + ';overflow:hidden;gap:5px;border-left-color:' + (slot.ticker ? 'var(--sky)' : 'var(--silver)');
     card.innerHTML = `
       <input class="fondo-input accion-ticker-inp" type="text"
              placeholder="Ticker (ej. AMZN)"
@@ -911,7 +910,7 @@ function renderSlotsProp() {
       : '';
     const card = document.createElement('div');
     card.className = 'fondo-row propuesta';
-    card.style.cssText = 'min-height:185px;max-height:185px;height:185px;overflow:hidden;gap:5px;border-left-color:' + (slot.ticker ? 'var(--sky)' : 'var(--silver)');
+    card.style.cssText = 'height:auto;min-height:' + (slot.nombre ? '152px' : '112px') + ';overflow:hidden;gap:5px;border-left-color:' + (slot.ticker ? 'var(--sky)' : 'var(--silver)');
     card.innerHTML = `
       <input class="fondo-input accion-ticker-inp" type="text"
              placeholder="Ticker (ej. AMZN)"
@@ -1077,14 +1076,17 @@ function fmtMontoFocus(inp) {
   inp.select();
 }
 function fmtMontoBlur(i, inp, tipo) {
-  // Al salir: formatear con $ y comas
+  // Al salir: formatear con $ y comas Y actualizar estado
   const raw = inp.value.replace(/[^0-9.]/g,'');
   const num = parseFloat(raw);
   if (!isNaN(num) && num > 0) {
     inp.value = '$' + num.toLocaleString('es-MX', {minimumFractionDigits:2, maximumFractionDigits:2});
+    if (tipo === 'act') _slotsActual[i].monto = '$' + raw;
   } else {
     inp.value = '';
+    if (tipo === 'act') _slotsActual[i].monto = '';
   }
+  calcTotalActual();
 }
 function fmtPctFocus(inp) {
   // Al enfocar: mostrar solo número
@@ -1093,14 +1095,17 @@ function fmtPctFocus(inp) {
   inp.select();
 }
 function fmtPctBlur(i, inp) {
-  // Al salir: agregar %
+  // Al salir: agregar % Y actualizar estado
   const raw = inp.value.replace(/[^0-9.]/g,'');
   const num = parseFloat(raw);
   if (!isNaN(num) && num > 0) {
     inp.value = num.toFixed(2) + '%';
+    _slotsProp[i].pct = raw;
   } else {
     inp.value = '';
+    _slotsProp[i].pct = '';
   }
+  calcTotalProp();
 }
 
 function onSlotActualMontoLive(i, inp) {
