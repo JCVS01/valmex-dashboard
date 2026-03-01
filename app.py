@@ -289,206 +289,6 @@ SEC_TRANSLATE_YF = {
 }
 
 # ── Yahoo Finance cookie/crumb cache ──
-_yf_session   = None
-_yf_crumb     = None
-_yf_cookie_ts = 0
-
-def _get_yf_session():
-    """
-    Obtiene sesión con cookies válidas de Yahoo Finance.
-    Yahoo requiere: primero visitar finance.yahoo.com para obtener cookie,
-    luego obtener crumb token, y usarlo en todas las peticiones.
-    """
-    global _yf_session, _yf_crumb, _yf_cookie_ts
-    now = time.time()
-    # Renovar cada 2 horas
-    if _yf_session and _yf_crumb and (now - _yf_cookie_ts) < 7200:
-        return _yf_session, _yf_crumb
-
-    session = requests.Session()
-    session.headers.update({
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9",
-        "Accept-Encoding": "gzip, deflate, br",
-        "Referer": "https://finance.yahoo.com/",
-    })
-
-    try:
-        # Paso 1: obtener cookies visitando Yahoo Finance
-        r = session.get("https://finance.yahoo.com/", timeout=10)
-        r.raise_for_status()
-
-        # Paso 2: obtener crumb
-        r2 = session.get(
-            "https://query1.finance.yahoo.com/v1/test/csrfToken",
-            headers={"Accept": "application/json"},
-            timeout=10
-        )
-        crumb = None
-        if r2.status_code == 200:
-            try:
-                crumb = r2.json().get("crumb")
-            except Exception:
-                pass
-
-        # Fallback crumb endpoint
-        if not crumb:
-            r3 = session.get(
-                "https://query2.finance.yahoo.com/v1/test/csrfToken",
-                timeout=10
-            )
-            if r3.status_code == 200:
-                try:
-                    crumb = r3.json().get("crumb")
-                except Exception:
-                    pass
-
-        _yf_session   = session
-        _yf_crumb     = crumb or ""
-        _yf_cookie_ts = now
-        print(f"[YF SESSION] Cookie OK, crumb={'OK' if crumb else 'vacío'}")
-        return _yf_session, _yf_crumb
-
-    except Exception as e:
-        print(f"[YF SESSION ERROR] {e}")
-        _yf_session   = session  # usar igual aunque falle el crumb
-        _yf_crumb     = ""
-        _yf_cookie_ts = now
-        return session, ""
-
-
-
-
-# ── ETF holdings fallback — para cuando yfinance no retorna funds_data ──
-# Datos aproximados de los ETFs más comunes (en % por región/sector)
-_ETF_GEO_FALLBACK = {
-    # ETFs de mercado global
-    "ACWI.MX": {"Estados Unidos": 64.0, "Japón": 5.5, "Reino Unido": 3.8, "Francia": 3.2, "Canadá": 2.9, "Suiza": 2.5, "Alemania": 2.2, "Australia": 2.0, "Taiwán": 1.8, "India": 1.7, "Corea del Sur": 1.5, "Otros": 6.9},
-    "ACWI":    {"Estados Unidos": 64.0, "Japón": 5.5, "Reino Unido": 3.8, "Francia": 3.2, "Canadá": 2.9, "Suiza": 2.5, "Alemania": 2.2, "Australia": 2.0, "Taiwán": 1.8, "India": 1.7, "Corea del Sur": 1.5, "Otros": 6.9},
-    # ETFs USA
-    "SPY.MX":  {"Estados Unidos": 100.0},
-    "SPY":     {"Estados Unidos": 100.0},
-    "IVV.MX":  {"Estados Unidos": 100.0},
-    "VOO.MX":  {"Estados Unidos": 100.0},
-    "QQQ.MX":  {"Estados Unidos": 100.0},
-    "QQQ":     {"Estados Unidos": 100.0},
-    "VTI.MX":  {"Estados Unidos": 100.0},
-    # ETFs emergentes
-    "EEM.MX":  {"China": 26.0, "India": 16.0, "Taiwán": 15.0, "Corea del Sur": 12.0, "Brasil": 5.5, "Arabia Saudita": 4.0, "Sudáfrica": 3.5, "Otros": 18.0},
-    "VWO.MX":  {"China": 29.0, "India": 16.0, "Taiwán": 14.0, "Corea del Sur": 11.0, "Brasil": 5.0, "Arabia Saudita": 4.0, "Sudáfrica": 3.0, "Otros": 18.0},
-    # ETFs Europa
-    "EFA.MX":  {"Japón": 22.0, "Reino Unido": 14.5, "Francia": 11.5, "Suiza": 10.0, "Alemania": 9.0, "Australia": 7.5, "Países Bajos": 4.5, "Suecia": 3.5, "Hong Kong": 3.5, "Otros": 14.0},
-    "IEFA.MX": {"Japón": 22.0, "Reino Unido": 14.0, "Francia": 11.0, "Suiza": 10.0, "Alemania": 9.0, "Australia": 7.5, "Otros": 26.5},
-}
-
-_ETF_SEC_FALLBACK = {
-    "ACWI.MX": {"Tecnología": 24.0, "Financiero": 15.0, "Salud": 11.0, "Industriales": 10.0, "Consumo Discrecional": 10.0, "Comunicaciones": 8.0, "Consumo Básico": 6.5, "Energía": 4.5, "Materiales": 4.0, "Bienes Raíces": 2.5, "Utilidades": 2.5, "Otros": 1.5},
-    "ACWI":    {"Tecnología": 24.0, "Financiero": 15.0, "Salud": 11.0, "Industriales": 10.0, "Consumo Discrecional": 10.0, "Comunicaciones": 8.0, "Consumo Básico": 6.5, "Energía": 4.5, "Materiales": 4.0, "Bienes Raíces": 2.5, "Utilidades": 2.5, "Otros": 1.5},
-    "SPY.MX":  {"Tecnología": 32.5, "Financiero": 13.0, "Salud": 12.5, "Consumo Discrecional": 10.5, "Comunicaciones": 8.5, "Industriales": 8.0, "Consumo Básico": 5.5, "Energía": 3.5, "Materiales": 2.5, "Bienes Raíces": 2.0, "Utilidades": 2.5, "Otros": 1.0},
-    "SPY":     {"Tecnología": 32.5, "Financiero": 13.0, "Salud": 12.5, "Consumo Discrecional": 10.5, "Comunicaciones": 8.5, "Industriales": 8.0, "Consumo Básico": 5.5, "Energía": 3.5, "Materiales": 2.5, "Bienes Raíces": 2.0, "Utilidades": 2.5, "Otros": 1.0},
-    "IVV.MX":  {"Tecnología": 32.5, "Financiero": 13.0, "Salud": 12.5, "Consumo Discrecional": 10.5, "Comunicaciones": 8.5, "Industriales": 8.0, "Consumo Básico": 5.5, "Energía": 3.5, "Materiales": 2.5, "Bienes Raíces": 2.0, "Utilidades": 2.5},
-    "VOO.MX":  {"Tecnología": 32.5, "Financiero": 13.0, "Salud": 12.5, "Consumo Discrecional": 10.5, "Comunicaciones": 8.5, "Industriales": 8.0, "Consumo Básico": 5.5, "Energía": 3.5, "Materiales": 2.5, "Bienes Raíces": 2.0, "Utilidades": 2.5},
-    "QQQ.MX":  {"Tecnología": 51.0, "Comunicaciones": 16.0, "Consumo Discrecional": 14.0, "Salud": 6.0, "Industriales": 5.0, "Financiero": 4.0, "Consumo Básico": 2.5, "Otros": 1.5},
-    "QQQ":     {"Tecnología": 51.0, "Comunicaciones": 16.0, "Consumo Discrecional": 14.0, "Salud": 6.0, "Industriales": 5.0, "Financiero": 4.0, "Consumo Básico": 2.5, "Otros": 1.5},
-    "VTI.MX":  {"Tecnología": 30.0, "Financiero": 13.5, "Salud": 12.5, "Industriales": 13.0, "Consumo Discrecional": 9.5, "Comunicaciones": 8.5, "Consumo Básico": 5.0, "Energía": 3.5, "Materiales": 2.5, "Bienes Raíces": 3.5, "Utilidades": 2.5},
-    "EEM.MX":  {"Tecnología": 22.0, "Financiero": 21.0, "Consumo Discrecional": 14.0, "Comunicaciones": 10.0, "Materiales": 8.0, "Industriales": 7.0, "Energía": 5.0, "Salud": 4.0, "Consumo Básico": 4.0, "Otros": 5.0},
-    "VWO.MX":  {"Financiero": 22.0, "Tecnología": 21.0, "Consumo Discrecional": 13.0, "Comunicaciones": 10.0, "Materiales": 8.0, "Industriales": 7.0, "Energía": 5.0, "Salud": 4.0, "Otros": 10.0},
-    "EFA.MX":  {"Financiero": 19.5, "Industriales": 16.0, "Salud": 13.0, "Consumo Discrecional": 11.0, "Tecnología": 9.5, "Consumo Básico": 9.0, "Materiales": 7.0, "Comunicaciones": 5.0, "Energía": 4.5, "Bienes Raíces": 2.5, "Utilidades": 3.0},
-    "IEFA.MX": {"Financiero": 19.0, "Industriales": 16.0, "Salud": 13.0, "Consumo Discrecional": 11.5, "Tecnología": 10.0, "Consumo Básico": 9.0, "Materiales": 7.0, "Comunicaciones": 5.0, "Energía": 4.0, "Otros": 5.5},
-}
-# ── Limpieza de nombres de ETFs e índices ──
-# Yahoo Finance devuelve nombres como "iShares MSCI ACWI ETF" o "Invesco QQQ Trust"
-# Queremos solo el índice/estrategia que representa, sin la gestora
-def limpiar_nombre_instrumento(nombre: str, ticker: str, quote_type: str) -> str:
-    """
-    Limpia el nombre de un instrumento eliminando prefijos de gestora
-    y simplificando a lo que realmente representa.
-    """
-    if not nombre:
-        return ticker
-
-    # Mapa de tickers conocidos → nombre descriptivo en español
-    NOMBRES_CONOCIDOS = {
-        # ETFs globales
-        "ACWI":   "MSCI ACWI Global",
-        "VT":     "Total World Market",
-        "VTI":    "Total Stock Market EE.UU.",
-        "VOO":    "S&P 500",
-        "IVV":    "S&P 500",
-        "SPY":    "S&P 500",
-        "QQQ":    "Nasdaq 100",
-        "QQEW":   "Nasdaq 100 Eq. Ponderado",
-        "EFA":    "MSCI EAFE Desarrollados",
-        "IEFA":   "MSCI EAFE Core",
-        "EEM":    "MSCI Emergentes",
-        "VWO":    "MSCI Emergentes Vanguard",
-        "IEMG":   "MSCI Emergentes Core",
-        # ETFs sectoriales
-        "XLK":    "S&P 500 Tecnología",
-        "XLF":    "S&P 500 Financiero",
-        "XLV":    "S&P 500 Salud",
-        "XLE":    "S&P 500 Energía",
-        "XLI":    "S&P 500 Industriales",
-        "XLY":    "S&P 500 Consumo Discrecional",
-        "XLP":    "S&P 500 Consumo Básico",
-        "XLB":    "S&P 500 Materiales",
-        "XLU":    "S&P 500 Utilidades",
-        "XLRE":   "S&P 500 Bienes Raíces",
-        "XLC":    "S&P 500 Comunicaciones",
-        # ETFs renta fija
-        "AGG":    "Bloomberg Aggregate Bonds - EE.UU.",
-        "BND":    "Vanguard Total Bond Market - EE.UU.",
-        "TLT":    "Bonos del Tesoro EE.UU. 20+ años",
-        "IEF":    "Bonos del Tesoro EE.UU. 7-10 años",
-        "SHY":    "Bonos del Tesoro EE.UU. 1-3 años",
-        "LQD":    "Bonos Corporativos Grado Inversión EE.UU.",
-        "HYG":    "Bonos High Yield EE.UU.",
-        "EMB":    "Bonos de Mercados Emergentes",
-        # Acciones conocidas (se pueden agregar más)
-        "AAPL":   "Apple",
-        "MSFT":   "Microsoft",
-        "GOOGL":  "Alphabet (Google)",
-        "AMZN":   "Amazon",
-        "NVDA":   "Nvidia",
-        "META":   "Meta (Facebook)",
-        "TSLA":   "Tesla",
-        "WALMEX": "Walmart México",
-        "GFNORTE":"GFNorte - Grupo Financiero Banorte",
-        "CEMEX":  "CEMEX",
-        "AMXL":   "América Móvil",
-        "FEMSAUBD":"FEMSA",
-        "BIMBOA": "Grupo Bimbo",
-    }
-
-    ticker_base = ticker.replace(".MX", "").upper()
-    if ticker_base in NOMBRES_CONOCIDOS:
-        return NOMBRES_CONOCIDOS[ticker_base]
-
-    # Si no está en el mapa, limpiar prefijos de gestoras
-    PREFIJOS_GESTORAS = [
-        "iShares MSCI ", "iShares Core MSCI ", "iShares Core ", "iShares ",
-        "Invesco ", "Vanguard ", "SPDR ", "SPDR S&P 500 ",
-        "Fidelity ", "Schwab ", "WisdomTree ", "ProShares ",
-        "First Trust ", "VanEck ", "ARK ", "Global X ",
-        "Direxion ", "Xtrackers ", "Franklin ",
-    ]
-    nombre_limpio = nombre
-    for prefijo in PREFIJOS_GESTORAS:
-        if nombre_limpio.startswith(prefijo):
-            nombre_limpio = nombre_limpio[len(prefijo):]
-            break
-
-    # Quitar sufijos redundantes
-    SUFIJOS = [" ETF", " Index Fund", " Fund", " Trust", " Portfolio"]
-    for suf in SUFIJOS:
-        if nombre_limpio.endswith(suf):
-            nombre_limpio = nombre_limpio[:-len(suf)]
-
-    return nombre_limpio or nombre
-
-
-
 def get_accion_yf(ticker: str) -> dict | None:
     """
     Obtiene datos de una acción/ETF via Yahoo Finance (yfinance).
@@ -555,7 +355,7 @@ def get_accion_yf(ticker: str) -> dict | None:
         pais       = GEO_TRANSLATE_YF.get(pais_en, info.get("country") or "Estados Unidos")
         nombre_raw = info.get("shortName") or info.get("longName") or ticker
         nombre     = limpiar_nombre_instrumento(nombre_raw, ticker, quote_type)
-        moneda     = "MXN" if ticker.endswith(".MX") else "USD"
+        moneda     = "MXN" if ticker.endswith(".MX") else ("MXN" if ticker == "^MXX" else "USD")
 
         # Traducciones de países para ETFs
         # Traducir países de Yahoo Finance → mismos labels que Morningstar
@@ -1148,10 +948,74 @@ def api_accion_validate():
     ticker = (body.get("ticker") or "").strip().upper()
     if not ticker:
         return jsonify({"ok": False, "error": "Ticker vacío"}), 400
-    # Siempre buscar en MXN — agregar .MX si no lo tiene
-    if not ticker.endswith(".MX"):
-        ticker = ticker + ".MX"
-    data = get_accion_yf(ticker)
+    # Aliases de tickers mexicanos comunes (usuario escribe versión corta)
+    MX_ALIASES = {
+        "GFNORTE":  "GFNORTEO",
+        "FEMSA":    "FEMSAUBD",
+        "BIMBO":    "BIMBOA",
+        "LIVERPOOL": "LIVEPOLC1",
+        "LIVERPOL": "LIVEPOLC1",
+        "SORIANA":  "SORIANAB",
+        "CHEDRAUI": "CHDRAUIB",
+        "ELEKTRA":  "ELEKTRA*",
+        "ALSEA":    "ALSEA*",
+        "GRUMA":    "GRUMAB",
+        "GENOMMA":  "LABB",
+        "ALFA":     "ALFAA",
+        "ALPEK":    "ALPEKA",
+        "AXTEL":    "AXTELA",
+        "RASSINI":  "RASSINIB",
+        "SANMEX":   "SANMEXB",
+        "BANORTE":  "GFNORTEO",
+    }
+    if ticker in MX_ALIASES:
+        ticker = MX_ALIASES[ticker]
+
+    # Tickers especiales que NO llevan .MX (índices, ETFs USD directos)
+    TICKERS_SIN_MX = {
+        # Índices
+        "^MXX", "^GSPC", "^NDX", "^DJI", "^VIX", "^IXIC", "^RUT",
+        "^FTSE", "^GDAXI", "^FCHI", "^N225", "^HSI", "^STOXX50E",
+        # ETFs que cotizan en USD directamente
+        "SPY", "QQQ", "IVV", "VOO", "VTI", "VT", "EFA", "EEM",
+        "ACWI", "VWO", "IEFA", "IEMG", "VEA", "GLD", "SLV",
+        "TLT", "IEF", "LQD", "HYG", "AGG", "BND",
+        "XLK", "XLF", "XLV", "XLE", "XLI", "XLP", "XLU", "XLRE",
+        "ARK", "ARKK", "ARKW", "ARKG", "ARKF",
+    }
+    if ticker in TICKERS_SIN_MX or ticker.startswith("^"):
+        # Índice o ETF USD puro — buscar directo sin .MX
+        data = get_accion_yf(ticker)
+    elif ticker.endswith(".MX"):
+        # Usuario ya puso sufijo .MX completo
+        data = get_accion_yf(ticker)
+    else:
+        # Multi-intento: primero variantes .MX (acciones mexicanas),
+        # luego USD directo (NYSE/NASDAQ)
+        # Estrategia en 2 pasos para no desperdiciar llamadas:
+        # Paso 1: probar ticker + .MX (cubre 95% de acciones mexicanas: WALMEX, AMXL, CEMEX...)
+        # Paso 2: si falla, probar USD directo (AMZN, NVDA, MSFT en NYSE/NASDAQ)
+        # Paso 3: solo si .MX falló Y USD falló, probar variantes de serie mexicana
+        data = get_accion_yf(ticker + ".MX")
+        if data is not None:
+            ticker = ticker + ".MX"
+        else:
+            # Intentar USD directo (NYSE/NASDAQ)
+            data = get_accion_yf(ticker)
+            if data is None:
+                # Último recurso: variantes de serie BMV
+                for sufijo in ["O", "B", "A", "UBD", "C1", "*", "L"]:
+                    cand = ticker + sufijo + ".MX"
+                    d = get_accion_yf(cand)
+                    if d is not None:
+                        data = d
+                        ticker = cand
+                        break
+                else:
+                    ticker = ticker + ".MX"  # para el mensaje de error
+        if data:
+            print(f"[VALIDATE] encontrado como {ticker}")
+
     if data is None:
         base = ticker.replace(".MX", "")
         return jsonify({"ok": False, "error": f"'{base}' no encontrado en SIC/BMV/BIVA. Verifica el ticker."}), 404
