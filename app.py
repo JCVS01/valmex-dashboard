@@ -533,15 +533,27 @@ def get_accion_yf(ticker: str) -> dict | None:
 def get_accion(ticker: str) -> dict | None:
     """
     Fuente unificada para acciones/ETFs.
-    - Tickers sin '.MX' o con '.MX': intenta DataBursatil primero (mercado mexicano).
-    - Si DataBursatil no tiene datos, cae a Yahoo Finance (mercado global).
+    Prioridad: DataBursatil (BMV local + SIC en MXN) → Yahoo Finance SIC (.MX) → Yahoo Finance global.
+    El usuario solo necesita datos del SIC (en MXN), nunca NYSE directo en USD.
     """
     db_key = ticker.upper().replace(".MX", "")
+
+    # 1. DataBursatil — cubre BMV local y SIC (ambos en MXN)
     if DB_TOKEN:
         data = get_accion_db(db_key)
         if data:
             return data
-    return get_accion_yf(ticker)
+
+    # 2. Yahoo Finance SIC — ticker con .MX (MXN)
+    mx_ticker = db_key + ".MX"
+    data = get_accion_yf(mx_ticker)
+    if data:
+        return data
+
+    # 3. Último recurso: Yahoo Finance global (solo si los anteriores fallaron)
+    if ticker.upper() != mx_ticker:
+        return get_accion_yf(ticker)
+    return None
 
 
 def safe_float(val, default=0.0):
@@ -873,22 +885,27 @@ def api_accion_validate():
     if not ticker:
         return jsonify({"ok": False, "error": "Ticker vacío"}), 400
 
-    # 1. Intentar DataBursatil (mercado mexicano)
-    db_key = ticker.replace(".MX", "")
+    db_key    = ticker.replace(".MX", "")
+    mx_ticker = db_key + ".MX"
+
+    # 1. DataBursatil — BMV local y SIC (precios en MXN)
     if DB_TOKEN:
         data = get_accion_db(db_key)
         if data:
             return jsonify({"ok": True, "data": data, "fuente": "databursatil"})
 
-    # 2. Fallback: Yahoo Finance (mercado global y MX)
-    data = get_accion_yf(ticker)
-    if data is None and not ticker.endswith(".MX"):
-        data = get_accion_yf(ticker + ".MX")
+    # 2. Yahoo Finance SIC — siempre con .MX para obtener precio en MXN
+    data = get_accion_yf(mx_ticker)
+    if data:
+        return jsonify({"ok": True, "data": data, "fuente": "yahoo_sic"})
+
+    # 3. Último recurso: Yahoo Finance global (solo si los anteriores fallaron)
+    if ticker != mx_ticker:
+        data = get_accion_yf(ticker)
         if data:
-            ticker = ticker + ".MX"
-    if data is None:
-        return jsonify({"ok": False, "error": f"'{ticker}' no encontrado. Verifica el ticker."}), 404
-    return jsonify({"ok": True, "data": data, "fuente": "yahoo"})
+            return jsonify({"ok": True, "data": data, "fuente": "yahoo_global"})
+
+    return jsonify({"ok": False, "error": f"'{db_key}' no encontrado en BMV/SIC. Verifica el ticker."}), 404
 
 
 @app.route("/api/propuesta", methods=["POST"])
