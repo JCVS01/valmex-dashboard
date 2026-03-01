@@ -814,9 +814,8 @@ function renderSlotsActual() {
              placeholder="Ticker (ej. AMZN)"
              value="${slot.ticker}"
              style="font-size:11px;font-weight:800;color:var(--navy);text-transform:uppercase;text-align:left;padding:4px 6px;"
-             oninput="onSlotActualTicker(${i}, this.value)"
-             onblur="validarSlotActual(${i})"
-             onkeydown="if(event.key==='Enter') validarSlotActual(${i})"
+             onblur="commitSlotActual(${i}, this.value)"
+             onkeydown="if(event.key==='Enter'){this.blur();}"
              autocomplete="off">
       ${slot.loading ? '<span style="font-size:9px;color:var(--blue);font-style:italic;">buscando...</span>' : ''}
       ${slot.nombre && !slot.loading ? '<span style="font-size:9px;color:var(--gray);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+slot.nombre+'">'+slot.nombre+'</span>' : ''}
@@ -857,9 +856,8 @@ function renderSlotsProp() {
              placeholder="Ticker (ej. AMZN)"
              value="${slot.ticker}"
              style="font-size:11px;font-weight:800;color:var(--navy);text-transform:uppercase;text-align:left;padding:4px 6px;"
-             oninput="onSlotPropTicker(${i}, this.value)"
-             onblur="validarSlotProp(${i})"
-             onkeydown="if(event.key==='Enter') validarSlotProp(${i})"
+             onblur="commitSlotProp(${i}, this.value)"
+             onkeydown="if(event.key==='Enter'){this.blur();}"
              autocomplete="off">
       ${slot.loading ? '<span style="font-size:9px;color:var(--blue);font-style:italic;">buscando...</span>' : ''}
       ${slot.nombre && !slot.loading ? '<span style="font-size:9px;color:var(--gray);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+slot.nombre+'">'+slot.nombre+'</span>' : ''}
@@ -884,6 +882,47 @@ function renderSlotsProp() {
 }
 
 // ── Handlers ticker ──
+// commit: se llama al blur/Enter — actualiza estado y valida sin re-render en cada tecla
+function commitSlotActual(i, val) {
+  const ticker = val.toUpperCase().trim();
+  if (!ticker) {
+    // Campo vacío — limpiar slot sin validar
+    _slotsActual[i].ticker = '';
+    _slotsActual[i].nombre = '';
+    _slotsActual[i].tipo   = '';
+    _slotsActual[i].error  = '';
+    renderSlotsActual();
+    return;
+  }
+  // Si el ticker no cambió y ya está validado, no hacer nada
+  const tickerMX = ticker.endsWith('.MX') ? ticker : ticker + '.MX';
+  if (_slotsActual[i].nombre && _slotsActual[i].ticker === tickerMX) return;
+  _slotsActual[i].ticker = ticker;
+  _slotsActual[i].nombre = '';
+  _slotsActual[i].tipo   = '';
+  _slotsActual[i].error  = '';
+  validarSlotActual(i);
+}
+
+function commitSlotProp(i, val) {
+  const ticker = val.toUpperCase().trim();
+  if (!ticker) {
+    _slotsProp[i].ticker = '';
+    _slotsProp[i].nombre = '';
+    _slotsProp[i].tipo   = '';
+    _slotsProp[i].error  = '';
+    renderSlotsProp();
+    return;
+  }
+  const tickerMX = ticker.endsWith('.MX') ? ticker : ticker + '.MX';
+  if (_slotsProp[i].nombre && _slotsProp[i].ticker === tickerMX) return;
+  _slotsProp[i].ticker = ticker;
+  _slotsProp[i].nombre = '';
+  _slotsProp[i].tipo   = '';
+  _slotsProp[i].error  = '';
+  validarSlotProp(i);
+}
+
 function onSlotActualTicker(i, val) {
   _slotsActual[i].ticker  = val.toUpperCase().trim();
   _slotsActual[i].nombre  = '';
