@@ -144,6 +144,148 @@ def load_ms_universe():
     return _ms_cache
 
 # ─────────────────────────────────────────────────────────────────────────────
+# ACCIONES MX — DataBursatil (fuente principal para BMV/BIVA)
+# ─────────────────────────────────────────────────────────────────────────────
+DB_TOKEN = os.environ.get("DATABURSATIL_TOKEN", "")
+DB_BASE  = "https://api.databursatil.com/v2"
+
+_db_cache: dict    = {}
+_db_cache_ts: dict = {}
+DB_CACHE_TTL = 3600
+
+
+def get_accion_db(emisora_serie: str) -> dict | None:
+    """
+    Obtiene datos de una emisora mexicana desde DataBursatil.
+    emisora_serie: p.ej. "AMXL", "GMEXICOB", "VOLARA"
+    """
+    if not DB_TOKEN:
+        return None
+
+    now = time.time()
+    key = emisora_serie.upper().strip()
+    if key in _db_cache and (now - _db_cache_ts.get(key, 0)) < DB_CACHE_TTL:
+        return _db_cache[key]
+
+    hoy = date.today()
+    ini = (hoy - timedelta(days=3 * 365 + 10)).isoformat()
+    fin = hoy.isoformat()
+
+    # 1. Historial de precios
+    try:
+        r = requests.get(
+            f"{DB_BASE}/historicos",
+            params={"token": DB_TOKEN, "emisora_serie": key, "inicio": ini, "final": fin},
+            timeout=20,
+        )
+        r.raise_for_status()
+        hist_raw = r.json()
+    except Exception as e:
+        print(f"[DB HIST ERROR] {key}: {e}")
+        return None
+
+    # El response puede venir como dict directo {fecha: {precio, importe}}
+    # o envuelto en {"data": {...}}
+    if isinstance(hist_raw, dict) and "data" in hist_raw and isinstance(hist_raw["data"], dict):
+        hist_raw = hist_raw["data"]
+
+    if not hist_raw or not isinstance(hist_raw, dict):
+        print(f"[DB] {key}: sin datos históricos")
+        return None
+
+    precios: list[tuple[date, float]] = []
+    for fecha_str, vals in hist_raw.items():
+        try:
+            d = date.fromisoformat(fecha_str[:10])
+            p = float(vals.get("precio", 0) if isinstance(vals, dict) else vals)
+            if p > 0:
+                precios.append((d, p))
+        except Exception:
+            pass
+
+    if not precios:
+        return None
+
+    precios.sort(key=lambda x: x[0])
+
+    def precio_en(target: date):
+        candidates = [p for d, p in precios if d <= target]
+        return candidates[-1] if candidates else None
+
+    p_hoy = precio_en(hoy)
+    if p_hoy is None:
+        return None
+
+    precio_cierre = round(precios[-1][1], 2)
+    p_mtd = precio_en(date(hoy.year, hoy.month, 1))
+    p_3m  = precio_en(hoy - timedelta(days=91))
+    p_ytd = precio_en(date(hoy.year, 1, 1))
+    p_1y  = precio_en(hoy - timedelta(days=365))
+    p_2y  = precio_en(hoy - timedelta(days=730))
+    p_3y  = precio_en(hoy - timedelta(days=1095))
+
+    def rend_efectivo(p_ini):
+        if p_ini and p_ini > 0:
+            return round((p_hoy / p_ini - 1) * 100, 2)
+        return None
+
+    def rend_anual(p_ini, years):
+        if p_ini and p_ini > 0:
+            return round(((p_hoy / p_ini) ** (1 / years) - 1) * 100, 2)
+        return None
+
+    # 2. Info de la emisora (nombre, tipo)
+    nombre = key
+    tipo   = "Acción"
+    try:
+        r2 = requests.get(
+            f"{DB_BASE}/emisoras",
+            params={"token": DB_TOKEN, "letra": key, "mercado": "local,global"},
+            timeout=10,
+        )
+        r2.raise_for_status()
+        em_raw = r2.json()
+        items = em_raw if isinstance(em_raw, list) else em_raw.get("data", [])
+        for item in items:
+            e = (item.get("Emisora") or "").strip().upper()
+            s = (item.get("Serie")   or "").strip().upper()
+            if (e + s) == key or e == key:
+                nombre = item.get("razon_social") or key
+                tv = (item.get("tipo_valor_descripcion") or "").upper()
+                if "FIBRA" in tv or "FIDEICOMISO" in tv:
+                    tipo = "FIBRA"
+                elif "ETF" in tv or "TRAC" in tv or "FONDO" in tv:
+                    tipo = "ETF"
+                break
+    except Exception as e:
+        print(f"[DB EMISORA ERROR] {key}: {e}")
+
+    result = {
+        "ticker":        key,
+        "nombre":        nombre,
+        "tipo":          tipo,
+        "sector":        "",
+        "pais":          "México",
+        "moneda":        "MXN",
+        "precio_cierre": precio_cierre,
+        "moneda_precio": "MXN",
+        "r1m":           rend_efectivo(p_mtd),
+        "r3m":           rend_efectivo(p_3m),
+        "ytd":           rend_efectivo(p_ytd),
+        "r1y":           rend_anual(p_1y, 1),
+        "r2y":           rend_anual(p_2y, 2),
+        "r3y":           rend_anual(p_3y, 3),
+        "sectores":      {},
+        "geo":           {"México": 100.0},
+    }
+
+    _db_cache[key]    = result
+    _db_cache_ts[key] = now
+    print(f"[DB OK] {key}: {nombre} | p={precio_cierre:.2f} | tipo={tipo}")
+    return result
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # ACCIONES & ETFs — Yahoo Finance con cookie/crumb
 # ─────────────────────────────────────────────────────────────────────────────
 _accion_cache: dict = {}
@@ -388,6 +530,20 @@ def get_accion_yf(ticker: str) -> dict | None:
         return None
 
 
+def get_accion(ticker: str) -> dict | None:
+    """
+    Fuente unificada para acciones/ETFs.
+    - Tickers sin '.MX' o con '.MX': intenta DataBursatil primero (mercado mexicano).
+    - Si DataBursatil no tiene datos, cae a Yahoo Finance (mercado global).
+    """
+    db_key = ticker.upper().replace(".MX", "")
+    if DB_TOKEN:
+        data = get_accion_db(db_key)
+        if data:
+            return data
+    return get_accion_yf(ticker)
+
+
 def safe_float(val, default=0.0):
     try:    return float(val)
     except: return default
@@ -567,7 +723,7 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
         if pct <= 0 or not ticker:
             continue
         w   = pct / 100.0
-        yfd = get_accion_yf(ticker)
+        yfd = get_accion(ticker)
         if not yfd:
             continue
 
@@ -716,16 +872,23 @@ def api_accion_validate():
     ticker = (body.get("ticker") or "").strip().upper()
     if not ticker:
         return jsonify({"ok": False, "error": "Ticker vacío"}), 400
-    # Try as-is first (covers US tickers like AMZN, AAPL, etc.)
+
+    # 1. Intentar DataBursatil (mercado mexicano)
+    db_key = ticker.replace(".MX", "")
+    if DB_TOKEN:
+        data = get_accion_db(db_key)
+        if data:
+            return jsonify({"ok": True, "data": data, "fuente": "databursatil"})
+
+    # 2. Fallback: Yahoo Finance (mercado global y MX)
     data = get_accion_yf(ticker)
-    # If not found and doesn't already have .MX, try Mexican exchange
     if data is None and not ticker.endswith(".MX"):
         data = get_accion_yf(ticker + ".MX")
         if data:
             ticker = ticker + ".MX"
     if data is None:
         return jsonify({"ok": False, "error": f"'{ticker}' no encontrado. Verifica el ticker."}), 404
-    return jsonify({"ok": True, "data": data})
+    return jsonify({"ok": True, "data": data, "fuente": "yahoo"})
 
 
 @app.route("/api/propuesta", methods=["POST"])
@@ -918,6 +1081,57 @@ def diag_repo():
     except Exception as e:
         resultado["rendimientos"] = {"error": str(e)}
     return jsonify(resultado)
+
+
+@app.route("/api/emisoras/buscar")
+def api_buscar_emisora():
+    if "usuario" not in session:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    q = (request.args.get("q") or "").strip().upper()
+    if not q or len(q) < 2:
+        return jsonify({"ok": True, "results": []})
+    if not DB_TOKEN:
+        return jsonify({"ok": False, "error": "DataBursatil no configurado"}), 503
+    try:
+        r = requests.get(
+            f"{DB_BASE}/emisoras",
+            params={"token": DB_TOKEN, "letra": q, "mercado": "local,global"},
+            timeout=10,
+        )
+        r.raise_for_status()
+        em_raw = r.json()
+        items = em_raw if isinstance(em_raw, list) else em_raw.get("data", [])
+        results = []
+        for item in items[:30]:
+            e = (item.get("Emisora") or "").strip()
+            s = (item.get("Serie")   or "").strip()
+            if not e:
+                continue
+            results.append({
+                "ticker": e + s,
+                "nombre": item.get("razon_social") or (e + s),
+                "bolsa":  item.get("bolsa", ""),
+                "tipo":   item.get("tipo_valor_descripcion", ""),
+            })
+        return jsonify({"ok": True, "results": results})
+    except Exception as e:
+        print(f"[DB BUSCAR ERROR] {e}")
+        return jsonify({"ok": False, "results": []}), 500
+
+
+@app.route("/api/creditos/db")
+def api_creditos_db():
+    """Consulta créditos disponibles en DataBursatil."""
+    if "usuario" not in session:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    if not DB_TOKEN:
+        return jsonify({"ok": False, "error": "Token no configurado"}), 503
+    try:
+        r = requests.get(f"{DB_BASE}/creditos", params={"token": DB_TOKEN}, timeout=10)
+        r.raise_for_status()
+        return jsonify({"ok": True, "data": r.json()})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 
 if __name__ == "__main__":
