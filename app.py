@@ -400,90 +400,21 @@ def limpiar_nombre_instrumento(nombre: str, ticker: str, quote_type: str) -> str
     return nombre_limpio or nombre
 
 
-# ── Cookie cache para Yahoo Finance ──
-_yf_cookie_cache: dict = {}   # {"cookie": str, "crumb": str, "ts": float}
-_YF_COOKIE_TTL = 3600  # renovar cookie cada hora
-
-def _ensure_yf_cookie(session: requests.Session) -> None:
-    """
-    Obtiene y cachea cookie + crumb de Yahoo Finance.
-    Sin esto, Yahoo bloquea requests desde servidores cloud.
-    """
-    global _yf_cookie_cache
-    now = time.time()
-
-    # Si tenemos cookie válida, aplicarla a la sesión y listo
-    if _yf_cookie_cache.get("cookie") and (now - _yf_cookie_cache.get("ts", 0)) < _YF_COOKIE_TTL:
-        session.cookies.set("B", _yf_cookie_cache["cookie"], domain=".yahoo.com")
-        return
-
-    try:
-        # Paso 1: obtener cookie visitando Yahoo Finance
-        r1 = requests.get(
-            "https://fc.yahoo.com",
-            headers={
-                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            },
-            timeout=10,
-            allow_redirects=True
-        )
-        cookie_val = r1.cookies.get("B") or ""
-
-        # Paso 2: obtener crumb con la cookie
-        r2 = requests.get(
-            "https://query2.finance.yahoo.com/v1/test/getcrumb",
-            headers={
-                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-                "Cookie": f"B={cookie_val}",
-            },
-            timeout=10
-        )
-        crumb = r2.text.strip()
-
-        if cookie_val and crumb and crumb != "":
-            _yf_cookie_cache = {"cookie": cookie_val, "crumb": crumb, "ts": now}
-            session.cookies.set("B", cookie_val, domain=".yahoo.com")
-            # Configurar crumb en yfinance globalmente
-            try:
-                yf.utils.get_crumb = lambda *a, **kw: crumb
-            except Exception:
-                pass
-            print(f"[YF COOKIE] OK — crumb={crumb[:8]}...")
-        else:
-            print(f"[YF COOKIE] No se pudo obtener cookie/crumb")
-
-    except Exception as e:
-        print(f"[YF COOKIE ERROR] {e}")
 
 def get_accion_yf(ticker: str) -> dict | None:
     """
-    Obtiene datos via Yahoo Finance usando cookie + crumb para evitar rate limit.
-    yfinance >= 0.2.40 maneja esto automáticamente con YF_CRUMB / YF_COOKIE env vars,
-    o podemos obtener el crumb manualmente al inicio.
+    Obtiene datos de una acción/ETF via Yahoo Finance (yfinance).
+    yfinance maneja cookies y crumb automáticamente.
+    Tickers .MX = SIC/BMV/BIVA en pesos mexicanos.
     """
     now = time.time()
     if ticker in _accion_cache and (now - _accion_cache_ts.get(ticker, 0)) < ACCION_CACHE_TTL:
         return _accion_cache[ticker]
 
     try:
-        # yfinance con session personalizada y headers anti-bloqueo
-        session = requests.Session()
-        session.headers.update({
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Accept": "*/*",
-            "Accept-Language": "en-US,en;q=0.9",
-            "Accept-Encoding": "gzip, deflate, br",
-            "Origin": "https://finance.yahoo.com",
-            "Referer": "https://finance.yahoo.com/",
-        })
+        t = yf.Ticker(ticker)
 
-        # Obtener cookie válida de Yahoo si no tenemos una en caché
-        _ensure_yf_cookie(session)
-
-        t = yf.Ticker(ticker, session=session)
-
-        # Obtener historial primero — más ligero que info
+        # Historial de precios — 3 años diarios ajustados
         hist = t.history(period="3y", auto_adjust=True)
         if hist.empty:
             hist = t.history(period="1y", auto_adjust=True)
@@ -491,7 +422,7 @@ def get_accion_yf(ticker: str) -> dict | None:
             print(f"[YF] {ticker}: historial vacío")
             return None
 
-        # Info después del historial (ya tenemos cookie válida)
+        # Info del instrumento
         try:
             info = t.info or {}
         except Exception:
@@ -508,6 +439,8 @@ def get_accion_yf(ticker: str) -> dict | None:
         p_hoy = precio_en(today)
         if p_hoy is None:
             return None
+
+        precio_cierre = round(float(prices.iloc[-1]), 2)
 
         p_mtd = precio_en(date(today.year, today.month, 1))
         p_3m  = precio_en(today - timedelta(days=91))
@@ -534,8 +467,7 @@ def get_accion_yf(ticker: str) -> dict | None:
         pais       = GEO_TRANSLATE_YF.get(pais_en, info.get("country") or "Estados Unidos")
         nombre_raw = info.get("shortName") or info.get("longName") or ticker
         nombre     = limpiar_nombre_instrumento(nombre_raw, ticker, quote_type)
-
-        moneda = "MXN" if ticker.endswith(".MX") else "USD"
+        moneda     = "MXN" if ticker.endswith(".MX") else "USD"
 
         # Traducciones de países para ETFs
         GEO_PAISES_ETF = {
@@ -557,7 +489,6 @@ def get_accion_yf(ticker: str) -> dict | None:
         if quote_type == "ETF":
             try:
                 holdings = t.funds_data
-                # Sectores del ETF
                 if holdings and hasattr(holdings, "sector_weightings"):
                     sw = holdings.sector_weightings or {}
                     if hasattr(sw, 'items'):
@@ -570,7 +501,6 @@ def get_accion_yf(ticker: str) -> dict | None:
                             except Exception:
                                 pass
 
-                # Geografía del ETF
                 if holdings and hasattr(holdings, "country_weightings"):
                     cw = holdings.country_weightings
                     if hasattr(cw, 'items'):
@@ -593,98 +523,44 @@ def get_accion_yf(ticker: str) -> dict | None:
                                     geo_etf[lbl] = round(val, 2)
                             except Exception:
                                 pass
-
             except Exception as ex:
                 print(f"[YF ETF holdings] {ticker}: {ex}")
 
-        # Fallback hardcoded para ETFs conocidos (cuando funds_data falla por rate limit)
+        # Fallback geo para ETFs conocidos
+        ticker_base = ticker.replace(".MX", "").upper()
         if quote_type == "ETF" and not geo_etf:
-            ticker_base = ticker.replace(".MX","").upper()
             ETF_GEO_FALLBACK = {
-                "ACWI":  {"Norteamérica":62.0,"Europa":18.0,"Asia Desarrollada":10.0,"Asia Emergente":6.0,"Latinoamérica":2.0,"Otros":2.0},
-                "VT":    {"Norteamérica":63.0,"Europa":16.0,"Asia Desarrollada":9.0,"Asia Emergente":8.0,"Latinoamérica":2.0,"Otros":2.0},
-                "URTH":  {"Norteamérica":68.0,"Europa":18.0,"Asia Desarrollada":11.0,"Otros":3.0},
-                "VXUS":  {"Europa":27.0,"Asia Emergente":28.0,"Asia Desarrollada":20.0,"Norteamérica":14.0,"Otros":11.0},
-                "EEM":   {"Asia Emergente":45.0,"Norteamérica":15.0,"Latinoamérica":10.0,"Europa Emergente":10.0,"Otros":20.0},
-                "VWO":   {"Asia Emergente":48.0,"Latinoamérica":10.0,"Europa Emergente":9.0,"Oriente Medio":5.0,"Otros":28.0},
-                "SPY":   {"Estados Unidos":100.0},
-                "IVV":   {"Estados Unidos":100.0},
-                "QQQ":   {"Estados Unidos":100.0},
-                "VTI":   {"Estados Unidos":100.0},
-                "VOO":   {"Estados Unidos":100.0},
-                "DIA":   {"Estados Unidos":100.0},
-                "IWM":   {"Estados Unidos":100.0},
-                "XLK":   {"Estados Unidos":100.0},
-                "XLF":   {"Estados Unidos":100.0},
-                "XLE":   {"Estados Unidos":100.0},
-                "XLV":   {"Estados Unidos":100.0},
-                "XLI":   {"Estados Unidos":100.0},
-                "XLY":   {"Estados Unidos":100.0},
-                "XLP":   {"Estados Unidos":100.0},
-                "XLU":   {"Estados Unidos":100.0},
-                "XLB":   {"Estados Unidos":100.0},
-                "XLRE":  {"Estados Unidos":100.0},
-                "EZU":   {"Eurozona":100.0},
-                "EWJ":   {"Japón":100.0},
-                "EWZ":   {"Brasil":100.0},
-                "EWW":   {"México":100.0},
-                "MCHI":  {"China":100.0},
-                "FXI":   {"China":100.0},
-                "EWU":   {"Reino Unido":100.0},
-                "EWG":   {"Alemania":100.0},
-                "ILF":   {"Brasil":60.0,"México":18.0,"Chile":8.0,"Colombia":6.0,"Otros":8.0},
-                "EWC":   {"Canadá":100.0},
-                "GLD":   {"Global (Oro)":100.0},
-                "SLV":   {"Global (Plata)":100.0},
-                "TLT":   {"Estados Unidos":100.0},
-                "AGG":   {"Estados Unidos":100.0},
-                "LQD":   {"Estados Unidos":100.0},
+                "ACWI":  {"Estados Unidos": 64.0, "Japón": 5.5, "Reino Unido": 3.8, "Francia": 3.2, "Canadá": 2.9, "Suiza": 2.5, "Alemania": 2.2, "Australia": 2.0, "Taiwán": 1.8, "India": 1.7, "Corea del Sur": 1.5, "Otros": 6.9},
+                "SPY":   {"Estados Unidos": 100.0},
+                "IVV":   {"Estados Unidos": 100.0},
+                "VOO":   {"Estados Unidos": 100.0},
+                "QQQ":   {"Estados Unidos": 100.0},
+                "VTI":   {"Estados Unidos": 100.0},
+                "EEM":   {"China": 26.0, "India": 16.0, "Taiwán": 15.0, "Corea del Sur": 12.0, "Brasil": 5.5, "Arabia Saudita": 4.0, "Sudáfrica": 3.5, "Otros": 18.0},
+                "VWO":   {"China": 29.0, "India": 16.0, "Taiwán": 14.0, "Corea del Sur": 11.0, "Brasil": 5.0, "Arabia Saudita": 4.0, "Sudáfrica": 3.0, "Otros": 18.0},
+                "EFA":   {"Japón": 22.0, "Reino Unido": 14.5, "Francia": 11.5, "Suiza": 10.0, "Alemania": 9.0, "Australia": 7.5, "Países Bajos": 4.5, "Suecia": 3.5, "Hong Kong": 3.5, "Otros": 14.0},
+                "IEFA":  {"Japón": 22.0, "Reino Unido": 14.0, "Francia": 11.0, "Suiza": 10.0, "Alemania": 9.0, "Australia": 7.5, "Otros": 26.5},
             }
-            ETF_SEC_FALLBACK = {
-                "ACWI":  {"Tecnología":23.0,"Financiero":16.0,"Salud":11.0,"Industriales":10.0,"Consumo Discrecional":10.0,"Comunicaciones":8.0,"Consumo Básico":7.0,"Energía":5.0,"Materiales":4.0,"Bienes Raíces":3.0,"Utilidades":3.0},
-                "VT":    {"Tecnología":22.0,"Financiero":16.0,"Salud":11.0,"Industriales":10.0,"Consumo Discrecional":10.0,"Comunicaciones":8.0,"Consumo Básico":7.0,"Energía":5.0,"Materiales":4.0,"Bienes Raíces":4.0,"Utilidades":3.0},
-                "SPY":   {"Tecnología":29.0,"Financiero":13.0,"Salud":12.0,"Consumo Discrecional":11.0,"Comunicaciones":9.0,"Industriales":8.0,"Consumo Básico":6.0,"Energía":4.0,"Bienes Raíces":3.0,"Materiales":3.0,"Utilidades":2.0},
-                "IVV":   {"Tecnología":29.0,"Financiero":13.0,"Salud":12.0,"Consumo Discrecional":11.0,"Comunicaciones":9.0,"Industriales":8.0,"Consumo Básico":6.0,"Energía":4.0,"Bienes Raíces":3.0,"Materiales":3.0,"Utilidades":2.0},
-                "QQQ":   {"Tecnología":51.0,"Comunicaciones":17.0,"Consumo Discrecional":14.0,"Salud":7.0,"Industriales":5.0,"Financiero":3.0,"Otros":3.0},
-                "EEM":   {"Financiero":23.0,"Tecnología":21.0,"Consumo Discrecional":13.0,"Materiales":8.0,"Energía":7.0,"Industriales":7.0,"Salud":5.0,"Consumo Básico":5.0,"Comunicaciones":5.0,"Utilidades":3.0,"Bienes Raíces":3.0},
-                "VWO":   {"Financiero":22.0,"Tecnología":20.0,"Consumo Discrecional":14.0,"Materiales":8.0,"Energía":7.0,"Industriales":7.0,"Salud":5.0,"Consumo Básico":5.0,"Comunicaciones":5.0,"Utilidades":4.0,"Bienes Raíces":3.0},
-                "XLK":   {"Tecnología":100.0},
-                "XLF":   {"Financiero":100.0},
-                "XLE":   {"Energía":100.0},
-                "XLV":   {"Salud":100.0},
-                "XLI":   {"Industriales":100.0},
-                "XLY":   {"Consumo Discrecional":100.0},
-                "XLP":   {"Consumo Básico":100.0},
-                "XLU":   {"Utilidades":100.0},
-                "XLB":   {"Materiales":100.0},
-                "XLRE":  {"Bienes Raíces":100.0},
-                "EWW":   {"Financiero":22.0,"Materiales":17.0,"Consumo Básico":14.0,"Industriales":12.0,"Comunicaciones":11.0,"Bienes Raíces":7.0,"Energía":6.0,"Salud":5.0,"Consumo Discrecional":4.0,"Utilidades":2.0},
-                "EWZ":   {"Financiero":28.0,"Energía":20.0,"Materiales":15.0,"Consumo Básico":12.0,"Industriales":8.0,"Salud":7.0,"Consumo Discrecional":5.0,"Utilidades":3.0,"Comunicaciones":2.0},
-            }
-            if ticker_base in ETF_GEO_FALLBACK:
-                geo_etf = ETF_GEO_FALLBACK[ticker_base]
-                print(f"[YF] {ticker}: geo fallback ({ticker_base})")
-            if ticker_base in ETF_SEC_FALLBACK and not sectores_etf:
-                sectores_etf = ETF_SEC_FALLBACK[ticker_base]
-                print(f"[YF] {ticker}: sectores fallback ({ticker_base})")
+            geo_etf = ETF_GEO_FALLBACK.get(ticker_base, ETF_GEO_FALLBACK.get(ticker, {}))
 
-        # Enriquecer geo y sectores con fallback para ETFs conocidos
-        if quote_type == "ETF":
-            if not sectores_etf and ticker in _ETF_SEC_FALLBACK:
-                sectores_etf = dict(_ETF_SEC_FALLBACK[ticker])
-                print(f"[YF ETF SEC FALLBACK] {ticker}")
-            if not geo_etf and ticker in _ETF_GEO_FALLBACK:
-                geo_etf = dict(_ETF_GEO_FALLBACK[ticker])
-                print(f"[YF ETF GEO FALLBACK] {ticker}")
-            # Si sigue vacío, poner país del ETF
-            if not geo_etf and pais:
-                geo_etf = {pais: 100.0}
-        else:
-            # Acción individual — geo = país, sector = sector de la empresa
-            if not geo_etf and pais:
-                geo_etf = {pais: 100.0}
-            if not sectores_etf and sector:
-                sectores_etf = {sector: 100.0}
+        # Fallback sectores para ETFs conocidos
+        if quote_type == "ETF" and not sectores_etf:
+            ETF_SEC_FALLBACK = {
+                "ACWI": {"Tecnología": 24.0, "Financiero": 15.0, "Salud": 11.0, "Industriales": 10.0, "Consumo Discrecional": 10.0, "Comunicaciones": 8.0, "Consumo Básico": 6.5, "Energía": 4.5, "Materiales": 4.0, "Bienes Raíces": 2.5, "Utilidades": 2.5},
+                "SPY":  {"Tecnología": 32.5, "Financiero": 13.0, "Salud": 12.5, "Consumo Discrecional": 10.5, "Comunicaciones": 8.5, "Industriales": 8.0, "Consumo Básico": 5.5, "Energía": 3.5, "Materiales": 2.5, "Bienes Raíces": 2.0, "Utilidades": 2.5},
+                "IVV":  {"Tecnología": 32.5, "Financiero": 13.0, "Salud": 12.5, "Consumo Discrecional": 10.5, "Comunicaciones": 8.5, "Industriales": 8.0, "Consumo Básico": 5.5, "Energía": 3.5, "Materiales": 2.5, "Bienes Raíces": 2.0, "Utilidades": 2.5},
+                "VOO":  {"Tecnología": 32.5, "Financiero": 13.0, "Salud": 12.5, "Consumo Discrecional": 10.5, "Comunicaciones": 8.5, "Industriales": 8.0, "Consumo Básico": 5.5, "Energía": 3.5, "Materiales": 2.5, "Bienes Raíces": 2.0, "Utilidades": 2.5},
+                "QQQ":  {"Tecnología": 51.0, "Comunicaciones": 16.0, "Consumo Discrecional": 14.0, "Salud": 6.0, "Industriales": 5.0, "Financiero": 4.0, "Consumo Básico": 2.5},
+                "VTI":  {"Tecnología": 30.0, "Financiero": 13.5, "Salud": 12.5, "Industriales": 13.0, "Consumo Discrecional": 9.5, "Comunicaciones": 8.5, "Consumo Básico": 5.0, "Energía": 3.5, "Materiales": 2.5, "Bienes Raíces": 3.5, "Utilidades": 2.5},
+                "EEM":  {"Tecnología": 22.0, "Financiero": 21.0, "Consumo Discrecional": 14.0, "Comunicaciones": 10.0, "Materiales": 8.0, "Industriales": 7.0, "Energía": 5.0, "Salud": 4.0, "Consumo Básico": 4.0},
+                "VWO":  {"Financiero": 22.0, "Tecnología": 21.0, "Consumo Discrecional": 13.0, "Comunicaciones": 10.0, "Materiales": 8.0, "Industriales": 7.0, "Energía": 5.0, "Salud": 4.0, "Consumo Básico": 4.0},
+                "EFA":  {"Financiero": 20.0, "Industriales": 16.0, "Salud": 13.0, "Consumo Básico": 12.0, "Tecnología": 10.0, "Consumo Discrecional": 9.0, "Materiales": 7.5, "Energía": 5.0, "Comunicaciones": 4.5, "Utilidades": 3.0},
+            }
+            sectores_etf = ETF_SEC_FALLBACK.get(ticker_base, ETF_SEC_FALLBACK.get(ticker, {}))
+
+        # Geo para acciones individuales
+        if not geo_etf and pais:
+            geo_etf = {pais: 100.0}
 
         result = {
             "ticker":        ticker,
@@ -713,6 +589,7 @@ def get_accion_yf(ticker: str) -> dict | None:
     except Exception as e:
         print(f"[YF ERROR] {ticker}: {e}")
         return None
+
 
 def safe_float(val, default=0.0):
     try:    return float(val)
