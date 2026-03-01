@@ -149,6 +149,16 @@ def load_ms_universe():
 DB_TOKEN = os.environ.get("DATABURSATIL_TOKEN", "")
 DB_BASE  = "https://api.databursatil.com/v2"
 
+# Casos especiales DataBursatil → Yahoo Finance
+# (la Ñ se omite en DataBursatil pero se escribe como & en Yahoo Finance)
+_YF_OVERRIDES = {"PENOLES": "PE&OLES"}
+
+def _db_to_yf(ticker_db: str) -> str:
+    """Convierte ticker de DataBursatil al formato Yahoo Finance (.MX)."""
+    t = ticker_db.rstrip("*")                  # WALMEX* → WALMEX
+    t = _YF_OVERRIDES.get(t, t)               # PENOLES → PE&OLES
+    return t + ".MX"
+
 _db_cache: dict    = {}
 _db_cache_ts: dict = {}
 DB_CACHE_TTL = 3600
@@ -192,7 +202,7 @@ def cargar_catalogo_emisoras(forzar: bool = False) -> dict:
                     if not isinstance(campos, dict):
                         continue
                     ticker_db = emisora.strip().upper() + serie.strip().upper()
-                    yf_ticker = ticker_db + ".MX"
+                    yf_ticker = _db_to_yf(ticker_db)
                     tv = (campos.get("tipo_valor_descripcion") or "").upper()
                     if "FIBRA" in tv or "FIDEICOMISO" in tv:
                         tipo = "FIBRA"
