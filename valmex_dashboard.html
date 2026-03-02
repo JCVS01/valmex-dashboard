@@ -2135,17 +2135,28 @@ function aplicarDatosCmp(dataA, dataB, valA, valB) {
     cmpCharts.comp.update();
   }
 
-  // ── Backtesting: 2 lines ──
+  // ── Backtesting: 2 lines (alineadas por fecha) ──
   if (cmpCharts.linea) {
     const btA = dataA ? btToSerie(dataA.bt_portafolio) : null;
     const btB = dataB ? btToSerie(dataB.bt_portafolio) : null;
-    const labelsA = btA ? btA.labels : [];
-    const labelsB = btB ? btB.labels : [];
-    const allLabels = labelsA.length >= labelsB.length ? labelsA : labelsB;
+    // Construir mapa fecha→valor para cada serie
+    const mapA = {}, mapB = {};
+    if (btA) btA.labels.forEach((l, i) => { mapA[l] = btA.values[i]; });
+    if (btB) btB.labels.forEach((l, i) => { mapB[l] = btB.values[i]; });
+    // Unir todas las fechas ordenadas cronológicamente
+    const allSet = new Set([...(btA ? btA.labels : []), ...(btB ? btB.labels : [])]);
+    const allLabels = [...allSet].sort((a, b) => {
+      const meses = {'Ene':0,'Feb':1,'Mar':2,'Abr':3,'May':4,'Jun':5,'Jul':6,'Ago':7,'Sep':8,'Oct':9,'Nov':10,'Dic':11};
+      const [mA, yA] = a.split(' '), [mB, yB] = b.split(' ');
+      return (parseInt(yA) - parseInt(yB)) || (meses[mA] - meses[mB]);
+    });
     cmpCharts.linea.data.labels = allLabels;
-    cmpCharts.linea.data.datasets[0].data = btA ? btA.values : [];
-    cmpCharts.linea.data.datasets[1].data = btB ? btB.values : [];
-    const allVals = [...(btA ? btA.values : []), ...(btB ? btB.values : [])].filter(v => v != null);
+    cmpCharts.linea.data.datasets[0].data = allLabels.map(l => mapA[l] != null ? mapA[l] : null);
+    cmpCharts.linea.data.datasets[1].data = allLabels.map(l => mapB[l] != null ? mapB[l] : null);
+    // spanGaps para que la línea no se rompa visualmente con nulls internos
+    cmpCharts.linea.data.datasets[0].spanGaps = false;
+    cmpCharts.linea.data.datasets[1].spanGaps = false;
+    const allVals = [...Object.values(mapA), ...Object.values(mapB)].filter(v => v != null);
     if (allVals.length) cmpCharts.linea.options.scales.y.min = Math.floor(Math.min(...allVals) * 0.95);
     cmpCharts.linea.update('none');
   }
