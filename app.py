@@ -1,5 +1,6 @@
 import os
 import time
+import random
 import requests
 import pandas as pd
 import yfinance as yf
@@ -751,6 +752,44 @@ COUNTRY_TO_REGION = {
 }
 
 
+# ── Free proxy pool para Yahoo Finance (evita bloqueo en cloud) ──
+_proxy_list: list = []
+_proxy_list_ts: float = 0
+_PROXY_TTL = 1800  # refrescar cada 30 min
+
+def _fetch_free_proxies() -> list:
+    """Obtiene proxies HTTPS gratis de ProxyScrape (sin registro)."""
+    global _proxy_list, _proxy_list_ts
+    now = time.time()
+    if _proxy_list and (now - _proxy_list_ts) < _PROXY_TTL:
+        return _proxy_list
+    try:
+        r = requests.get(
+            "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=10000&country=all&ssl=all&anonymity=all",
+            timeout=10
+        )
+        raw = [line.strip() for line in r.text.strip().split("\n") if line.strip()]
+        if raw:
+            _proxy_list = raw[:20]  # top 20 más frescos
+            _proxy_list_ts = now
+            print(f"[PROXY] {len(_proxy_list)} proxies cargados")
+    except Exception as e:
+        print(f"[PROXY] Error al obtener lista: {e}")
+    return _proxy_list
+
+def _yf_with_proxy(ticker: str, proxy_str: str):
+    """Intenta yfinance con un proxy específico."""
+    proxy_url = f"http://{proxy_str}"
+    try:
+        t = yf.Ticker(ticker)
+        hist = t.history(start="2000-01-01", auto_adjust=False, proxy=proxy_url)
+        if hist is not None and not hist.empty:
+            print(f"[YF PROXY] {ticker} OK via {proxy_str}")
+            return t, hist
+    except Exception as e:
+        print(f"[YF PROXY] {ticker} falló via {proxy_str}: {e}")
+    return None, None
+
 # ── Cookie cache para Yahoo Finance ──
 _yf_cookie_cache: dict = {}   # {"cookie": str, "crumb": str, "ts": float}
 _YF_COOKIE_TTL = 3600  # renovar cookie cada hora
@@ -854,8 +893,18 @@ def get_accion_yf(ticker: str) -> dict | None:
         except Exception as e:
             print(f"[YF] {ticker} intento-download falló: {e}")
 
+    # ── Intento 4: yfinance con proxies gratuitos (fallback cloud) ──
     if hist is None or hist.empty:
-        print(f"[YF] {ticker}: sin datos después de 3 intentos")
+        proxies = _fetch_free_proxies()
+        random.shuffle(proxies)
+        for px in proxies[:5]:  # probar hasta 5 proxies
+            t_px, h_px = _yf_with_proxy(ticker, px)
+            if h_px is not None and not h_px.empty:
+                t, hist = t_px, h_px
+                break
+
+    if hist is None or hist.empty:
+        print(f"[YF] {ticker}: sin datos después de 4 intentos (incl. proxies)")
         return None
 
     # ── Obtener info (nombre, sector, país) ──
