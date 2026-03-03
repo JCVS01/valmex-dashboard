@@ -1949,6 +1949,31 @@ def diag_yf():
     except Exception as e:
         resultado["curl_cffi_http"] = {"error": str(e)}
 
+    # Test 3: quoteSummary via curl_cffi
+    try:
+        from curl_cffi import requests as cffi_req
+        s3 = cffi_req.Session(impersonate="chrome")
+        s3.get("https://fc.yahoo.com", timeout=10, allow_redirects=True)
+        global_tk = tk.replace(".MX", "")
+        for try_tk in [tk, global_tk]:
+            r7 = s3.get(f"https://query2.finance.yahoo.com/v10/finance/quoteSummary/{try_tk}",
+                         params={"modules": "assetProfile,quoteType"}, timeout=15)
+            if r7.status_code == 200:
+                qs = r7.json().get("quoteSummary", {}).get("result", [{}])[0]
+                profile = qs.get("assetProfile", {})
+                qt = qs.get("quoteType", {})
+                resultado[f"quoteSummary_{try_tk}"] = {
+                    "status": r7.status_code,
+                    "country": profile.get("country", ""),
+                    "sector": profile.get("sector", ""),
+                    "quoteType": qt.get("quoteType", ""),
+                }
+                break
+            else:
+                resultado[f"quoteSummary_{try_tk}"] = {"status": r7.status_code, "body": r7.text[:200]}
+    except Exception as e:
+        resultado["quoteSummary"] = {"error": str(e)}
+
     return jsonify(resultado)
 
 
