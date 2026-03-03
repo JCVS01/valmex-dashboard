@@ -2202,6 +2202,27 @@ def diag_repo():
     return jsonify(resultado)
 
 
+@app.route("/api/diag-nav")
+def diag_nav():
+    """Diagnóstico Morningstar NAV API — prueba fetch de precios históricos."""
+    if "usuario" not in session:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    try:
+        isin = "MXP800501001"  # VXGUBCP A
+        navs = get_ms_nav(isin, start="2026-02-01", end=date.today().isoformat())
+        bt = get_fondo_backtesting("VXGUBCP", "A")
+        return jsonify({
+            "ok": True,
+            "isin": isin,
+            "nav_count": len(navs),
+            "nav_sample": navs[:3] if navs else [],
+            "bt_count": len(bt),
+            "bt_sample": bt[-3:] if bt else [],
+        })
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)})
+
+
 @app.route("/api/diag-yf")
 def diag_yf():
     """Diagnóstico Yahoo Finance — prueba raw HTTP a Yahoo."""
