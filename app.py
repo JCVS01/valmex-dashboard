@@ -698,6 +698,113 @@ _accion_cache_ts: dict = {}
 ACCION_CACHE_TTL = 3600
 _yf_rate_limit_until: float = 0  # timestamp hasta el cual no hacer requests a Yahoo
 
+# ── Mapeo estático ticker → (country, sector) — para cuando quoteSummary no funciona ──
+_TICKER_INFO_STATIC = {
+    # ── BMV (mexicanas) ──
+    "GFNORTEO": {"country": "Mexico", "sector": "Financial Services"},
+    "BIMBOA": {"country": "Mexico", "sector": "Consumer Defensive"},
+    "CEMEXCPO": {"country": "Mexico", "sector": "Basic Materials"},
+    "FEMSAUBD": {"country": "Mexico", "sector": "Consumer Defensive"},
+    "WALMEX": {"country": "Mexico", "sector": "Consumer Defensive"},
+    "AMXB": {"country": "Mexico", "sector": "Communication Services"},
+    "AMXL": {"country": "Mexico", "sector": "Communication Services"},
+    "TABORB": {"country": "Mexico", "sector": "Financial Services"},
+    "GCARSOA1": {"country": "Mexico", "sector": "Consumer Cyclical"},
+    "GMEXICOB": {"country": "Mexico", "sector": "Industrials"},
+    "GRUMAB": {"country": "Mexico", "sector": "Consumer Defensive"},
+    "ASURB": {"country": "Mexico", "sector": "Industrials"},
+    "GAPB": {"country": "Mexico", "sector": "Industrials"},
+    "OMAB": {"country": "Mexico", "sector": "Industrials"},
+    "LIVEPOLC-1": {"country": "Mexico", "sector": "Consumer Cyclical"},
+    "KIMBERA": {"country": "Mexico", "sector": "Consumer Defensive"},
+    "PE&OLES": {"country": "Mexico", "sector": "Basic Materials"},
+    "ALSEA": {"country": "Mexico", "sector": "Consumer Cyclical"},
+    "GENTERA": {"country": "Mexico", "sector": "Financial Services"},
+    "MEGACPO": {"country": "Mexico", "sector": "Communication Services"},
+    "TABORUSD": {"country": "Mexico", "sector": "Financial Services"},
+    "AC": {"country": "Mexico", "sector": "Consumer Defensive"},
+    "ORBIA": {"country": "Mexico", "sector": "Basic Materials"},
+    "ELEKTRA": {"country": "Mexico", "sector": "Consumer Cyclical"},
+    "GFINBURO": {"country": "Mexico", "sector": "Financial Services"},
+    "BBAJIOO": {"country": "Mexico", "sector": "Financial Services"},
+    "RA": {"country": "Mexico", "sector": "Financial Services"},
+    "CABORB": {"country": "Mexico", "sector": "Industrials"},
+    "Q": {"country": "Mexico", "sector": "Financial Services"},
+    "VOLAR": {"country": "Mexico", "sector": "Industrials"},
+    "PINFRA": {"country": "Mexico", "sector": "Industrials"},
+    # ── SIC (extranjeras en BMV) ──
+    "AMZN": {"country": "United States", "sector": "Consumer Cyclical"},
+    "AAPL": {"country": "United States", "sector": "Technology"},
+    "MSFT": {"country": "United States", "sector": "Technology"},
+    "GOOGL": {"country": "United States", "sector": "Communication Services"},
+    "GOOG": {"country": "United States", "sector": "Communication Services"},
+    "META": {"country": "United States", "sector": "Communication Services"},
+    "TSLA": {"country": "United States", "sector": "Consumer Cyclical"},
+    "NVDA": {"country": "United States", "sector": "Technology"},
+    "NFLX": {"country": "United States", "sector": "Communication Services"},
+    "JPM": {"country": "United States", "sector": "Financial Services"},
+    "V": {"country": "United States", "sector": "Financial Services"},
+    "MA": {"country": "United States", "sector": "Financial Services"},
+    "BAC": {"country": "United States", "sector": "Financial Services"},
+    "WMT": {"country": "United States", "sector": "Consumer Defensive"},
+    "JNJ": {"country": "United States", "sector": "Healthcare"},
+    "PG": {"country": "United States", "sector": "Consumer Defensive"},
+    "KO": {"country": "United States", "sector": "Consumer Defensive"},
+    "PEP": {"country": "United States", "sector": "Consumer Defensive"},
+    "DIS": {"country": "United States", "sector": "Communication Services"},
+    "COST": {"country": "United States", "sector": "Consumer Defensive"},
+    "HD": {"country": "United States", "sector": "Consumer Cyclical"},
+    "CRM": {"country": "United States", "sector": "Technology"},
+    "AMD": {"country": "United States", "sector": "Technology"},
+    "INTC": {"country": "United States", "sector": "Technology"},
+    "AVGO": {"country": "United States", "sector": "Technology"},
+    "ADBE": {"country": "United States", "sector": "Technology"},
+    "CSCO": {"country": "United States", "sector": "Technology"},
+    "ORCL": {"country": "United States", "sector": "Technology"},
+    "IBM": {"country": "United States", "sector": "Technology"},
+    "XOM": {"country": "United States", "sector": "Energy"},
+    "CVX": {"country": "United States", "sector": "Energy"},
+    "LLY": {"country": "United States", "sector": "Healthcare"},
+    "UNH": {"country": "United States", "sector": "Healthcare"},
+    "ABBV": {"country": "United States", "sector": "Healthcare"},
+    "MRK": {"country": "United States", "sector": "Healthcare"},
+    "PFE": {"country": "United States", "sector": "Healthcare"},
+    "ABT": {"country": "United States", "sector": "Healthcare"},
+    "TMO": {"country": "United States", "sector": "Healthcare"},
+    "CRCL": {"country": "United States", "sector": "Technology"},
+    "BRK-B": {"country": "United States", "sector": "Financial Services"},
+    "GS": {"country": "United States", "sector": "Financial Services"},
+    "MS": {"country": "United States", "sector": "Financial Services"},
+    "C": {"country": "United States", "sector": "Financial Services"},
+    "AXP": {"country": "United States", "sector": "Financial Services"},
+    "BLK": {"country": "United States", "sector": "Financial Services"},
+    "T": {"country": "United States", "sector": "Communication Services"},
+    "VZ": {"country": "United States", "sector": "Communication Services"},
+    "BA": {"country": "United States", "sector": "Industrials"},
+    "CAT": {"country": "United States", "sector": "Industrials"},
+    "UPS": {"country": "United States", "sector": "Industrials"},
+    "GE": {"country": "United States", "sector": "Industrials"},
+    "NKE": {"country": "United States", "sector": "Consumer Cyclical"},
+    "SBUX": {"country": "United States", "sector": "Consumer Cyclical"},
+    "MCD": {"country": "United States", "sector": "Consumer Cyclical"},
+    "F": {"country": "United States", "sector": "Consumer Cyclical"},
+    "GM": {"country": "United States", "sector": "Consumer Cyclical"},
+    "PLTR": {"country": "United States", "sector": "Technology"},
+    "UBER": {"country": "United States", "sector": "Technology"},
+    "SQ": {"country": "United States", "sector": "Technology"},
+    "PYPL": {"country": "United States", "sector": "Financial Services"},
+    "COIN": {"country": "United States", "sector": "Financial Services"},
+    "SNOW": {"country": "United States", "sector": "Technology"},
+    "SHOP": {"country": "Canada", "sector": "Technology"},
+    "BABA": {"country": "China", "sector": "Consumer Cyclical"},
+    "TSM": {"country": "Taiwan", "sector": "Technology"},
+    "NVO": {"country": "Denmark", "sector": "Healthcare"},
+    "ASML": {"country": "Netherlands", "sector": "Technology"},
+    "SAP": {"country": "Germany", "sector": "Technology"},
+    "TM": {"country": "Japan", "sector": "Consumer Cyclical"},
+    "SONY": {"country": "Japan", "sector": "Technology"},
+}
+
 GEO_TRANSLATE_YF = {
     "united states": "Estados Unidos", "mexico": "México", "canada": "Canadá",
     "united kingdom": "Reino Unido", "germany": "Alemania", "france": "Francia",
@@ -1021,22 +1128,30 @@ def get_accion_yf(ticker: str) -> dict | None:
 
     # ── Enriquecer info si falta country/sector (direct API no los trae) ──
     if not info.get("country"):
-        # Intentar 1: quoteSummary del ticker mismo (ej: GFNORTEO.MX → country=Mexico)
-        # Intentar 2: si es .MX, probar ticker global (ej: AMZN.MX → AMZN → country=US)
-        tickers_to_try = [ticker]
-        if ticker.endswith(".MX"):
-            tickers_to_try.append(ticker.replace(".MX", ""))
-        for try_tk in tickers_to_try:
-            try:
-                gi = _yf_quote_summary(try_tk)
-                if gi and gi.get("country"):
-                    for key in ("country", "sector", "quoteType", "shortName", "longName"):
-                        if gi.get(key):
-                            info.setdefault(key, gi[key])
-                    print(f"[YF INFO] {ticker} from {try_tk}: country={gi.get('country')}, sector={gi.get('sector')}")
-                    break
-            except Exception as e:
-                print(f"[YF INFO] {ticker} via {try_tk} failed: {e}")
+        clean = ticker.replace(".MX", "").upper()
+        # 1. Mapeo estático (confiable, no depende de API)
+        static = _TICKER_INFO_STATIC.get(clean)
+        if static:
+            for key in ("country", "sector", "quoteType"):
+                if static.get(key):
+                    info.setdefault(key, static[key])
+            print(f"[YF INFO] {ticker} from static: country={static.get('country')}, sector={static.get('sector')}")
+        else:
+            # 2. quoteSummary API (puede fallar sin crumb en cloud)
+            tickers_to_try = [ticker]
+            if ticker.endswith(".MX"):
+                tickers_to_try.append(clean)
+            for try_tk in tickers_to_try:
+                try:
+                    gi = _yf_quote_summary(try_tk)
+                    if gi and gi.get("country"):
+                        for key in ("country", "sector", "quoteType", "shortName", "longName"):
+                            if gi.get(key):
+                                info.setdefault(key, gi[key])
+                        print(f"[YF INFO] {ticker} from {try_tk}: country={gi.get('country')}, sector={gi.get('sector')}")
+                        break
+                except Exception as e:
+                    print(f"[YF INFO] {ticker} via {try_tk} failed: {e}")
 
     try:
         today  = datetime.now().date()
