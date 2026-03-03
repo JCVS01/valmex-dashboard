@@ -907,32 +907,16 @@ def get_accion_yf(ticker: str) -> dict | None:
     info = {}
     t    = None
 
-    ua = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-
-    # ── Intento 1: sesión autenticada con cookie/crumb ──
+    # ── Intento 1: yfinance nativo (con curl_cffi usa TLS fingerprint de Chrome) ──
     try:
-        sess = requests.Session()
-        sess.headers.update({
-            "User-Agent": ua, "Accept": "*/*",
-            "Accept-Language": "en-US,en;q=0.9",
-            "Origin": "https://finance.yahoo.com",
-            "Referer": "https://finance.yahoo.com/",
-        })
-        _ensure_yf_cookie(sess)
-        t    = yf.Ticker(ticker, session=sess)
+        t    = yf.Ticker(ticker)
         hist = t.history(start="2000-01-01", auto_adjust=False)
+        if hist is not None and not hist.empty:
+            print(f"[YF] {ticker} OK vía yfinance nativo ({len(hist)} filas)")
     except Exception as e:
-        print(f"[YF] {ticker} intento-sesión falló: {e}")
+        print(f"[YF] {ticker} intento-nativo falló: {e}")
 
-    # ── Intento 2: yfinance nativo sin sesión ──
-    if hist is None or hist.empty:
-        try:
-            t    = yf.Ticker(ticker)
-            hist = t.history(start="2000-01-01", auto_adjust=False)
-        except Exception as e:
-            print(f"[YF] {ticker} intento-nativo falló: {e}")
-
-    # ── Intento 3: yf.download (más estable en servidores cloud) ──
+    # ── Intento 2: yf.download (más estable en algunos entornos cloud) ──
     if hist is None or hist.empty:
         try:
             hist = yf.download(ticker, start="2000-01-01", auto_adjust=False,
@@ -940,21 +924,22 @@ def get_accion_yf(ticker: str) -> dict | None:
             # yf.download retorna MultiIndex si solo es un ticker en algunas versiones
             if isinstance(hist.columns, pd.MultiIndex):
                 hist.columns = hist.columns.get_level_values(0)
+            if hist is not None and not hist.empty:
+                print(f"[YF] {ticker} OK vía yf.download ({len(hist)} filas)")
         except Exception as e:
             print(f"[YF] {ticker} intento-download falló: {e}")
 
-    # ── Intento 4: Yahoo Chart API directo (sin yfinance, evita detección cloud) ──
+    # ── Intento 3: Yahoo Chart API directo (requests puro, último recurso) ──
     if hist is None or hist.empty:
         direct_info, direct_df = _yf_direct_chart(ticker)
         if direct_df is not None and not direct_df.empty:
             hist = direct_df
-            # Guardar info del API directo para usar después
             if direct_info:
                 info = direct_info
-                t = None  # No tenemos objeto Ticker
+                t = None
 
     if hist is None or hist.empty:
-        print(f"[YF] {ticker}: sin datos después de 4 intentos")
+        print(f"[YF] {ticker}: sin datos después de 3 intentos")
         return None
 
     # ── Obtener info (nombre, sector, país) ──

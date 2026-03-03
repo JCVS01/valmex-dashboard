@@ -3,3 +3,4 @@ gunicorn==21.2.0
 requests==2.31.0
 yfinance==0.2.54
 pandas==2.2.3
+curl_cffi>=0.5.10
