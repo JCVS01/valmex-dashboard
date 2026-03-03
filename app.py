@@ -1830,6 +1830,48 @@ def diag_repo():
     return jsonify(resultado)
 
 
+@app.route("/api/diag-yf")
+def diag_yf():
+    """Diagnóstico Yahoo Finance — prueba los 3 intentos."""
+    if "usuario" not in session:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    tk = request.args.get("t", "AAPL.MX")
+    resultado = {"ticker": tk}
+
+    # Check curl_cffi
+    try:
+        import curl_cffi
+        resultado["curl_cffi"] = {"ok": True, "version": getattr(curl_cffi, "__version__", "?")}
+    except ImportError as e:
+        resultado["curl_cffi"] = {"ok": False, "error": str(e)}
+
+    # Intento 1: yfinance nativo
+    try:
+        t = yf.Ticker(tk)
+        h = t.history(start="2024-01-01", auto_adjust=False)
+        resultado["yf_nativo"] = {"ok": h is not None and not h.empty, "filas": len(h) if h is not None else 0}
+    except Exception as e:
+        resultado["yf_nativo"] = {"ok": False, "error": str(e)}
+
+    # Intento 2: yf.download
+    try:
+        h2 = yf.download(tk, start="2024-01-01", auto_adjust=False, progress=False, threads=False)
+        if isinstance(h2.columns, pd.MultiIndex):
+            h2.columns = h2.columns.get_level_values(0)
+        resultado["yf_download"] = {"ok": h2 is not None and not h2.empty, "filas": len(h2) if h2 is not None else 0}
+    except Exception as e:
+        resultado["yf_download"] = {"ok": False, "error": str(e)}
+
+    # Intento 3: direct API
+    try:
+        di, dd = _yf_direct_chart(tk)
+        resultado["yf_direct"] = {"ok": dd is not None and not dd.empty, "filas": len(dd) if dd is not None else 0}
+    except Exception as e:
+        resultado["yf_direct"] = {"ok": False, "error": str(e)}
+
+    return jsonify(resultado)
+
+
 @app.route("/api/emisoras/buscar")
 def api_buscar_emisora():
     """Búsqueda en el catálogo en memoria — sin costo de créditos."""
