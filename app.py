@@ -19,11 +19,11 @@ USERS = {
 }
 
 PERFILES = {
-    "0": {"VXGUBCP": 5.00,  "VXDEUDA": 90.00, "VXUDIMP": 5.00},
-    "1": {"VXGUBCP": 25.00, "VXDEUDA": 12.00, "VXUDIMP": 7.00,  "VXGUBLP": 52.00, "VXTBILL": 4.00},
-    "2": {"VXGUBCP": 26.93, "VXDEUDA": 18.00, "VXUDIMP": 5.83,  "VXGUBLP": 26.89, "VXTBILL": 2.35, "VALMX28": 17.00, "VALMX20": 3.00},
-    "3": {"VXGUBCP": 20.40, "VXDEUDA": 5.76,  "VXUDIMP": 6.65,  "VXGUBLP": 25.11, "VXTBILL": 2.08, "VALMX28": 34.00, "VALMX20": 6.00},
-    "4": {"VXGUBCP": 20.70, "VXDEUDA": 4.08,  "VXUDIMP": 5.37,  "VXGUBLP": 7.61,  "VXTBILL": 2.24, "VALMX28": 51.00, "VALMX20": 9.00},
+    "0": {"VXGUBCP": 14.00, "VXDEUDA": 81.00, "VXUDIMP": 5.00},
+    "1": {"VXGUBCP": 33.00, "VXDEUDA": 10.00, "VXUDIMP": 8.75,  "VXGUBLP": 42.25, "VXTBILL": 6.00},
+    "2": {"VXGUBCP": 32.34, "VXDEUDA": 15.00, "VXUDIMP": 7.29,  "VXGUBLP": 21.85, "VXTBILL": 3.52, "VALMX28": 17.00, "VALMX20": 3.00},
+    "3": {"VXGUBCP": 23.36, "VXDEUDA": 4.80,  "VXUDIMP": 8.31,  "VXGUBLP": 20.40, "VXTBILL": 3.12, "VALMX28": 34.00, "VALMX20": 6.00},
+    "4": {"VXGUBCP": 20.35, "VXDEUDA": 3.40,  "VXUDIMP": 6.71,  "VXGUBLP": 6.18,  "VXTBILL": 3.36, "VALMX28": 51.00, "VALMX20": 9.00},
 }
 
 FONDOS_DEUDA_MXN = {"VXREPO1", "VXGUBCP", "VXUDIMP", "VXDEUDA", "VXGUBLP", "VLMXETF"}
@@ -695,7 +695,7 @@ def get_accion_db(emisora_serie: str) -> dict | None:
 # ─────────────────────────────────────────────────────────────────────────────
 _accion_cache: dict = {}
 _accion_cache_ts: dict = {}
-ACCION_CACHE_TTL = 3600
+ACCION_CACHE_TTL = 172800  # 48 horas
 _yf_rate_limit_until: float = 0  # timestamp hasta el cual no hacer requests a Yahoo
 
 # ── Mapeo estático ticker → (country, sector) — para cuando quoteSummary no funciona ──
