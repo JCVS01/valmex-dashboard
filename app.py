@@ -959,6 +959,26 @@ def get_accion_yf(ticker: str) -> dict | None:
         except Exception:
             pass
 
+    # ── SIC: si info viene vacía/incompleta, obtener country/sector del ticker global ──
+    if ticker.endswith(".MX") and not info.get("country"):
+        global_tk = ticker.replace(".MX", "")
+        try:
+            g = yf.Ticker(global_tk)
+            gi = g.info or {}
+            if gi.get("country"):
+                info.setdefault("country", gi["country"])
+            if gi.get("sector"):
+                info.setdefault("sector", gi["sector"])
+            if gi.get("quoteType"):
+                info.setdefault("quoteType", gi["quoteType"])
+            if gi.get("shortName"):
+                info.setdefault("shortName", gi["shortName"])
+            if gi.get("longName"):
+                info.setdefault("longName", gi["longName"])
+            print(f"[YF SIC] {ticker} info from {global_tk}: country={gi.get('country')}, sector={gi.get('sector')}")
+        except Exception as e:
+            print(f"[YF SIC] {ticker} fallback info failed: {e}")
+
     try:
         today  = datetime.now().date()
         prices = hist["Close"].dropna()
@@ -1016,7 +1036,7 @@ def get_accion_yf(ticker: str) -> dict | None:
         sector_en  = (info.get("sector") or "").strip().lower()
         sector     = SEC_TRANSLATE_YF.get(sector_en, info.get("sector") or "")
         pais_en    = (info.get("country") or "").strip().lower()
-        pais       = COUNTRY_TO_REGION.get(pais_en, info.get("country") or "Latin America")
+        pais       = COUNTRY_TO_REGION.get(pais_en, info.get("country") or "")
         moneda     = "MXN" if ticker.endswith(".MX") else "USD"
         nombre     = info.get("shortName") or info.get("longName") or ticker
 
