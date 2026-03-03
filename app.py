@@ -849,6 +849,50 @@ def _yf_direct_chart(ticker: str):
         _yf_direct_session["ts"] = 0
         return None, None
 
+
+def _yf_quote_summary(ticker: str) -> dict:
+    """Obtiene info básica (country, sector, quoteType, nombre) vía Yahoo quoteSummary.
+    Usa la sesión curl_cffi existente para evitar rate limits."""
+    try:
+        # Asegurar que tenemos sesión curl_cffi
+        if not _yf_direct_session["s"]:
+            _yf_direct_chart("AAPL")  # inicializa sesión
+        s = _yf_direct_session["s"]
+        if not s:
+            return {}
+
+        url = f"https://query2.finance.yahoo.com/v10/finance/quoteSummary/{ticker}"
+        params = {"modules": "assetProfile,quoteType"}
+        crumb = _yf_direct_session.get("crumb", "")
+        if crumb:
+            params["crumb"] = crumb
+        r = s.get(url, params=params, timeout=15)
+        if r.status_code != 200:
+            # Retry with query1
+            r = s.get(f"https://query1.finance.yahoo.com/v10/finance/quoteSummary/{ticker}",
+                       params=params, timeout=15)
+        if r.status_code != 200:
+            return {}
+
+        data = r.json()
+        result = data.get("quoteSummary", {}).get("result", [])
+        if not result:
+            return {}
+
+        profile = result[0].get("assetProfile", {})
+        qt = result[0].get("quoteType", {})
+        return {
+            "country": profile.get("country", ""),
+            "sector": profile.get("sector", ""),
+            "quoteType": qt.get("quoteType", ""),
+            "shortName": qt.get("shortName", ""),
+            "longName": qt.get("longName", ""),
+        }
+    except Exception as e:
+        print(f"[YF SUMMARY] {ticker} error: {e}")
+        return {}
+
+
 # ── Cookie cache para Yahoo Finance ──
 _yf_cookie_cache: dict = {}   # {"cookie": str, "crumb": str, "ts": float}
 _YF_COOKIE_TTL = 3600  # renovar cookie cada hora
@@ -975,25 +1019,24 @@ def get_accion_yf(ticker: str) -> dict | None:
         except Exception:
             pass
 
-    # ── SIC: si info viene vacía/incompleta, obtener country/sector del ticker global ──
-    if ticker.endswith(".MX") and not info.get("country"):
-        global_tk = ticker.replace(".MX", "")
-        try:
-            g = yf.Ticker(global_tk)
-            gi = g.info or {}
-            if gi.get("country"):
-                info.setdefault("country", gi["country"])
-            if gi.get("sector"):
-                info.setdefault("sector", gi["sector"])
-            if gi.get("quoteType"):
-                info.setdefault("quoteType", gi["quoteType"])
-            if gi.get("shortName"):
-                info.setdefault("shortName", gi["shortName"])
-            if gi.get("longName"):
-                info.setdefault("longName", gi["longName"])
-            print(f"[YF SIC] {ticker} info from {global_tk}: country={gi.get('country')}, sector={gi.get('sector')}")
-        except Exception as e:
-            print(f"[YF SIC] {ticker} fallback info failed: {e}")
+    # ── Enriquecer info si falta country/sector (direct API no los trae) ──
+    if not info.get("country"):
+        # Intentar 1: quoteSummary del ticker mismo (ej: GFNORTEO.MX → country=Mexico)
+        # Intentar 2: si es .MX, probar ticker global (ej: AMZN.MX → AMZN → country=US)
+        tickers_to_try = [ticker]
+        if ticker.endswith(".MX"):
+            tickers_to_try.append(ticker.replace(".MX", ""))
+        for try_tk in tickers_to_try:
+            try:
+                gi = _yf_quote_summary(try_tk)
+                if gi and gi.get("country"):
+                    for key in ("country", "sector", "quoteType", "shortName", "longName"):
+                        if gi.get(key):
+                            info.setdefault(key, gi[key])
+                    print(f"[YF INFO] {ticker} from {try_tk}: country={gi.get('country')}, sector={gi.get('sector')}")
+                    break
+            except Exception as e:
+                print(f"[YF INFO] {ticker} via {try_tk} failed: {e}")
 
     try:
         today  = datetime.now().date()
