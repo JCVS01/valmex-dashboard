@@ -61,7 +61,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
 .mobile-logout:hover{color:#fff;background:rgba(255,255,255,.10);}
 
 /* ── CONTAINER / PAGES ── */
-.container{max-width:1400px;margin:0 auto;padding:24px 20px;background:#fff;} #page-presentacion{margin:-24px -20px;height:calc(100vh - 72px);flex-direction:column;} 
+.container{max-width:1400px;margin:0 auto;padding:24px 20px;background:#fff;} #page-presentacion{margin:-24px -20px;height:calc(100vh - 72px);height:calc(100dvh - 72px);flex-direction:column;}
 
 #prop-dash{
   width:100%;
@@ -83,7 +83,11 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
 .pres-hdr{background:#fff;border-bottom:1px solid var(--silver);padding:4px 14px;display:flex;align-items:center;justify-content:flex-end;flex-shrink:0;}
 .pres-hdr h2{font-size:12px;font-weight:600;color:var(--navy);}
 .pres-body{width:100%;flex:1;overflow:hidden;line-height:0;position:relative;}
-.pres-body iframe{width:100%;height:100%;border:none;display:block;}
+.pres-body iframe,.pres-body object{width:100%;height:100%;border:none;display:block;}
+.pres-mobile-fallback{display:none;flex-direction:column;align-items:center;justify-content:center;gap:20px;height:100%;text-align:center;padding:40px 24px;}
+.pres-mobile-fallback .pres-open-btn{display:inline-flex;align-items:center;gap:8px;padding:14px 28px;background:var(--navy);color:#fff;border:none;border-radius:10px;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;transition:background .18s;}
+.pres-mobile-fallback .pres-open-btn:hover{background:var(--sky);}
+.pres-mobile-fallback p{font-size:13px;color:var(--gray);max-width:280px;}
 
 /* ── PROPUESTA ── */
 .prop-titlebar{display:flex;align-items:center;justify-content:space-between;margin-bottom:0;padding:4px 0;}
@@ -238,7 +242,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
   .brand{padding:0 16px;height:62px;}
   .logo-img{height:34px;}
   .container{padding:12px;}
-  .pres-body{height:65vh;}
+  .pres-body{height:65vh;height:65dvh;}
   .prop-grid{grid-template-columns:1fr;}
   .card-comp,.card-rend,.card-deuda,.card-back,.card-pie{grid-column:span 1;}
   .prop-title{font-size:15px;}
@@ -299,7 +303,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
   .dd-block .rh-val{font-size:11px;}
   .ph{padding:4px 10px;font-size:9.5px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .prop-note{display:none;}
-  .pres-body{height:78vh;}
+  .pres-body{height:78vh;height:78dvh;}
   /* Responsive: fondos-list 2 columnas, max-height */
   .fondos-list{grid-template-columns:1fr 1fr!important;max-height:50vh;}
   /* Responsive: acciones-grid 2 columnas */
@@ -464,8 +468,8 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         </a>
       </div>
-      <div class="pres-body">
-        <iframe src="/PC.pdf#toolbar=0&navpanes=0&scrollbar=0&view=FitH" title="Presentación Comercial"></iframe>
+      <div class="pres-body" id="pres-body">
+        <!-- PDF se carga dinámicamente según dispositivo -->
       </div>
     </div>
   </div>
@@ -1748,7 +1752,7 @@ function showPage(name, el) {
     document.querySelectorAll('.nav-tab').forEach(b => { if(b.textContent.trim().toLowerCase()===label) b.classList.add('active'); });
   }
   const logo = document.getElementById('logo-tab');
-  if (name === 'presentacion') logo.classList.add('logo-active');
+  if (name === 'presentacion') { logo.classList.add('logo-active'); loadPresentacion(); }
   else logo.classList.remove('logo-active');
   if (name === 'propuesta') {
     setTimeout(() => { Object.values(charts).forEach(c => c && c.resize && c.resize()); }, 80);
@@ -1780,6 +1784,36 @@ function showPage(name, el) {
 }
 function openMobileNav()  { document.getElementById('mobile-nav').style.display='block'; document.body.style.overflow='hidden'; }
 function closeMobileNav() { document.getElementById('mobile-nav').style.display='none';  document.body.style.overflow=''; }
+
+// ── PRESENTACIÓN: carga inteligente según dispositivo ──
+var _presLoaded = false;
+var _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+function loadPresentacion() {
+  if (_presLoaded) return;
+  _presLoaded = true;
+  var container = document.getElementById('pres-body');
+  if (!container) return;
+
+  if (_isIOS) {
+    // iOS: iframe con PDF se congela — mostrar botón para abrir en visor nativo
+    container.innerHTML =
+      '<div class="pres-mobile-fallback" style="display:flex;">' +
+        '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#00205C" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>' +
+        '<p>Presentación Comercial VALMEX</p>' +
+        '<a href="/PC.pdf" target="_blank" class="pres-open-btn">' +
+          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' +
+          'Abrir presentación' +
+        '</a>' +
+      '</div>';
+  } else {
+    // Desktop/Android: iframe normal
+    container.innerHTML = '<iframe src="/PC.pdf#toolbar=0&navpanes=0&scrollbar=0&view=FitH" title="Presentación Comercial"></iframe>';
+  }
+}
+
+// Cargar presentación al inicio (es la página por defecto)
+loadPresentacion();
 
 // ── USUARIO ──
 document.getElementById('logo-tab').classList.add('logo-active');
@@ -2504,9 +2538,11 @@ function vxToast(msg, type='warn') {
 
 function descargarPresentacion(e) {
   e.preventDefault();
+  if (_isIOS) { window.open('/PC.pdf', '_blank'); return; }
   var xhr = new XMLHttpRequest();
   xhr.open('GET', '/PC.pdf', true);
   xhr.responseType = 'blob';
+  xhr.timeout = 30000;
   xhr.onload = function() {
     var blob = xhr.response;
     var url = URL.createObjectURL(blob);
@@ -2516,8 +2552,10 @@ function descargarPresentacion(e) {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
   };
+  xhr.onerror = function() { window.open('/PC.pdf', '_blank'); };
+  xhr.ontimeout = function() { window.open('/PC.pdf', '_blank'); };
   xhr.send();
 }
 
