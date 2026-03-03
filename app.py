@@ -1844,7 +1844,7 @@ def diag_repo():
 
 @app.route("/api/diag-yf")
 def diag_yf():
-    """Diagnóstico Yahoo Finance — prueba un solo intento (no agrava rate limit)."""
+    """Diagnóstico Yahoo Finance — prueba raw HTTP a Yahoo."""
     if "usuario" not in session:
         return jsonify({"ok": False, "error": "No autenticado"}), 401
     tk = request.args.get("t", "AAPL.MX")
@@ -1859,19 +1859,48 @@ def diag_yf():
 
     # Rate limit status
     now = time.time()
-    if now < _yf_rate_limit_until:
-        resultado["rate_limited"] = True
-        resultado["cooldown_remaining_s"] = int(_yf_rate_limit_until - now)
+    resultado["rate_limit_until"] = _yf_rate_limit_until
+    resultado["rate_limited"] = now < _yf_rate_limit_until
 
-    # Solo un intento para no empeorar el rate limit
+    # Test 1: Raw HTTP to Yahoo Chart API (no yfinance, just requests)
     try:
-        data = get_accion_yf(tk)
-        resultado["resultado"] = {"ok": data is not None, "tiene_geo": bool(data.get("geo")) if data else False,
-                                   "tiene_sector": bool(data.get("sectores")) if data else False,
-                                   "nombre": data.get("nombre") if data else None,
-                                   "precio": data.get("precio_cierre") if data else None}
+        s = requests.Session()
+        s.headers.update(_YF_DIRECT_HEADERS)
+        r1 = s.get("https://fc.yahoo.com", timeout=10, allow_redirects=True)
+        cookie = r1.cookies.get("B", "")
+        r2 = s.get("https://query2.finance.yahoo.com/v1/test/getcrumb", timeout=10)
+        crumb = r2.text.strip() if r2.status_code == 200 else f"HTTP {r2.status_code}"
+        r3 = s.get(f"https://query2.finance.yahoo.com/v8/finance/chart/{tk}",
+                    params={"range": "1mo", "interval": "1d", "crumb": crumb}, timeout=15)
+        chart = r3.json() if r3.status_code == 200 else {}
+        result_data = chart.get("chart", {}).get("result", [])
+        n_points = len(result_data[0].get("timestamp", [])) if result_data else 0
+        resultado["raw_http"] = {
+            "cookie": bool(cookie), "crumb": crumb[:10] if crumb else "",
+            "chart_status": r3.status_code, "puntos": n_points
+        }
     except Exception as e:
-        resultado["resultado"] = {"ok": False, "error": str(e)}
+        resultado["raw_http"] = {"error": str(e)}
+
+    # Test 2: curl_cffi direct (if available)
+    try:
+        from curl_cffi import requests as cffi_req
+        s2 = cffi_req.Session(impersonate="chrome")
+        r4 = s2.get("https://fc.yahoo.com", timeout=10, allow_redirects=True)
+        cookie2 = r4.cookies.get("B", "")
+        r5 = s2.get("https://query2.finance.yahoo.com/v1/test/getcrumb", timeout=10)
+        crumb2 = r5.text.strip() if r5.status_code == 200 else f"HTTP {r5.status_code}"
+        r6 = s2.get(f"https://query2.finance.yahoo.com/v8/finance/chart/{tk}",
+                     params={"range": "1mo", "interval": "1d", "crumb": crumb2}, timeout=15)
+        chart2 = r6.json() if r6.status_code == 200 else {}
+        result_data2 = chart2.get("chart", {}).get("result", [])
+        n_points2 = len(result_data2[0].get("timestamp", [])) if result_data2 else 0
+        resultado["curl_cffi_http"] = {
+            "cookie": bool(cookie2), "crumb": crumb2[:10] if crumb2 else "",
+            "chart_status": r6.status_code, "puntos": n_points2
+        }
+    except Exception as e:
+        resultado["curl_cffi_http"] = {"error": str(e)}
 
     return jsonify(resultado)
 
