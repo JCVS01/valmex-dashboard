@@ -531,8 +531,6 @@ def get_ms_nav(isin: str, start: str = "2010-01-01", end: str = None) -> list:
 def get_fondo_backtesting(fondo: str, serie: str) -> list:
     """Construye serie mensual base-100 para un fondo Valmex usando NAV histórico.
     Retorna [{"fecha": "yyyy-mm-dd", "valor": float}]"""
-    if fondo == "VXREPO1":
-        return []
     isin = ISIN_MAP.get(fondo, {}).get(serie)
     if not isin:
         return []
