@@ -416,7 +416,7 @@ ISIN_MAP = {
   "VXUDIMP": {"A":"MX51VA2S0008","B0CF":"MX51VA2S00D4","B0CO":"MX51VA2S0065","B0FI":"MX51VA2S0040","B0NC":"MX51VA2S0057","B1CO":"MX51VA2S0099","B1FI":"MX51VA2S0073","B1NC":"MX51VA2S0081","B2CO":"MX51VA2S00C6","B2FI":"MX51VA2S00A0","B2NC":"MX51VA2S00B8"},
   "VXDEUDA": {"A":"MXP800521009","B0CF":"MX51VA2M0046","B0CO":"MX51VA2M00D7","B0FI":"MX51VA2M0061","B0NC":"MX51VA2M0079","B1CF":"MX51VA2M0095","B1CO":"MX51VA2M00E5","B1FI":"MX51VA2M00A3","B1NC":"MX51VA2M00B1","B2FI":"MX51VA2M00C9","B2NC":"MX51VA2M00H8"},
   "VXGUBLP": {"A":"MX51VA2R0009","B0CF":"MX51VA2R00C8","B0CO":"MX51VA2R00F1","B0FI":"MX51VA2R0041","B0NC":"MX51VA2R0058","B1CF":"MX51VA2R00D6","B1CO":"MX51VA2R0082","B1FI":"MX51VA2R0066","B1NC":"MX51VA2R0074","B2CO":"MX51VA2R00B0","B2FI":"MX51VA2R0090","B2NC":"MX51VA2R00A2"},
-  "VXTBILL": {"A":"MX51VA1F0004","B0CF":"MX51VA1F0087","B0CO":"MX51VA1F0020","B0FI":"MX51VA1F0012","B0NC":"MX51VA1F0053"},
+  "VXTBILL": {"A":"MX51VA1F0004","B1CF":"MX51VA1F0087","B0CO":"MX51VA1F0020","B0FI":"MX51VA1F0012","B0NC":"MX51VA1F0053"},
   "VXCOBER": {"A":"MXP800621007","B0FI":"MX51VA2N0037","B0NC":"MX51VA2N0045","B1CF":"MX51VA2N00D5","B1CO":"MX51VA2N0086","B1FI":"MX51VA2N0060","B1NC":"MX52FM080076","B2FI":"MX51VA2N0094"},
   "VLMXETF": {"A":"MX52VL060004","B0FI":"MX52VL060038","B1CO":"MX52VL060061","B1FI":"MX52VL060079"},
   "VLMXDME": {"A":"MX52VL0D0002","B0CF":"MX52VL0D0010","B0CO":"MX52VL0D0028","B0FI":"MX52VL0D0036","B0NC":"MX52VL0D0044","B1CF":"MX52VL0D0051","B1FI":"MX52VL0D00B0","B2FI":"MX52VL0D0093"},
@@ -431,7 +431,7 @@ ISIN_MAP = {
   "VXINFRA": {"A":"MX52VL0E0001","B0CO":"MX52VL0E0019","B0FI":"MX52VL0E0027","B1FI":"MX52VL0E0050","B2FI":"MX52VL0E0084"},
   "VLMXJUB": {"A":"MX52VL070003","B0CF":"MX52VL070011","B0NC":"MX52VL070045","B1CF":"MX52VL070052","B1FI":"MX52VL070078","B1NC":"MX52VL070086","B2NC":"MX52VL0700C7","B3NC":"MX52VL0700D5"},
   "VLMXP24": {"A":"MX52VL010009","B0CF":"MX52VL0100A4","B0NC":"MX52VL010025","B1FI":"MX52VL010041","B1NC":"MX52VL010058","B2NC":"MX52VL010082","B3NC":"MX52VL0100D8"},
-  "VLMXP31": {"A":"MX52VL030007","B0CF":"MX52VL0300A0","B0FI":"MX52VL030015","B0NC":"MX52VL030023","B1CF":"MX52VL030049","B1FI":"MX52VL030049","B1NC":"MX52VL030056","B2NC":"MX52VL030080","B3NC":"MX52VL0300D4"},
+  "VLMXP31": {"A":"MX52VL030007","B0CF":"MX52VL0300A0","B0FI":"MX52VL030015","B0NC":"MX52VL030023","B1FI":"MX52VL030049","B1NC":"MX52VL030056","B2NC":"MX52VL030080","B3NC":"MX52VL0300D4"},
   "VLMXP38": {"A":"MX52VL000000","B0CF":"MX52VL0000A6","B0FI":"MX52VL000018","B0NC":"MX52VL000026","B1CF":"MX52VL0000B4","B1FI":"MX52VL000042","B1NC":"MX52VL000059","B2NC":"MX52VL000083","B3NC":"MX52VL0000D0"},
   "VLMXP45": {"A":"MX52VL040014","B0CF":"MX52VL040089","B0FI":"MX52VL040022","B0NC":"MX52VL040048","B1CF":"MX52VL040097","B1CO":"MX52VL0400C4","B1FI":"MX52VL040071","B1NC":"MX52VL0400B6","B2NC":"MX52VL040030","B3NC":"MX52VL0400D2"},
   "VLMXP52": {"A":"MX52VL050005","B0FI":"MX52VL050013","B0NC":"MX52VL050021","B1FI":"MX52VL050047","B1NC":"MX52VL050096","B2NC":"MX52VL050088","B3NC":"MX52VL0500B3"},
@@ -502,15 +502,18 @@ def load_ms_universe():
 _ms_nav_cache: dict = {}   # "isin|start" → {"ts": float, "data": list}
 _MS_NAV_TTL = 14400         # 4 horas
 
-def get_ms_nav(isin: str, start: str = "2010-01-01", end: str = None) -> list:
+def get_ms_nav(isin: str, start: str = "2010-01-01", end: str = None,
+               expect_fund: str = None, expect_serie: str = None) -> list:
     """Obtiene precios históricos NAV de Morningstar por ISIN.
+    Si expect_fund/expect_serie se proporcionan, valida que fundName coincida.
     Retorna lista de {"fecha": "yyyy-mm-dd", "nav": float}"""
     if end is None:
         end = date.today().isoformat()
     cache_key = f"{isin}|{start}"
     now = time.time()
-    if cache_key in _ms_nav_cache and (now - _ms_nav_cache[cache_key]["ts"]) < _MS_NAV_TTL:
-        return _ms_nav_cache[cache_key]["data"]
+    cached = _ms_nav_cache.get(cache_key)
+    if cached and (now - cached["ts"]) < _MS_NAV_TTL:
+        return cached["data"]
     try:
         r = requests.get(
             f"{MS_NAV_URL}/{isin}",
@@ -519,10 +522,21 @@ def get_ms_nav(isin: str, start: str = "2010-01-01", end: str = None) -> list:
         )
         r.raise_for_status()
         root = ET.fromstring(r.text)
+
+        # Validar que el ISIN corresponde al fondo+serie esperado
+        if expect_fund and expect_serie:
+            data_elem = root.find(".//data")
+            api_fund_name = data_elem.get("fundName", "") if data_elem is not None else ""
+            expected_name = f"{expect_fund} {expect_serie}"
+            if api_fund_name and api_fund_name != expected_name:
+                print(f"[MS NAV MISMATCH] {isin}: esperado '{expected_name}', "
+                      f"API regresa '{api_fund_name}' — descartando datos")
+                return []
+
         data = [{"fecha": elem.get("d"), "nav": float(elem.get("v"))}
                 for elem in root.iter("r")]
         _ms_nav_cache[cache_key] = {"ts": now, "data": data}
-        print(f"[MS NAV] {isin}: {len(data)} precios ({start} → {end})")
+        print(f"[MS NAV] {isin}: {len(data)} precios ({start} -> {end})")
         return data
     except Exception as e:
         print(f"[MS NAV ERROR] {isin}: {e}")
@@ -531,17 +545,37 @@ def get_ms_nav(isin: str, start: str = "2010-01-01", end: str = None) -> list:
 
 def get_fondo_backtesting(fondo: str, serie: str) -> list:
     """Construye serie mensual base-100 para un fondo Valmex usando NAV histórico.
+    Valida fundName contra API y descarta series cerradas (>90 días sin precio).
     Retorna [{"fecha": "yyyy-mm-dd", "valor": float}]"""
     isin = ISIN_MAP.get(fondo, {}).get(serie)
     if not isin:
         return []
-    navs = get_ms_nav(isin)
+    navs = get_ms_nav(isin, expect_fund=fondo, expect_serie=serie)
     if len(navs) < 2:
         return []
     try:
         df = pd.DataFrame(navs)
         df["fecha"] = pd.to_datetime(df["fecha"])
         df = df.set_index("fecha").sort_index()
+
+        # Detectar y ajustar resets de NAV (e.g. reestructuración de serie)
+        # Un cambio diario >2x o <0.5x indica un reset, no un rendimiento real
+        nav_vals = df["nav"].values.copy()
+        for i in range(1, len(nav_vals)):
+            if nav_vals[i - 1] > 0:
+                ratio = nav_vals[i] / nav_vals[i - 1]
+                if ratio > 2.0 or ratio < 0.5:
+                    nav_vals[:i] *= ratio
+                    print(f"[BT NAV RESET] {fondo} {serie}: ajuste {ratio:.1f}x en {df.index[i].strftime('%Y-%m-%d')}")
+        df["nav"] = nav_vals
+
+        # Descartar series cerradas: último precio > 90 días
+        last_price_date = df.index[-1]
+        if (pd.Timestamp.now() - last_price_date).days > 90:
+            print(f"[BT FONDO SKIP] {fondo} {serie}: serie cerrada "
+                  f"(ultimo precio {last_price_date.strftime('%Y-%m-%d')})")
+            return []
+
         monthly = df["nav"].resample("MS").first().dropna()
         if len(monthly) < 2:
             return []
