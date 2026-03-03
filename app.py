@@ -753,7 +753,7 @@ COUNTRY_TO_REGION = {
 }
 
 
-# ── Yahoo Finance direct API (bypass yfinance library, evita detección cloud) ──
+# ── Yahoo Finance direct API con curl_cffi (Chrome TLS fingerprint) ──
 _YF_DIRECT_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
     "Accept": "application/json,text/html,application/xhtml+xml",
@@ -762,32 +762,42 @@ _YF_DIRECT_HEADERS = {
     "Origin": "https://finance.yahoo.com",
 }
 
-_yf_direct_session = {"s": None, "crumb": None, "ts": 0}
+_yf_direct_session = {"s": None, "crumb": None, "ts": 0, "lib": None}
 
 def _yf_direct_chart(ticker: str):
-    """Llama directo al Yahoo Chart API sin yfinance — evita detección en cloud."""
+    """Llama directo al Yahoo Chart API con curl_cffi (impersonate Chrome).
+    Fallback a requests si curl_cffi no está disponible."""
     try:
         now = time.time()
         # Reutilizar sesión+crumb por 1 hora
         if not _yf_direct_session["s"] or (now - _yf_direct_session["ts"]) > 3600:
-            s = requests.Session()
-            s.headers.update(_YF_DIRECT_HEADERS)
-            # Obtener cookies visitando Yahoo
-            s.get("https://finance.yahoo.com/", timeout=10)
+            # Preferir curl_cffi (Chrome TLS fingerprint, pasa detección cloud)
+            try:
+                from curl_cffi import requests as cffi_req
+                s = cffi_req.Session(impersonate="chrome")
+                _yf_direct_session["lib"] = "curl_cffi"
+            except ImportError:
+                s = requests.Session()
+                s.headers.update(_YF_DIRECT_HEADERS)
+                _yf_direct_session["lib"] = "requests"
+
+            # Obtener cookies
+            s.get("https://fc.yahoo.com", timeout=10, allow_redirects=True)
             # Obtener crumb
             cr = s.get("https://query2.finance.yahoo.com/v1/test/getcrumb", timeout=10)
             crumb = cr.text.strip() if cr.status_code == 200 else ""
             _yf_direct_session["s"] = s
             _yf_direct_session["crumb"] = crumb
             _yf_direct_session["ts"] = now
-            print(f"[YF DIRECT] Sesión creada, crumb={'OK' if crumb else 'NONE'}")
+            print(f"[YF DIRECT] Sesión {_yf_direct_session['lib']} creada, crumb={'OK' if crumb else 'NONE'}")
 
         s = _yf_direct_session["s"]
         crumb = _yf_direct_session["crumb"]
 
-        # Intentar v8 chart API con crumb
+        # Intentar v8 chart API con crumb — period1=0 para historial completo
         url = f"https://query2.finance.yahoo.com/v8/finance/chart/{ticker}"
-        params = {"range": "max", "interval": "1d", "includeAdjustedClose": "true"}
+        params = {"period1": "0", "period2": str(int(time.time())),
+                  "interval": "1d", "includeAdjustedClose": "true"}
         if crumb:
             params["crumb"] = crumb
         r = s.get(url, params=params, timeout=20)
@@ -798,8 +808,7 @@ def _yf_direct_chart(ticker: str):
             r = s.get(url2, params=params, timeout=20)
 
         if r.status_code != 200:
-            print(f"[YF DIRECT] {ticker} HTTP {r.status_code}")
-            # Invalidar sesión para que se renueve en la próxima llamada
+            print(f"[YF DIRECT] {ticker} HTTP {r.status_code} (vía {_yf_direct_session['lib']})")
             _yf_direct_session["ts"] = 0
             return None, None
 
@@ -832,9 +841,8 @@ def _yf_direct_chart(ticker: str):
             "currentPrice": meta.get("regularMarketPrice"),
             "currency": meta.get("currency", "USD"),
             "exchangeName": meta.get("exchangeName", ""),
-            "country": meta.get("exchangeName", ""),
         }
-        print(f"[YF DIRECT] {ticker} OK: {len(df)} puntos, p={meta.get('regularMarketPrice')}")
+        print(f"[YF DIRECT] {ticker} OK ({_yf_direct_session['lib']}): {len(df)} puntos, p={meta.get('regularMarketPrice')}")
         return info, df
     except Exception as e:
         print(f"[YF DIRECT] {ticker} error: {e}")
@@ -909,26 +917,31 @@ def get_accion_yf(ticker: str) -> dict | None:
     info = {}
     t    = None
 
-    # ── Rate limit check: si Yahoo nos bloqueó, no reintentar por un rato ──
-    if now < _yf_rate_limit_until:
-        wait = int(_yf_rate_limit_until - now)
-        print(f"[YF] {ticker} en rate-limit cooldown ({wait}s restantes)")
-        return None
+    # ── Intento 1: curl_cffi directo (Chrome TLS fingerprint — funciona en cloud) ──
+    direct_info, direct_df = _yf_direct_chart(ticker)
+    if direct_df is not None and not direct_df.empty:
+        hist = direct_df
+        if direct_info:
+            info = direct_info
 
-    # ── Intento 1: yfinance nativo (con curl_cffi usa TLS fingerprint de Chrome) ──
-    try:
-        t    = yf.Ticker(ticker)
-        hist = t.history(start="2000-01-01", auto_adjust=False)
-        if hist is not None and not hist.empty:
-            print(f"[YF] {ticker} OK vía yfinance nativo ({len(hist)} filas)")
-    except Exception as e:
-        err_str = str(e)
-        print(f"[YF] {ticker} intento-nativo falló: {e}")
-        if "Too Many Requests" in err_str or "Rate limit" in err_str:
-            _yf_rate_limit_until = now + 300  # cooldown 5 minutos
-            print(f"[YF] Rate limited — cooldown 5 min hasta {time.strftime('%H:%M:%S', time.localtime(_yf_rate_limit_until))}")
+    # ── Intento 2: yfinance nativo (funciona bien en local) ──
+    if hist is None or hist.empty:
+        if now < _yf_rate_limit_until:
+            print(f"[YF] {ticker} yfinance en cooldown ({int(_yf_rate_limit_until - now)}s)")
+        else:
+            try:
+                t    = yf.Ticker(ticker)
+                hist = t.history(start="2000-01-01", auto_adjust=False)
+                if hist is not None and not hist.empty:
+                    print(f"[YF] {ticker} OK vía yfinance nativo ({len(hist)} filas)")
+            except Exception as e:
+                err_str = str(e)
+                print(f"[YF] {ticker} yfinance falló: {e}")
+                if "Too Many Requests" in err_str or "Rate limit" in err_str:
+                    _yf_rate_limit_until = now + 300
+                    print(f"[YF] Rate limited — cooldown 5 min")
 
-    # ── Intento 2: yf.download (más estable en algunos entornos cloud) ──
+    # ── Intento 3: yf.download (backup) ──
     if hist is None or hist.empty:
         if now >= _yf_rate_limit_until:
             try:
@@ -939,16 +952,7 @@ def get_accion_yf(ticker: str) -> dict | None:
                 if hist is not None and not hist.empty:
                     print(f"[YF] {ticker} OK vía yf.download ({len(hist)} filas)")
             except Exception as e:
-                print(f"[YF] {ticker} intento-download falló: {e}")
-
-    # ── Intento 3: Yahoo Chart API directo (requests puro, último recurso) ──
-    if hist is None or hist.empty:
-        direct_info, direct_df = _yf_direct_chart(ticker)
-        if direct_df is not None and not direct_df.empty:
-            hist = direct_df
-            if direct_info:
-                info = direct_info
-                t = None
+                print(f"[YF] {ticker} yf.download falló: {e}")
 
     if hist is None or hist.empty:
         print(f"[YF] {ticker}: sin datos después de 3 intentos")
