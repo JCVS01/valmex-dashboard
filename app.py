@@ -1874,8 +1874,6 @@ def pc_pdf():
 
 @app.route("/VALMEX.png")
 def valmex_logo():
-    if "usuario" not in session:
-        return redirect(url_for("login"))
     return send_from_directory(BASE, "VALMEX.png")
 
 @app.route("/VALMEX2.png")

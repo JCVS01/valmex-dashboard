@@ -119,6 +119,48 @@
     font-size: 11px;
     color: rgba(255,255,255,0.45);
   }
+
+  .link-change-pw {
+    display: block;
+    text-align: center;
+    margin-top: 16px;
+    font-size: 12px;
+    color: #5B6670;
+    cursor: pointer;
+    text-decoration: none;
+    transition: color 0.18s;
+  }
+  .link-change-pw:hover { color: #00205C; }
+
+  .success-msg {
+    display: none;
+    background: #F0FDF4;
+    border: 1px solid #BBF7D0;
+    color: #16A34A;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 10px 14px;
+    border-radius: 7px;
+    margin-top: 14px;
+    text-align: center;
+  }
+  .success-msg.visible { display: block; }
+
+  .btn-secondary {
+    width: 100%;
+    padding: 13px;
+    background: #fff;
+    color: #00205C;
+    border: 1.5px solid #D3DDE6;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'Montserrat', sans-serif;
+    cursor: pointer;
+    transition: border-color 0.18s, background 0.18s;
+    letter-spacing: 0.5px;
+  }
+  .btn-secondary:hover { border-color: #41BBC9; background: #F8FAFC; }
 </style>
 </head>
 <body>
@@ -143,23 +185,77 @@
       <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
     </div>
 
-    <button class="btn-login" onclick="doLogin()">Iniciar sesión</button>
+    <button class="btn-login" id="btn-login" onclick="doLogin()">Iniciar sesión</button>
 
     <div class="error-msg" id="error-msg">Usuario o contraseña incorrectos</div>
+
+    <a class="link-change-pw" id="link-show-change" onclick="showChangeView()">Cambiar contraseña</a>
+  </div>
+
+  <!-- Card cambiar contraseña -->
+  <div class="login-card" id="change-card" style="display:none;">
+    <h2>Cambiar contraseña</h2>
+    <p>Ingresa tu usuario y contraseña actual para cambiarla</p>
+
+    <div class="fg">
+      <label>Usuario</label>
+      <input type="text" id="cp-user" placeholder="Ej. jvilla" autocomplete="username">
+    </div>
+
+    <div class="fg">
+      <label>Contraseña actual</label>
+      <input type="password" id="cp-current" placeholder="••••••••" autocomplete="current-password">
+    </div>
+
+    <div class="fg">
+      <label>Nueva contraseña</label>
+      <input type="password" id="cp-new" placeholder="Mínimo 8 caracteres" autocomplete="new-password">
+    </div>
+
+    <div class="fg">
+      <label>Confirmar nueva contraseña</label>
+      <input type="password" id="cp-confirm" placeholder="Repite la nueva contraseña" autocomplete="new-password">
+    </div>
+
+    <button class="btn-login" onclick="doChangePw()">Actualizar contraseña</button>
+    <div style="height:8px;"></div>
+    <button class="btn-secondary" onclick="showLoginView()">Volver al inicio de sesión</button>
+
+    <div class="error-msg" id="cp-error"></div>
+    <div class="success-msg" id="cp-success"></div>
   </div>
 
   <p class="login-footer">© 2026 Promoción Patrimonial VALMEX · Acceso restringido</p>
 </div>
 
 <script>
-  // También permite Enter para hacer login
-  document.getElementById('password').addEventListener('keydown', e => {
-    if (e.key === 'Enter') doLogin();
-  });
-  document.getElementById('usuario').addEventListener('keydown', e => {
-    if (e.key === 'Enter') doLogin();
-  });
+  // Enter para login
+  document.getElementById('password').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  document.getElementById('usuario').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  // Enter para cambiar contraseña
+  document.getElementById('cp-confirm').addEventListener('keydown', e => { if (e.key === 'Enter') doChangePw(); });
 
+  // ── Alternar vistas ──
+  function showChangeView() {
+    document.getElementById('change-card').style.display = '';
+    // Ocultar la card de login: subir hasta el card anterior
+    var loginCard = document.getElementById('btn-login').closest('.login-card');
+    loginCard.style.display = 'none';
+    // Limpiar
+    document.getElementById('cp-user').value = document.getElementById('usuario').value;
+    document.getElementById('cp-current').value = '';
+    document.getElementById('cp-new').value = '';
+    document.getElementById('cp-confirm').value = '';
+    document.getElementById('cp-error').classList.remove('visible');
+    document.getElementById('cp-success').classList.remove('visible');
+  }
+  function showLoginView() {
+    document.getElementById('change-card').style.display = 'none';
+    var loginCard = document.getElementById('btn-login').closest('.login-card');
+    loginCard.style.display = '';
+  }
+
+  // ── Login ──
   async function doLogin() {
     const usuario  = document.getElementById('usuario').value.trim();
     const password = document.getElementById('password').value.trim();
@@ -182,11 +278,75 @@
       if (res.ok) {
         window.location.href = '/';
       } else {
-        errEl.textContent = 'Usuario o contraseña incorrectos';
+        const data = await res.json().catch(() => ({}));
+        errEl.textContent = data.error || 'Usuario o contraseña incorrectos';
         errEl.classList.add('visible');
       }
     } catch(e) {
       errEl.textContent = 'Error de conexión, intenta de nuevo';
+      errEl.classList.add('visible');
+    }
+  }
+
+  // ── Cambiar contraseña ──
+  async function doChangePw() {
+    const user    = document.getElementById('cp-user').value.trim();
+    const current = document.getElementById('cp-current').value;
+    const newPw   = document.getElementById('cp-new').value;
+    const confirm = document.getElementById('cp-confirm').value;
+    const errEl   = document.getElementById('cp-error');
+    const sucEl   = document.getElementById('cp-success');
+    errEl.classList.remove('visible');
+    sucEl.classList.remove('visible');
+
+    if (!user || !current || !newPw || !confirm) {
+      errEl.textContent = 'Llena todos los campos';
+      errEl.classList.add('visible');
+      return;
+    }
+    if (newPw.length < 8) {
+      errEl.textContent = 'La nueva contraseña debe tener mínimo 8 caracteres';
+      errEl.classList.add('visible');
+      return;
+    }
+    if (newPw !== confirm) {
+      errEl.textContent = 'Las contraseñas no coinciden';
+      errEl.classList.add('visible');
+      return;
+    }
+
+    try {
+      // Primero hacer login para establecer sesión
+      const loginRes = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usuario: user, password: current })
+      });
+      if (!loginRes.ok) {
+        const ld = await loginRes.json().catch(() => ({}));
+        errEl.textContent = ld.error || 'Usuario o contraseña actual incorrectos';
+        errEl.classList.add('visible');
+        return;
+      }
+
+      // Ahora cambiar la contraseña
+      const res = await fetch('/api/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ current, new_password: newPw, confirm })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        sucEl.textContent = 'Contraseña actualizada correctamente';
+        sucEl.classList.add('visible');
+        // Cerrar sesión para que vuelvan a entrar con la nueva
+        setTimeout(() => { fetch('/logout').then(() => showLoginView()); }, 2000);
+      } else {
+        errEl.textContent = data.error || 'Error al cambiar contraseña';
+        errEl.classList.add('visible');
+      }
+    } catch(e) {
+      errEl.textContent = 'Error de conexión';
       errEl.classList.add('visible');
     }
   }
