@@ -499,7 +499,7 @@ def load_ms_universe():
 
 
 # ── Morningstar NAV Histórico — precios diarios por ISIN ──
-_ms_nav_cache: dict = {}   # isin → {"ts": float, "data": list}
+_ms_nav_cache: dict = {}   # "isin|start" → {"ts": float, "data": list}
 _MS_NAV_TTL = 14400         # 4 horas
 
 def get_ms_nav(isin: str, start: str = "2010-01-01", end: str = None) -> list:
@@ -507,9 +507,10 @@ def get_ms_nav(isin: str, start: str = "2010-01-01", end: str = None) -> list:
     Retorna lista de {"fecha": "yyyy-mm-dd", "nav": float}"""
     if end is None:
         end = date.today().isoformat()
+    cache_key = f"{isin}|{start}"
     now = time.time()
-    if isin in _ms_nav_cache and (now - _ms_nav_cache[isin]["ts"]) < _MS_NAV_TTL:
-        return _ms_nav_cache[isin]["data"]
+    if cache_key in _ms_nav_cache and (now - _ms_nav_cache[cache_key]["ts"]) < _MS_NAV_TTL:
+        return _ms_nav_cache[cache_key]["data"]
     try:
         r = requests.get(
             f"{MS_NAV_URL}/{isin}",
@@ -520,8 +521,8 @@ def get_ms_nav(isin: str, start: str = "2010-01-01", end: str = None) -> list:
         root = ET.fromstring(r.text)
         data = [{"fecha": elem.get("d"), "nav": float(elem.get("v"))}
                 for elem in root.iter("r")]
-        _ms_nav_cache[isin] = {"ts": now, "data": data}
-        print(f"[MS NAV] {isin}: {len(data)} precios cargados")
+        _ms_nav_cache[cache_key] = {"ts": now, "data": data}
+        print(f"[MS NAV] {isin}: {len(data)} precios ({start} → {end})")
         return data
     except Exception as e:
         print(f"[MS NAV ERROR] {isin}: {e}")
