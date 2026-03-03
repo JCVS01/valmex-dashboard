@@ -752,43 +752,93 @@ COUNTRY_TO_REGION = {
 }
 
 
-# ── Free proxy pool para Yahoo Finance (evita bloqueo en cloud) ──
-_proxy_list: list = []
-_proxy_list_ts: float = 0
-_PROXY_TTL = 1800  # refrescar cada 30 min
+# ── Yahoo Finance direct API (bypass yfinance library, evita detección cloud) ──
+_YF_DIRECT_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+    "Accept": "application/json,text/html,application/xhtml+xml",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Referer": "https://finance.yahoo.com/",
+    "Origin": "https://finance.yahoo.com",
+}
 
-def _fetch_free_proxies() -> list:
-    """Obtiene proxies HTTPS gratis de ProxyScrape (sin registro)."""
-    global _proxy_list, _proxy_list_ts
-    now = time.time()
-    if _proxy_list and (now - _proxy_list_ts) < _PROXY_TTL:
-        return _proxy_list
-    try:
-        r = requests.get(
-            "https://api.proxyscrape.com/v2/?request=displayproxies&protocol=http&timeout=10000&country=all&ssl=all&anonymity=all",
-            timeout=10
-        )
-        raw = [line.strip() for line in r.text.strip().split("\n") if line.strip()]
-        if raw:
-            _proxy_list = raw[:20]  # top 20 más frescos
-            _proxy_list_ts = now
-            print(f"[PROXY] {len(_proxy_list)} proxies cargados")
-    except Exception as e:
-        print(f"[PROXY] Error al obtener lista: {e}")
-    return _proxy_list
+_yf_direct_session = {"s": None, "crumb": None, "ts": 0}
 
-def _yf_with_proxy(ticker: str, proxy_str: str):
-    """Intenta yfinance con un proxy específico."""
-    proxy_url = f"http://{proxy_str}"
+def _yf_direct_chart(ticker: str):
+    """Llama directo al Yahoo Chart API sin yfinance — evita detección en cloud."""
     try:
-        t = yf.Ticker(ticker)
-        hist = t.history(start="2000-01-01", auto_adjust=False, proxy=proxy_url)
-        if hist is not None and not hist.empty:
-            print(f"[YF PROXY] {ticker} OK via {proxy_str}")
-            return t, hist
+        now = time.time()
+        # Reutilizar sesión+crumb por 1 hora
+        if not _yf_direct_session["s"] or (now - _yf_direct_session["ts"]) > 3600:
+            s = requests.Session()
+            s.headers.update(_YF_DIRECT_HEADERS)
+            # Obtener cookies visitando Yahoo
+            s.get("https://finance.yahoo.com/", timeout=10)
+            # Obtener crumb
+            cr = s.get("https://query2.finance.yahoo.com/v1/test/getcrumb", timeout=10)
+            crumb = cr.text.strip() if cr.status_code == 200 else ""
+            _yf_direct_session["s"] = s
+            _yf_direct_session["crumb"] = crumb
+            _yf_direct_session["ts"] = now
+            print(f"[YF DIRECT] Sesión creada, crumb={'OK' if crumb else 'NONE'}")
+
+        s = _yf_direct_session["s"]
+        crumb = _yf_direct_session["crumb"]
+
+        # Intentar v8 chart API con crumb
+        url = f"https://query2.finance.yahoo.com/v8/finance/chart/{ticker}"
+        params = {"range": "max", "interval": "1d", "includeAdjustedClose": "true"}
+        if crumb:
+            params["crumb"] = crumb
+        r = s.get(url, params=params, timeout=20)
+
+        # Si falla, reintentar con query1
+        if r.status_code != 200:
+            url2 = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}"
+            r = s.get(url2, params=params, timeout=20)
+
+        if r.status_code != 200:
+            print(f"[YF DIRECT] {ticker} HTTP {r.status_code}")
+            # Invalidar sesión para que se renueve en la próxima llamada
+            _yf_direct_session["ts"] = 0
+            return None, None
+
+        data = r.json()
+        result = data.get("chart", {}).get("result", [])
+        if not result:
+            print(f"[YF DIRECT] {ticker} sin result en respuesta")
+            return None, None
+
+        meta = result[0].get("meta", {})
+        timestamps = result[0].get("timestamp", [])
+        quotes = result[0].get("indicators", {}).get("quote", [{}])[0]
+        closes = quotes.get("close", [])
+        if not timestamps or not closes:
+            print(f"[YF DIRECT] {ticker} sin timestamps/closes")
+            return None, None
+
+        # Build DataFrame compatible con el resto del código
+        dates = pd.to_datetime(timestamps, unit="s", utc=True).tz_convert("America/New_York")
+        df = pd.DataFrame({"Close": closes}, index=dates)
+        df.index.name = "Date"
+        df = df.dropna()
+
+        # Build info dict
+        info = {
+            "shortName": meta.get("shortName", ticker),
+            "longName": meta.get("longName", ""),
+            "quoteType": meta.get("instrumentType", meta.get("quoteType", "")),
+            "regularMarketPrice": meta.get("regularMarketPrice"),
+            "currentPrice": meta.get("regularMarketPrice"),
+            "currency": meta.get("currency", "USD"),
+            "exchangeName": meta.get("exchangeName", ""),
+            "country": meta.get("exchangeName", ""),
+        }
+        print(f"[YF DIRECT] {ticker} OK: {len(df)} puntos, p={meta.get('regularMarketPrice')}")
+        return info, df
     except Exception as e:
-        print(f"[YF PROXY] {ticker} falló via {proxy_str}: {e}")
-    return None, None
+        print(f"[YF DIRECT] {ticker} error: {e}")
+        _yf_direct_session["ts"] = 0
+        return None, None
 
 # ── Cookie cache para Yahoo Finance ──
 _yf_cookie_cache: dict = {}   # {"cookie": str, "crumb": str, "ts": float}
@@ -893,18 +943,18 @@ def get_accion_yf(ticker: str) -> dict | None:
         except Exception as e:
             print(f"[YF] {ticker} intento-download falló: {e}")
 
-    # ── Intento 4: yfinance con proxies gratuitos (fallback cloud) ──
+    # ── Intento 4: Yahoo Chart API directo (sin yfinance, evita detección cloud) ──
     if hist is None or hist.empty:
-        proxies = _fetch_free_proxies()
-        random.shuffle(proxies)
-        for px in proxies[:5]:  # probar hasta 5 proxies
-            t_px, h_px = _yf_with_proxy(ticker, px)
-            if h_px is not None and not h_px.empty:
-                t, hist = t_px, h_px
-                break
+        direct_info, direct_df = _yf_direct_chart(ticker)
+        if direct_df is not None and not direct_df.empty:
+            hist = direct_df
+            # Guardar info del API directo para usar después
+            if direct_info:
+                info = direct_info
+                t = None  # No tenemos objeto Ticker
 
     if hist is None or hist.empty:
-        print(f"[YF] {ticker}: sin datos después de 4 intentos (incl. proxies)")
+        print(f"[YF] {ticker}: sin datos después de 4 intentos")
         return None
 
     # ── Obtener info (nombre, sector, país) ──
