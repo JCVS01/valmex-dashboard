@@ -1837,8 +1837,8 @@ charts.linea = new Chart(document.getElementById('c-linea'),{
   data:{
     labels:['2016','2017','2018','2019','2020','2021','2022','2023','2024'],
     datasets:[
-      {label:'Propuesta',data:[100,108,112,122,115,140,150,170,200],borderColor:'#00205C',backgroundColor:'rgba(61,165,224,0.08)',fill:true,borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#00205C',pointBorderColor:'#fff',pointBorderWidth:1.5,pointHoverRadius:5,tension:.35},
-      {label:'Referencia',data:[100,106,110,118,112,134,144,162,193],borderColor:'#41BBC9',backgroundColor:'transparent',borderWidth:2,borderDash:[5,4],pointRadius:3,pointBackgroundColor:'#41BBC9',pointBorderColor:'#fff',pointBorderWidth:1.5,pointHoverRadius:5,tension:.35}
+      {label:'Propuesta',data:[100,108,112,122,115,140,150,170,200],borderColor:'#00205C',backgroundColor:'rgba(61,165,224,0.08)',fill:true,borderWidth:2,pointRadius:0,pointHitRadius:6,pointHoverRadius:4,pointHoverBackgroundColor:'#00205C',tension:.35},
+      {label:'Referencia',data:[100,106,110,118,112,134,144,162,193],borderColor:'#41BBC9',backgroundColor:'transparent',borderWidth:1.5,borderDash:[5,4],pointRadius:0,pointHitRadius:6,pointHoverRadius:4,pointHoverBackgroundColor:'#41BBC9',tension:.35}
     ]
   },
   options:{
@@ -1846,11 +1846,11 @@ charts.linea = new Chart(document.getElementById('c-linea'),{
     interaction:{mode:'index',intersect:false},
     plugins:{
       legend:{position:'bottom',labels:{boxWidth:8,font:{size:13,family:'Montserrat',weight:'600'},padding:16,usePointStyle:true,pointStyleWidth:12,color:'#00205C'}},
-      tooltip:{backgroundColor:'#00205C',titleFont:{size:10,weight:'600'},bodyFont:{size:10},padding:10,cornerRadius:6,callbacks:{label:ctx=>' '+ctx.dataset.label+': '+ctx.raw}}
+      tooltip:{backgroundColor:'#00205C',titleFont:{size:10,weight:'600'},bodyFont:{size:10},padding:10,cornerRadius:6,callbacks:{title:_btTooltipTitle,label:ctx=>' '+ctx.dataset.label+': '+ctx.raw}}
     },
     layout:{padding:{right:55,top:18}},
     scales:{
-      x:{grid:{display:false},ticks:{font:{size:13,family:'Montserrat'},color:'#00205C'},border:{display:false}},
+      x:{grid:{display:false},ticks:{font:{size:11,family:'Montserrat'},color:'#00205C',maxTicksLimit:10,maxRotation:0,autoSkip:true,callback:_btTickFmt},border:{display:false}},
       y:{min:90,grid:{color:'rgba(0,32,92,0.06)'},ticks:{font:{size:13,family:'Montserrat'},color:'#00205C'},border:{display:false}}
     }
   },
@@ -1957,19 +1957,19 @@ function initCmpCharts() {
   cmpCharts.linea = new Chart(document.getElementById('c-cmp-linea'), {
     type:'line',
     data:{labels:[],datasets:[
-      {label:'A',data:[],borderColor:'#00205C',backgroundColor:'rgba(61,165,224,0.08)',fill:true,borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#00205C',pointBorderColor:'#fff',pointBorderWidth:1.5,pointHoverRadius:5,tension:.35},
-      {label:'B',data:[],borderColor:'#41BBC9',backgroundColor:'transparent',borderWidth:2,borderDash:[5,4],pointRadius:3,pointBackgroundColor:'#41BBC9',pointBorderColor:'#fff',pointBorderWidth:1.5,pointHoverRadius:5,tension:.35}
+      {label:'A',data:[],borderColor:'#00205C',backgroundColor:'rgba(61,165,224,0.08)',fill:true,borderWidth:2,pointRadius:0,pointHitRadius:6,pointHoverRadius:4,pointHoverBackgroundColor:'#00205C',tension:.35},
+      {label:'B',data:[],borderColor:'#41BBC9',backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,pointHitRadius:6,pointHoverRadius:4,pointHoverBackgroundColor:'#41BBC9',tension:.35}
     ]},
     options:{
       responsive:true,maintainAspectRatio:false,
       interaction:{mode:'index',intersect:false},
       plugins:{
         legend:{position:'bottom',labels:{boxWidth:8,font:{size:13,family:'Montserrat',weight:'600'},padding:16,usePointStyle:true,pointStyleWidth:12,color:'#00205C'}},
-        tooltip:{backgroundColor:'#00205C',titleFont:{size:10,weight:'600'},bodyFont:{size:10},padding:10,cornerRadius:6,callbacks:{label:ctx=>' '+ctx.dataset.label+': '+ctx.raw}}
+        tooltip:{backgroundColor:'#00205C',titleFont:{size:10,weight:'600'},bodyFont:{size:10},padding:10,cornerRadius:6,callbacks:{title:_btTooltipTitle,label:ctx=>' '+ctx.dataset.label+': '+ctx.raw}}
       },
       layout:{padding:{right:55,top:18}},
       scales:{
-        x:{grid:{display:false},ticks:{font:{size:11,family:'Montserrat'},color:'#00205C'},border:{display:false}},
+        x:{grid:{display:false},ticks:{font:{size:11,family:'Montserrat'},color:'#00205C',maxTicksLimit:10,maxRotation:0,autoSkip:true,callback:_btTickFmt},border:{display:false}},
         y:{grid:{color:'rgba(0,32,92,0.06)'},ticks:{font:{size:11,family:'Montserrat'},color:'#00205C'},border:{display:false}}
       }
     },
@@ -2112,8 +2112,8 @@ function aplicarDatosCmp(dataA, dataB, valA, valB) {
     const FUND_ORDER = ['Reporto MXN','Reporto USD','VXREPO1','VXGUBCP','VLMXETF','VXUDIMP','VXDEUDA','VXGUBLP','VXCOBER','VXTBILL','VLMXDME','VALMXA','VALMX28','VALMX20','VALMXVL','VALMXES','VLMXTEC','VLMXESG','VALMXHC','VXINFRA','Fondos Ciclo de Vida','Acciones',"ETF's"];
     const allFunds = new Set();
     const mapA = {}, mapB = {};
-    if (dataA && dataA.composicion) dataA.composicion.slice(0,10).forEach(f => { allFunds.add(f.fondo); mapA[f.fondo] = f.pct; });
-    if (dataB && dataB.composicion) dataB.composicion.slice(0,10).forEach(f => { allFunds.add(f.fondo); mapB[f.fondo] = f.pct; });
+    if (dataA && dataA.composicion) dataA.composicion.forEach(f => { allFunds.add(f.fondo); mapA[f.fondo] = f.pct; });
+    if (dataB && dataB.composicion) dataB.composicion.forEach(f => { allFunds.add(f.fondo); mapB[f.fondo] = f.pct; });
     const labels = [...allFunds];
     labels.sort((a,b) => {
       const iA = FUND_ORDER.indexOf(a), iB = FUND_ORDER.indexOf(b);
@@ -2122,38 +2122,38 @@ function aplicarDatosCmp(dataA, dataB, valA, valB) {
       if (iB !== -1) return 1;
       return a.localeCompare(b);
     });
-    const top = labels.slice(0, 10);
-    cmpCharts.comp.data.labels = top;
-    cmpCharts.comp.data.datasets[0].data = top.map(f => mapB[f] || 0);
-    cmpCharts.comp.data.datasets[1].data = top.map(f => mapA[f] || 0);
-    const maxVal = Math.max(...top.map(f => Math.max(mapA[f]||0, mapB[f]||0)));
+    cmpCharts.comp.data.labels = labels;
+    cmpCharts.comp.data.datasets[0].data = labels.map(f => mapB[f] || 0);
+    cmpCharts.comp.data.datasets[1].data = labels.map(f => mapA[f] || 0);
+    const maxVal = Math.max(...labels.map(f => Math.max(mapA[f]||0, mapB[f]||0)));
     cmpCharts.comp.options.scales.x.max = maxVal * 1.08;
-    const n = top.length;
-    const bp = n <= 3 ? 0.95 : n <= 5 ? 0.92 : 0.88;
-    const cp = n <= 3 ? 0.98 : n <= 5 ? 0.96 : 0.94;
+    const n = labels.length;
+    const bp = n <= 3 ? 0.95 : n <= 5 ? 0.92 : n <= 10 ? 0.88 : 0.82;
+    const cp = n <= 3 ? 0.98 : n <= 5 ? 0.96 : n <= 10 ? 0.94 : 0.90;
     cmpCharts.comp.data.datasets.forEach(ds => { ds.barPercentage = bp; ds.categoryPercentage = cp; });
     cmpCharts.comp.update();
   }
 
-  // ── Backtesting: 2 lines (alineadas por fecha) ──
+  // ── Backtesting: 2 lines (alineadas por fecha raw YYYY-MM-DD) ──
   if (cmpCharts.linea) {
-    const btA = dataA ? btToSerie(dataA.bt_portafolio) : null;
-    const btB = dataB ? btToSerie(dataB.bt_portafolio) : null;
-    // Construir mapa fecha→valor para cada serie
+    const rawA = dataA?.bt_portafolio || [];
+    const rawB = dataB?.bt_portafolio || [];
+    // Build date→base100 maps from raw data
     const mapA = {}, mapB = {};
-    if (btA) btA.labels.forEach((l, i) => { mapA[l] = btA.values[i]; });
-    if (btB) btB.labels.forEach((l, i) => { mapB[l] = btB.values[i]; });
-    // Unir todas las fechas ordenadas cronológicamente
-    const allSet = new Set([...(btA ? btA.labels : []), ...(btB ? btB.labels : [])]);
-    const allLabels = [...allSet].sort((a, b) => {
-      const meses = {'Ene':0,'Feb':1,'Mar':2,'Abr':3,'May':4,'Jun':5,'Jul':6,'Ago':7,'Sep':8,'Oct':9,'Nov':10,'Dic':11};
-      const [mA, yA] = a.split(' '), [mB, yB] = b.split(' ');
-      return (parseInt(yA) - parseInt(yB)) || (meses[mA] - meses[mB]);
-    });
-    cmpCharts.linea.data.labels = allLabels;
-    cmpCharts.linea.data.datasets[0].data = allLabels.map(l => mapA[l] != null ? mapA[l] : null);
-    cmpCharts.linea.data.datasets[1].data = allLabels.map(l => mapB[l] != null ? mapB[l] : null);
-    // spanGaps para que la línea no se rompa visualmente con nulls internos
+    if (rawA.length) {
+      const baseA = rawA[0].valor;
+      if (baseA > 0) rawA.forEach(p => { mapA[p.fecha] = Math.round((p.valor / baseA) * 100 * 100) / 100; });
+    }
+    if (rawB.length) {
+      const baseB = rawB[0].valor;
+      if (baseB > 0) rawB.forEach(p => { mapB[p.fecha] = Math.round((p.valor / baseB) * 100 * 100) / 100; });
+    }
+    // Union all dates, sort chronologically (ISO strings sort correctly)
+    const allDates = [...new Set([...Object.keys(mapA), ...Object.keys(mapB)])].sort();
+    // Use raw ISO dates as labels — tick callback formats display
+    cmpCharts.linea.data.labels = allDates;
+    cmpCharts.linea.data.datasets[0].data = allDates.map(dt => mapA[dt] != null ? mapA[dt] : null);
+    cmpCharts.linea.data.datasets[1].data = allDates.map(dt => mapB[dt] != null ? mapB[dt] : null);
     cmpCharts.linea.data.datasets[0].spanGaps = false;
     cmpCharts.linea.data.datasets[1].spanGaps = false;
     const allVals = [...Object.values(mapA), ...Object.values(mapB)].filter(v => v != null);
@@ -2651,13 +2651,28 @@ function btToSerie(btData) {
   const base = btData[0].valor;
   if (base <= 0) return null;
   return {
-    labels: btData.map(p => {
-      const d = new Date(p.fecha + 'T00:00:00');
-      const m = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-      return m[d.getMonth()] + ' ' + d.getFullYear().toString().slice(-2);
-    }),
+    labels: btData.map(p => p.fecha),
     values: btData.map(p => Math.round((p.valor / base) * 100 * 100) / 100)
   };
+}
+function _btTickFmt(value) {
+  const lbl = this.getLabelForValue(value);
+  if (!lbl || lbl.length < 10) return lbl;
+  const d = new Date(lbl + 'T00:00:00');
+  const m = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const ls = this.chart.data.labels;
+  if (ls && ls.length > 1) {
+    const days = (new Date(ls[ls.length-1]+'T00:00:00') - new Date(ls[0]+'T00:00:00')) / 864e5;
+    if (days <= 180) return d.getDate() + ' ' + m[d.getMonth()] + ' ' + d.getFullYear().toString().slice(-2);
+  }
+  return m[d.getMonth()] + ' ' + d.getFullYear().toString().slice(-2);
+}
+function _btTooltipTitle(items) {
+  const lbl = items[0]?.label;
+  if (!lbl || lbl.length < 10) return lbl;
+  const d = new Date(lbl + 'T00:00:00');
+  const m = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return d.getDate() + ' ' + m[d.getMonth()] + ' ' + d.getFullYear();
 }
 
 function sortedPie(labels, values) {
@@ -2761,15 +2776,14 @@ function aplicarDatos(data, valor) {
       if (iB !== -1) return 1;
       return a.fondo.localeCompare(b.fondo);
     });
-    const top8 = sorted.slice(0, 8);
-    charts.comp.data.labels           = top8.map(f => f.fondo);
-    charts.comp.data.datasets[0].data = top8.map(f => f.pct);
+    charts.comp.data.labels           = sorted.map(f => f.fondo);
+    charts.comp.data.datasets[0].data = sorted.map(f => f.pct);
     charts.comp.data.datasets[0].backgroundColor = '#3DA5E0';
-    charts.comp.options.scales.x.max  = Math.max(...top8.map(f => f.pct)) * 1.18;
-    // Barras más gruesas cuando hay pocos fondos
-    const n = top8.length;
-    charts.comp.data.datasets[0].barPercentage    = n <= 3 ? 0.95 : n <= 5 ? 0.88 : 0.82;
-    charts.comp.data.datasets[0].categoryPercentage = n <= 3 ? 0.98 : n <= 5 ? 0.95 : 0.92;
+    charts.comp.options.scales.x.max  = Math.max(...sorted.map(f => f.pct)) * 1.18;
+    // Barras: ajustar grosor según cantidad
+    const n = sorted.length;
+    charts.comp.data.datasets[0].barPercentage    = n <= 3 ? 0.95 : n <= 5 ? 0.88 : n <= 10 ? 0.82 : 0.75;
+    charts.comp.data.datasets[0].categoryPercentage = n <= 3 ? 0.98 : n <= 5 ? 0.95 : n <= 10 ? 0.92 : 0.88;
     charts.comp.update();
     setTimeout(() => { charts.comp.resize(); charts.comp.update('none'); }, 50);
   }

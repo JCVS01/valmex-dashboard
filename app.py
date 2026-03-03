@@ -647,16 +647,16 @@ def get_accion_db(emisora_serie: str) -> dict | None:
     if not geo_db:
         geo_db = {"Latin America": 100.0}
 
-    # ── Backtesting: serie mensual base 100 ──
+    # ── Backtesting: serie diaria base 100 ──
     historico_bt = []
     try:
         df = pd.DataFrame(precios, columns=["fecha", "precio"])
         df["fecha"] = pd.to_datetime(df["fecha"])
         df = df.set_index("fecha").sort_index()
-        monthly = df["precio"].resample("MS").first().dropna()
-        if len(monthly) > 1:
-            base = float(monthly.iloc[0])
-            for dt, px in monthly.items():
+        daily = df["precio"].dropna()
+        if len(daily) > 1:
+            base = float(daily.iloc[0])
+            for dt, px in daily.items():
                 historico_bt.append({
                     "fecha": dt.strftime("%Y-%m-%d"),
                     "valor": round(float(px) / base * 100, 4)
@@ -1018,13 +1018,13 @@ def get_accion_yf(ticker: str) -> dict | None:
                 region = COUNTRY_TO_REGION.get(pais_en, pais)
                 geo_etf[region] = 100.0
 
-        # ── Backtesting: serie mensual base 100 ──
+        # ── Backtesting: serie diaria base 100 ──
         historico_bt = []
         try:
-            monthly = prices.resample('MS').first().dropna()
-            if len(monthly) > 1:
-                base = float(monthly.iloc[0])
-                for dt, px in monthly.items():
+            daily = prices.dropna()
+            if len(daily) > 1:
+                base = float(daily.iloc[0])
+                for dt, px in daily.items():
                     historico_bt.append({
                         "fecha": dt.strftime("%Y-%m-%d"),
                         "valor": round(float(px) / base * 100, 4)
@@ -1067,6 +1067,8 @@ def get_accion(ticker: str) -> dict | None:
     Fuente unificada para acciones/ETFs.
     Prioridad: Yahoo Finance SIC (.MX) → DataBursatil (BMV local + SIC en MXN).
     YF primero para que precio actual (regularMarketPrice) e histórico sean consistentes.
+    Cross-valida: si el .MX tiene backtesting sospechoso (caída >35% desde inception
+    en un listing reciente <500 días), prueba el ticker global y usa el más consistente.
     """
     db_key = ticker.upper().replace(".MX", "")
     # Normalizar caracteres especiales BMV (ñ/Ñ → & para Yahoo Finance)
@@ -1076,6 +1078,23 @@ def get_accion(ticker: str) -> dict | None:
     mx_ticker = db_key + ".MX"
     data = get_accion_yf(mx_ticker)
     if data:
+        # Cross-validar backtesting de SIC recientes
+        hist = data.get("historico", [])
+        if hist and len(hist) < 500:
+            last_bt = hist[-1]["valor"]
+            first_bt = hist[0]["valor"]
+            bt_return = (last_bt / first_bt - 1) if first_bt > 0 else 0
+            if bt_return < -0.35:
+                # Backtesting sospechoso: >35% caída desde inception en listing reciente
+                # Probar ticker global para comparar
+                global_data = get_accion_yf(db_key) if db_key != mx_ticker else None
+                if global_data:
+                    g_hist = global_data.get("historico", [])
+                    if g_hist:
+                        g_return = (g_hist[-1]["valor"] / g_hist[0]["valor"] - 1) if g_hist[0]["valor"] > 0 else 0
+                        if g_return > bt_return + 0.30:
+                            print(f"[SIC FIX] {mx_ticker} bt={bt_return*100:.1f}% vs {db_key} bt={g_return*100:.1f}% → usando global")
+                            return global_data
         return data
 
     # 2. DataBursatil — fallback para emisoras que YF no tenga
