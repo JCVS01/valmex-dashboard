@@ -1,22 +1,59 @@
 import os
+import re
 import time
 import random
+import secrets
 import requests
 import pandas as pd
 import yfinance as yf
 from datetime import date, timedelta, datetime
 from flask import Flask, send_file, request, jsonify, redirect, url_for, session, send_from_directory
+import json
+from werkzeug.security import generate_password_hash, check_password_hash
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "valmex-secret-2024")
+app.secret_key = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=12)
 
 USERS = {
-    "jvilla":  {"password": "valmex",   "nombre": "José Carlos Villa", "iniciales": "JV", "rol": "admin"},
-    "admin":   {"password": "admin123", "nombre": "Administrador",      "iniciales": "AD", "rol": "admin"},
-    "obernal": {"password": "valmex",   "nombre": "Olivia Bernal",      "iniciales": "OB", "rol": "admin"},
+    "jvilla":  {"password": "scrypt:32768:8:1$8NSI0TYUylmMRgpu$f8f46e0116cc6d0de4af97d4f47b96fb8bd4ad2d71ceec46fe6ab4add66a07d8b1d6dec548919199351e06b880862b1a556eb90d5c186b15605f5b372e90cdd3", "nombre": "José Carlos Villa", "iniciales": "JV", "rol": "admin"},
+    "admin":   {"password": "scrypt:32768:8:1$355dZMeOGJDWGAof$1f75a3d1918d39d199d3efcbabae55b30824d29f9da1d0e0b7a1da2c89bb130ea15e354a6dbbeae6c6825ec00ce8b5c52badc0c93a560b47547d2da1b77b463d", "nombre": "Administrador",      "iniciales": "AD", "rol": "admin"},
+    "obernal": {"password": "scrypt:32768:8:1$EiyEQJ7JtcPqp0Um$1c7c793ae8583917403405e08f2f41f79e3d3643fe25d15f02bbc4f016a79ae9f15e42fc5312c0a2f3b2d4b2fb8d2d8a55be1eda0bef080b34a6d74b0244671c", "nombre": "Olivia Bernal",      "iniciales": "OB", "rol": "admin"},
 }
+
+# ── Persistent password overrides ──
+_PASSWORDS_FILE = os.path.join(BASE, "passwords.json")
+
+def _load_password_overrides():
+    """Load user password overrides from persistent file."""
+    try:
+        if os.path.exists(_PASSWORDS_FILE):
+            with open(_PASSWORDS_FILE, "r") as f:
+                overrides = json.load(f)
+            for username, pw_hash in overrides.items():
+                if username in USERS:
+                    USERS[username]["password"] = pw_hash
+    except Exception as e:
+        print(f"[SECURITY] Error loading password overrides: {e}")
+
+def _save_password_override(username, pw_hash):
+    """Save a password override to persistent file."""
+    overrides = {}
+    try:
+        if os.path.exists(_PASSWORDS_FILE):
+            with open(_PASSWORDS_FILE, "r") as f:
+                overrides = json.load(f)
+    except Exception:
+        pass
+    overrides[username] = pw_hash
+    with open(_PASSWORDS_FILE, "w") as f:
+        json.dump(overrides, f)
+
+_load_password_overrides()
 
 PERFILES = {
     "0": {"VXGUBCP": 14.00, "VXDEUDA": 81.00, "VXUDIMP": 5.00},
@@ -1727,18 +1764,62 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# SECURITY: headers, rate limiting, input validation
+# ─────────────────────────────────────────────────────────────────────────────
+
+@app.after_request
+def set_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    response.headers['Permissions-Policy'] = 'geolocation=(), camera=(), microphone=()'
+    if request.is_secure:
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    return response
+
+_login_attempts = {}
+_LOGIN_MAX_ATTEMPTS = 5
+_LOGIN_WINDOW = 300
+
+def _check_login_rate_limit(ip):
+    now = time.time()
+    if ip in _login_attempts:
+        count, first = _login_attempts[ip]
+        if now - first > _LOGIN_WINDOW:
+            _login_attempts[ip] = (1, now)
+            return True
+        if count >= _LOGIN_MAX_ATTEMPTS:
+            return False
+        _login_attempts[ip] = (count + 1, first)
+        return True
+    _login_attempts[ip] = (1, now)
+    return True
+
+_TICKER_RE = re.compile(r'^[A-Za-z0-9.&]{1,20}$')
+
+def _valid_ticker(t: str) -> bool:
+    return bool(_TICKER_RE.match(t))
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # RUTAS
 # ─────────────────────────────────────────────────────────────────────────────
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
+        ip = request.remote_addr or "unknown"
+        if not _check_login_rate_limit(ip):
+            return jsonify({"ok": False, "error": "Demasiados intentos. Espera 5 minutos."}), 429
         data = request.get_json(force=True)
         u    = data.get("usuario", "").strip().lower()
         p    = data.get("password", "").strip()
         user = USERS.get(u)
-        if user and user["password"] == p:
+        if user and check_password_hash(user["password"], p):
+            session.clear()
             session["usuario"] = u
+            session.permanent = True
             return jsonify({"ok":True,"nombre":user["nombre"],"iniciales":user["iniciales"],"rol":user["rol"]})
         return jsonify({"ok": False}), 401
     return send_file(os.path.join(BASE, "login.html"))
@@ -1756,16 +1837,51 @@ def me():
     user = USERS[u]
     return jsonify({"ok":True,"nombre":user["nombre"],"iniciales":user["iniciales"],"rol":user["rol"]})
 
+@app.route("/api/change-password", methods=["POST"])
+def change_password():
+    u = session.get("usuario")
+    if not u or u not in USERS:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    ip = request.remote_addr or "unknown"
+    if not _check_login_rate_limit(ip):
+        return jsonify({"ok": False, "error": "Demasiados intentos. Espera 5 minutos."}), 429
+    data = request.get_json(force=True)
+    current  = (data.get("current") or "").strip()
+    new_pass = (data.get("new_password") or "").strip()
+    confirm  = (data.get("confirm") or "").strip()
+    user = USERS[u]
+    if not check_password_hash(user["password"], current):
+        return jsonify({"ok": False, "error": "Contraseña actual incorrecta"}), 401
+    if len(new_pass) < 8:
+        return jsonify({"ok": False, "error": "Mínimo 8 caracteres"}), 400
+    if new_pass != confirm:
+        return jsonify({"ok": False, "error": "Las contraseñas no coinciden"}), 400
+    if new_pass == current:
+        return jsonify({"ok": False, "error": "La nueva contraseña debe ser diferente"}), 400
+    new_hash = generate_password_hash(new_pass)
+    USERS[u]["password"] = new_hash
+    _save_password_override(u, new_hash)
+    session.clear()
+    session["usuario"] = u
+    session.permanent = True
+    return jsonify({"ok": True, "message": "Contraseña actualizada"})
+
 @app.route("/PC.pdf")
 def pc_pdf():
+    if "usuario" not in session:
+        return redirect(url_for("login"))
     return send_from_directory(BASE, "PC.pdf")
 
 @app.route("/VALMEX.png")
 def valmex_logo():
+    if "usuario" not in session:
+        return redirect(url_for("login"))
     return send_from_directory(BASE, "VALMEX.png")
 
 @app.route("/VALMEX2.png")
 def valmex_logo2():
+    if "usuario" not in session:
+        return redirect(url_for("login"))
     return send_from_directory(BASE, "VALMEX2.png")
 
 @app.route("/")
@@ -1781,8 +1897,8 @@ def api_accion_validate():
         return jsonify({"ok": False, "error": "No autenticado"}), 401
     body   = request.get_json(force=True)
     ticker = (body.get("ticker") or "").strip().upper()
-    if not ticker:
-        return jsonify({"ok": False, "error": "Ticker vacío"}), 400
+    if not ticker or not _valid_ticker(ticker):
+        return jsonify({"ok": False, "error": "Ticker inválido"}), 400
 
     db_key    = ticker.replace(".MX", "")
     # Normalizar caracteres especiales BMV (ñ/Ñ → & para Yahoo Finance)
@@ -1825,7 +1941,12 @@ def api_propuesta():
             return jsonify({"ok": False, "error": f"Perfil {pid} no existe"}), 400
     else:
         raw = body.get("fondos", {})
-        fondos_pct = {k: float(v) for k, v in raw.items() if float(v) > 0}
+        try:
+            fondos_pct = {k: float(v) for k, v in raw.items() if float(v) > 0}
+            if any(v > 100 or v < 0 for v in fondos_pct.values()):
+                return jsonify({"ok": False, "error": "Porcentaje fuera de rango"}), 400
+        except (ValueError, TypeError):
+            return jsonify({"ok": False, "error": "Datos numéricos inválidos"}), 400
         repo_mxn = body.get("repo_mxn")
         repo_usd = body.get("repo_usd")
         acciones_raw = body.get("acciones", [])
@@ -1843,9 +1964,9 @@ def api_propuesta():
 # ─────────────────────────────────────────────────────────────────────────────
 # MACRO
 # ─────────────────────────────────────────────────────────────────────────────
-BANXICO_TOKEN = os.environ.get("BANXICO_TOKEN", "592b06934a31710cba9e9a6efebec12c1fe432f5459fc87e7f473380fa0a1d3a")
+BANXICO_TOKEN = os.environ.get("BANXICO_TOKEN", "")
 BANXICO_BASE  = "https://www.banxico.org.mx/SieAPIRest/service/v1/series"
-FRED_API_KEY  = os.environ.get("FRED_API_KEY", "1a6dadbec2267dd21b3ad5d6447ed711")
+FRED_API_KEY  = os.environ.get("FRED_API_KEY", "")
 FRED_BASE     = "https://api.stlouisfed.org/fred/series/observations"
 
 SERIE_TIIE28  = "SF43783"
@@ -1994,6 +2115,9 @@ def get_banxico_dato(serie_id):
 def diag_repo():
     if "usuario" not in session:
         return jsonify({"ok": False, "error": "No autenticado"}), 401
+    user_data = USERS.get(session.get("usuario", ""))
+    if not user_data or user_data.get("rol") != "admin":
+        return jsonify({"ok": False, "error": "No autorizado"}), 403
     resultado = {}
     try:
         hoy = date.today(); ini = (hoy - timedelta(days=10)).isoformat(); fin = hoy.isoformat()
@@ -2023,7 +2147,12 @@ def diag_yf():
     """Diagnóstico Yahoo Finance — prueba raw HTTP a Yahoo."""
     if "usuario" not in session:
         return jsonify({"ok": False, "error": "No autenticado"}), 401
+    user_data = USERS.get(session.get("usuario", ""))
+    if not user_data or user_data.get("rol") != "admin":
+        return jsonify({"ok": False, "error": "No autorizado"}), 403
     tk = request.args.get("t", "AAPL.MX")
+    if not _valid_ticker(tk):
+        return jsonify({"ok": False, "error": "Ticker inválido"}), 400
     resultado = {"ticker": tk}
 
     # Check curl_cffi
@@ -2033,10 +2162,8 @@ def diag_yf():
     except ImportError as e:
         resultado["curl_cffi"] = {"ok": False, "error": str(e)}
 
-    # Rate limit status
-    now = time.time()
-    resultado["rate_limit_until"] = _yf_rate_limit_until
-    resultado["rate_limited"] = now < _yf_rate_limit_until
+    # Rate limit status (solo indica si está limitado, sin exponer timestamps internos)
+    resultado["rate_limited"] = time.time() < _yf_rate_limit_until
 
     # Test 1: Raw HTTP to Yahoo Chart API (no yfinance, just requests)
     try:
