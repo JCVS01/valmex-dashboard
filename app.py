@@ -6,6 +6,7 @@ import secrets
 import requests
 import pandas as pd
 import yfinance as yf
+import xml.etree.ElementTree as ET
 from datetime import date, timedelta, datetime
 from flask import Flask, send_file, request, jsonify, redirect, url_for, session, send_from_directory
 import json
@@ -477,6 +478,7 @@ SERIE_MAP = {
 _ms_cache = {}
 MS_URL    = "https://api.morningstar.com/v2/service/mf/hlk0d0zmiy1b898b/universeid/txcm88fa8x3vxapp"
 MS_ACCESS = "hwg0cty5re7araij32k035091f43wxd0"
+MS_NAV_URL = "https://api.morningstar.com/service/mf/UnadjustedNAV/ISIN"
 
 
 def load_ms_universe():
@@ -494,6 +496,62 @@ def load_ms_universe():
     except Exception as e:
         print(f"[MS ERROR] {e}")
     return _ms_cache
+
+
+# ── Morningstar NAV Histórico — precios diarios por ISIN ──
+_ms_nav_cache: dict = {}   # isin → {"ts": float, "data": list}
+_MS_NAV_TTL = 14400         # 4 horas
+
+def get_ms_nav(isin: str, start: str = "2010-01-01", end: str = None) -> list:
+    """Obtiene precios históricos NAV de Morningstar por ISIN.
+    Retorna lista de {"fecha": "yyyy-mm-dd", "nav": float}"""
+    if end is None:
+        end = date.today().isoformat()
+    now = time.time()
+    if isin in _ms_nav_cache and (now - _ms_nav_cache[isin]["ts"]) < _MS_NAV_TTL:
+        return _ms_nav_cache[isin]["data"]
+    try:
+        r = requests.get(
+            f"{MS_NAV_URL}/{isin}",
+            params={"startdate": start, "enddate": end, "accesscode": MS_ACCESS},
+            timeout=25,
+        )
+        r.raise_for_status()
+        root = ET.fromstring(r.text)
+        data = [{"fecha": elem.get("d"), "nav": float(elem.get("v"))}
+                for elem in root.iter("r")]
+        _ms_nav_cache[isin] = {"ts": now, "data": data}
+        print(f"[MS NAV] {isin}: {len(data)} precios cargados")
+        return data
+    except Exception as e:
+        print(f"[MS NAV ERROR] {isin}: {e}")
+        return []
+
+
+def get_fondo_backtesting(fondo: str, serie: str) -> list:
+    """Construye serie mensual base-100 para un fondo Valmex usando NAV histórico.
+    Retorna [{"fecha": "yyyy-mm-dd", "valor": float}]"""
+    if fondo == "VXREPO1":
+        return []
+    isin = ISIN_MAP.get(fondo, {}).get(serie)
+    if not isin:
+        return []
+    navs = get_ms_nav(isin)
+    if len(navs) < 2:
+        return []
+    try:
+        df = pd.DataFrame(navs)
+        df["fecha"] = pd.to_datetime(df["fecha"])
+        df = df.set_index("fecha").sort_index()
+        monthly = df["nav"].resample("MS").first().dropna()
+        if len(monthly) < 2:
+            return []
+        base = float(monthly.iloc[0])
+        return [{"fecha": dt.strftime("%Y-%m-%d"), "valor": round(float(px) / base * 100, 4)}
+                for dt, px in monthly.items()]
+    except Exception as e:
+        print(f"[BT FONDO ERROR] {fondo} {serie}: {e}")
+        return []
 
 # ─────────────────────────────────────────────────────────────────────────────
 # ACCIONES MX — DataBursatil (fuente principal para BMV/BIVA)
@@ -1534,6 +1592,12 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
             "r3y": round(safe_float(d.get("TTR-Return3Yr")),  2),
         })
 
+        # Backtesting: serie histórica NAV de Morningstar
+        fondo_bt = get_fondo_backtesting(fondo, serie)
+        if fondo_bt:
+            fondo_bt_series = {pt["fecha"]: pt["valor"] for pt in fondo_bt}
+            bt_components.append({"weight": w, "series": fondo_bt_series, "is_repo": False})
+
     # ── Reporto directo ──
     for repo_cfg, es_usd, label_corto in [
         (repo_mxn, False, "MD MXP"),
@@ -1903,16 +1967,16 @@ def api_accion_validate():
     db_key    = db_key.replace("Ñ", "&").replace("ñ", "&")
     mx_ticker = db_key + ".MX"
 
-    # 1. DataBursatil — BMV local y SIC (precios en MXN)
+    # 1. Yahoo Finance SIC — ticker con .MX (MXN), precio más preciso
+    data = get_accion_yf(mx_ticker)
+    if data:
+        return jsonify({"ok": True, "data": data, "fuente": "yahoo_sic"})
+
+    # 2. DataBursatil — fallback para emisoras que YF no tenga
     if DB_TOKEN:
         data = get_accion_db(db_key)
         if data:
             return jsonify({"ok": True, "data": data, "fuente": "databursatil"})
-
-    # 2. Yahoo Finance SIC — siempre con .MX para obtener precio en MXN
-    data = get_accion_yf(mx_ticker)
-    if data:
-        return jsonify({"ok": True, "data": data, "fuente": "yahoo_sic"})
 
     # 3. Último recurso: Yahoo Finance global (solo si los anteriores fallaron)
     if ticker != mx_ticker:
