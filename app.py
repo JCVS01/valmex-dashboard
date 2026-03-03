@@ -696,22 +696,19 @@ def get_accion_db(emisora_serie: str) -> dict | None:
 _accion_cache: dict = {}
 _accion_cache_ts: dict = {}
 def _accion_cache_valid(ticker: str) -> bool:
-    """Cache válido hasta las 16:30 CDMX del día siguiente al fetch."""
+    """Cache válido hasta las 4:00pm hora Nueva York (cierre NYSE/NASDAQ)."""
     ts = _accion_cache_ts.get(ticker, 0)
     if not ts:
         return False
     from zoneinfo import ZoneInfo
-    cdmx = ZoneInfo("America/Mexico_City")
-    fetched = datetime.fromtimestamp(ts, tz=cdmx)
-    now = datetime.now(tz=cdmx)
-    # Si se fetcheó hoy después de las 16:30, válido hasta mañana 16:30
-    # Si se fetcheó hoy antes de las 16:30, válido hasta hoy 16:30
-    cutoff_today = now.replace(hour=16, minute=30, second=0, microsecond=0)
-    if now >= cutoff_today:
-        # Después de las 16:30 — el próximo corte es mañana 16:30
-        next_cutoff = cutoff_today + timedelta(days=1)
+    ny = ZoneInfo("America/New_York")
+    now = datetime.now(tz=ny)
+    cutoff = now.replace(hour=16, minute=0, second=0, microsecond=0)
+    if now >= cutoff:
+        next_cutoff = cutoff + timedelta(days=1)
     else:
-        next_cutoff = cutoff_today
+        next_cutoff = cutoff
+    fetched = datetime.fromtimestamp(ts, tz=ny)
     return fetched < next_cutoff and now < next_cutoff
 _yf_rate_limit_until: float = 0  # timestamp hasta el cual no hacer requests a Yahoo
 
