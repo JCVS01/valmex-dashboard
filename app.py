@@ -695,7 +695,24 @@ def get_accion_db(emisora_serie: str) -> dict | None:
 # ─────────────────────────────────────────────────────────────────────────────
 _accion_cache: dict = {}
 _accion_cache_ts: dict = {}
-ACCION_CACHE_TTL = 172800  # 48 horas
+def _accion_cache_valid(ticker: str) -> bool:
+    """Cache válido hasta las 16:30 CDMX del día siguiente al fetch."""
+    ts = _accion_cache_ts.get(ticker, 0)
+    if not ts:
+        return False
+    from zoneinfo import ZoneInfo
+    cdmx = ZoneInfo("America/Mexico_City")
+    fetched = datetime.fromtimestamp(ts, tz=cdmx)
+    now = datetime.now(tz=cdmx)
+    # Si se fetcheó hoy después de las 16:30, válido hasta mañana 16:30
+    # Si se fetcheó hoy antes de las 16:30, válido hasta hoy 16:30
+    cutoff_today = now.replace(hour=16, minute=30, second=0, microsecond=0)
+    if now >= cutoff_today:
+        # Después de las 16:30 — el próximo corte es mañana 16:30
+        next_cutoff = cutoff_today + timedelta(days=1)
+    else:
+        next_cutoff = cutoff_today
+    return fetched < next_cutoff and now < next_cutoff
 _yf_rate_limit_until: float = 0  # timestamp hasta el cual no hacer requests a Yahoo
 
 # ── Mapeo estático ticker → (country, sector) — para cuando quoteSummary no funciona ──
@@ -1060,7 +1077,7 @@ def _ensure_yf_cookie(session: requests.Session) -> bool:
 
 def get_accion_yf(ticker: str) -> dict | None:
     now = time.time()
-    if ticker in _accion_cache and (now - _accion_cache_ts.get(ticker, 0)) < ACCION_CACHE_TTL:
+    if ticker in _accion_cache and _accion_cache_valid(ticker):
         return _accion_cache[ticker]
 
     global _yf_rate_limit_until
