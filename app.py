@@ -696,6 +696,7 @@ def get_accion_db(emisora_serie: str) -> dict | None:
 _accion_cache: dict = {}
 _accion_cache_ts: dict = {}
 ACCION_CACHE_TTL = 3600
+_yf_rate_limit_until: float = 0  # timestamp hasta el cual no hacer requests a Yahoo
 
 GEO_TRANSLATE_YF = {
     "united states": "Estados Unidos", "mexico": "México", "canada": "Canadá",
@@ -903,9 +904,16 @@ def get_accion_yf(ticker: str) -> dict | None:
     if ticker in _accion_cache and (now - _accion_cache_ts.get(ticker, 0)) < ACCION_CACHE_TTL:
         return _accion_cache[ticker]
 
+    global _yf_rate_limit_until
     hist = None
     info = {}
     t    = None
+
+    # ── Rate limit check: si Yahoo nos bloqueó, no reintentar por un rato ──
+    if now < _yf_rate_limit_until:
+        wait = int(_yf_rate_limit_until - now)
+        print(f"[YF] {ticker} en rate-limit cooldown ({wait}s restantes)")
+        return None
 
     # ── Intento 1: yfinance nativo (con curl_cffi usa TLS fingerprint de Chrome) ──
     try:
@@ -914,20 +922,24 @@ def get_accion_yf(ticker: str) -> dict | None:
         if hist is not None and not hist.empty:
             print(f"[YF] {ticker} OK vía yfinance nativo ({len(hist)} filas)")
     except Exception as e:
+        err_str = str(e)
         print(f"[YF] {ticker} intento-nativo falló: {e}")
+        if "Too Many Requests" in err_str or "Rate limit" in err_str:
+            _yf_rate_limit_until = now + 300  # cooldown 5 minutos
+            print(f"[YF] Rate limited — cooldown 5 min hasta {time.strftime('%H:%M:%S', time.localtime(_yf_rate_limit_until))}")
 
     # ── Intento 2: yf.download (más estable en algunos entornos cloud) ──
     if hist is None or hist.empty:
-        try:
-            hist = yf.download(ticker, start="2000-01-01", auto_adjust=False,
-                               progress=False, threads=False)
-            # yf.download retorna MultiIndex si solo es un ticker en algunas versiones
-            if isinstance(hist.columns, pd.MultiIndex):
-                hist.columns = hist.columns.get_level_values(0)
-            if hist is not None and not hist.empty:
-                print(f"[YF] {ticker} OK vía yf.download ({len(hist)} filas)")
-        except Exception as e:
-            print(f"[YF] {ticker} intento-download falló: {e}")
+        if now >= _yf_rate_limit_until:
+            try:
+                hist = yf.download(ticker, start="2000-01-01", auto_adjust=False,
+                                   progress=False, threads=False)
+                if isinstance(hist.columns, pd.MultiIndex):
+                    hist.columns = hist.columns.get_level_values(0)
+                if hist is not None and not hist.empty:
+                    print(f"[YF] {ticker} OK vía yf.download ({len(hist)} filas)")
+            except Exception as e:
+                print(f"[YF] {ticker} intento-download falló: {e}")
 
     # ── Intento 3: Yahoo Chart API directo (requests puro, último recurso) ──
     if hist is None or hist.empty:
@@ -1832,7 +1844,7 @@ def diag_repo():
 
 @app.route("/api/diag-yf")
 def diag_yf():
-    """Diagnóstico Yahoo Finance — prueba los 3 intentos."""
+    """Diagnóstico Yahoo Finance — prueba un solo intento (no agrava rate limit)."""
     if "usuario" not in session:
         return jsonify({"ok": False, "error": "No autenticado"}), 401
     tk = request.args.get("t", "AAPL.MX")
@@ -1845,29 +1857,21 @@ def diag_yf():
     except ImportError as e:
         resultado["curl_cffi"] = {"ok": False, "error": str(e)}
 
-    # Intento 1: yfinance nativo
-    try:
-        t = yf.Ticker(tk)
-        h = t.history(start="2024-01-01", auto_adjust=False)
-        resultado["yf_nativo"] = {"ok": h is not None and not h.empty, "filas": len(h) if h is not None else 0}
-    except Exception as e:
-        resultado["yf_nativo"] = {"ok": False, "error": str(e)}
+    # Rate limit status
+    now = time.time()
+    if now < _yf_rate_limit_until:
+        resultado["rate_limited"] = True
+        resultado["cooldown_remaining_s"] = int(_yf_rate_limit_until - now)
 
-    # Intento 2: yf.download
+    # Solo un intento para no empeorar el rate limit
     try:
-        h2 = yf.download(tk, start="2024-01-01", auto_adjust=False, progress=False, threads=False)
-        if isinstance(h2.columns, pd.MultiIndex):
-            h2.columns = h2.columns.get_level_values(0)
-        resultado["yf_download"] = {"ok": h2 is not None and not h2.empty, "filas": len(h2) if h2 is not None else 0}
+        data = get_accion_yf(tk)
+        resultado["resultado"] = {"ok": data is not None, "tiene_geo": bool(data.get("geo")) if data else False,
+                                   "tiene_sector": bool(data.get("sectores")) if data else False,
+                                   "nombre": data.get("nombre") if data else None,
+                                   "precio": data.get("precio_cierre") if data else None}
     except Exception as e:
-        resultado["yf_download"] = {"ok": False, "error": str(e)}
-
-    # Intento 3: direct API
-    try:
-        di, dd = _yf_direct_chart(tk)
-        resultado["yf_direct"] = {"ok": dd is not None and not dd.empty, "filas": len(dd) if dd is not None else 0}
-    except Exception as e:
-        resultado["yf_direct"] = {"ok": False, "error": str(e)}
+        resultado["resultado"] = {"ok": False, "error": str(e)}
 
     return jsonify(resultado)
 
