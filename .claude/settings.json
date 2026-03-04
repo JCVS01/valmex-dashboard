@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && git pull --rebase origin main 2>/dev/null; git add -A && git diff --cached --quiet || (git commit -m \"auto-sync $(date '+%Y-%m-%d %H:%M')\" && git push origin main)",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
+}
