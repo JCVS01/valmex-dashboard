@@ -297,11 +297,11 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
   .dd-block .rh-pill{font-size:10px!important;}
   .dd-block .rh-val{font-size:16px!important;}
 
-  /* Pies: 3 per row compact gallery */
-  .prop-row2{display:grid!important;grid-template-columns:1fr 1fr 1fr!important;gap:6px!important;}
-  .card-pie{grid-column:span 1!important;height:200px!important;min-height:auto!important;}
-  .card-pie .ph{font-size:9px!important;padding:5px 4px!important;letter-spacing:0!important;}
-  .card-pie .pb{padding:4px!important;}
+  /* Pies: full-width stacked on mobile */
+  .prop-row2{display:grid!important;grid-template-columns:1fr!important;gap:10px!important;}
+  .card-pie{grid-column:1/-1!important;height:280px!important;min-height:auto!important;}
+  .card-pie .ph{font-size:11px!important;padding:6px 10px!important;}
+  .card-pie .pb{padding:8px!important;}
 
   /* Card styling: cleaner mobile look */
   .pcard{border-radius:10px!important;box-shadow:0 2px 8px rgba(0,0,0,.06)!important;border:1px solid rgba(0,0,0,.06)!important;}
