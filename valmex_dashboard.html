@@ -198,7 +198,18 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
 .cmp-pie-pair{display:flex;gap:8px;height:100%;}
 .cmp-pie-half{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0;}
 .cmp-pie-half canvas{flex:1;width:100%!important;min-height:0;}
-@media(max-width:600px) and (orientation:portrait){#cmp-dash{grid-template-columns:1fr!important;gap:10px!important;padding:0 4px!important;} #cmp-dash .pcard{grid-column:span 1!important;height:auto!important;min-height:220px;border-radius:10px!important;} #cmp-dash .cmp-rend,#cmp-dash .cmp-deuda{min-height:400px!important;}}
+@media(max-width:600px) and (orientation:portrait){
+  #cmp-dash{grid-template-columns:1fr!important;gap:10px!important;padding:0 4px!important;}
+  #cmp-dash .pcard{grid-column:span 1!important;border-radius:10px!important;}
+  #cmp-dash .cmp-comp{height:260px!important;}
+  #cmp-dash .cmp-back{height:220px!important;}
+  #cmp-dash .cmp-rend{height:auto!important;min-height:260px!important;}
+  #cmp-dash .cmp-clase{height:260px!important;}
+  #cmp-dash .cmp-deuda{height:auto!important;min-height:260px!important;}
+  #cmp-dash .cmp-tipodeuda{height:260px!important;}
+  #cmp-dash .cmp-geo{height:260px!important;}
+  #cmp-dash .cmp-sector{height:260px!important;}
+}
 
 /* ── ELITE ── */
 .elite-hero{background:linear-gradient(130deg,var(--navy) 0%,#0A3580 100%);border-radius:14px;padding:36px 40px;display:flex;align-items:center;gap:28px;box-shadow:0 8px 32px rgba(0,32,92,.22);}
@@ -276,13 +287,13 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
   #prop-title-sub,#cmp-title-sub{font-size:11px!important;}
   .prop-rule-full{margin-bottom:4px!important;}
 
-  /* Cards: full-width stacked feed */
-  .card-comp,.card-rend,.card-deuda,.card-back,.card-pie{grid-column:1/-1!important;height:auto!important;}
+  /* Cards: full-width stacked feed — explicit heights */
+  .card-comp,.card-rend,.card-deuda,.card-back,.card-pie{grid-column:1/-1!important;}
   .prop-row1 .pcard,.prop-row2 .pcard{min-height:auto!important;}
-  .card-comp{height:220px!important;}
-  .card-rend{min-height:180px!important;}
-  .card-deuda{min-height:160px!important;}
-  .card-back{height:240px!important;}
+  .card-comp{height:260px!important;}
+  .card-rend{height:260px!important;}
+  .card-deuda{height:260px!important;}
+  .card-back{height:220px!important;}
 
   /* Rendimientos: 3×2 grid compact */
   .rh-grid{gap:4px!important;}
@@ -351,8 +362,6 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
   #cmp-dash .rh-pill{font-size:9px!important;}
   #cmp-dash .dd-block .rh-val{font-size:13px!important;}
   #cmp-dash .dd-block .rh-pill{font-size:8px!important;}
-  #cmp-dash .cmp-rend,#cmp-dash .cmp-deuda{min-height:400px!important;}
-
   /* ── ELITE ── */
   .elite-hero{flex-direction:column;padding:24px 20px;}
   .elite-features{grid-template-columns:1fr;}
