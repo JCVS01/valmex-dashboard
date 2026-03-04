@@ -11,7 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
+body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 :root{--navy:#00205C;--sky:#41BBC9;--blue:#3DA5E0;--silver:#D3DDE6;--gray:#5B6670;--white:#fff;--bg:#FFFFFF;}
 
 /* ── Toast notification (modal para warn/err) ── */
@@ -223,10 +223,10 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
   .cfg-layout{grid-template-columns:1fr;}
   .elite-features{grid-template-columns:1fr;}
   /* Responsive: CMP grid 3 columnas */
-  #cmp-dash{grid-template-columns:repeat(3,1fr)!important;}
+  #cmp-dash{grid-template-columns:repeat(2,1fr)!important;gap:10px!important;}
   #cmp-dash .cmp-comp{grid-column:span 1!important;}
-  #cmp-dash .cmp-back{grid-column:span 2!important;}
-  #cmp-dash .cmp-rend,#cmp-dash .cmp-clase,#cmp-dash .cmp-deuda{grid-column:span 3!important;}
+  #cmp-dash .cmp-back{grid-column:span 1!important;}
+  #cmp-dash .cmp-rend,#cmp-dash .cmp-clase,#cmp-dash .cmp-deuda{grid-column:1/-1!important;}
   #cmp-dash .cmp-tipodeuda{grid-column:span 1!important;}
   #cmp-dash .cmp-geo{grid-column:span 1!important;}
   #cmp-dash .cmp-sector{grid-column:span 1!important;}
@@ -387,17 +387,17 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
   .fondos-list{grid-template-columns:1fr 1fr!important;max-height:50vh;}
   /* Responsive: acciones-grid 2 columnas */
   #act-acciones-grid,#prop-acciones-grid{grid-template-columns:1fr 1fr!important;}
-  /* Responsive: CMP grid 3 columnas */
-  #cmp-dash{grid-template-columns:repeat(3,1fr)!important;}
+  /* Responsive: CMP grid 2 columnas landscape phone */
+  #cmp-dash{grid-template-columns:repeat(2,1fr)!important;gap:8px!important;}
   #cmp-dash .cmp-comp{grid-column:span 1!important;}
-  #cmp-dash .cmp-back{grid-column:span 2!important;}
-  #cmp-dash .cmp-rend,#cmp-dash .cmp-clase,#cmp-dash .cmp-deuda{grid-column:span 3!important;}
+  #cmp-dash .cmp-back{grid-column:span 1!important;}
+  #cmp-dash .cmp-rend,#cmp-dash .cmp-clase,#cmp-dash .cmp-deuda{grid-column:1/-1!important;}
   #cmp-dash .cmp-tipodeuda,#cmp-dash .cmp-geo,#cmp-dash .cmp-sector{grid-column:span 1!important;}
   /* Responsive: CMP font sizes reducidos */
-  #cmp-dash .rh-val{font-size:11px!important;}
+  #cmp-dash .rh-val{font-size:12px!important;}
   #cmp-dash .rh-pill{font-size:8px!important;}
-  #cmp-dash .dd-block .rh-val{font-size:10px!important;}
-  .cmp-badge-a,.cmp-badge-b{font-size:8px!important;padding:1px 6px!important;}
+  #cmp-dash .dd-block .rh-val{font-size:11px!important;}
+  .cmp-badge-a,.cmp-badge-b{font-size:8px!important;padding:2px 8px!important;}
   /* Responsive: CMP toolbar wrap */
   #page-comparativa .prop-titlebar .prop-right{flex-wrap:wrap;gap:4px;}
   /* Responsive: cfg-layout 1 columna */
