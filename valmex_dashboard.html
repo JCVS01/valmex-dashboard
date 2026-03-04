@@ -213,9 +213,10 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
 
 /* ══ TABLET PORTRAIT (≤1024px vertical) ══ */
 @media(max-width:1024px) and (orientation:portrait){
-  .card-comp,.card-rend,.card-deuda{grid-column:span 1;}
-  .card-back{grid-column:span 3;}
-  .card-pie{grid-column:span 2;}
+  #prop-dash{grid-template-columns:repeat(3,1fr)!important;}
+  .card-comp,.card-rend,.card-deuda{grid-column:span 1!important;}
+  .card-back{grid-column:1/-1!important;}
+  .card-pie{grid-column:span 1!important;}
   .cfg-layout{grid-template-columns:1fr;}
   .elite-features{grid-template-columns:1fr;}
   /* Responsive: CMP grid 3 columnas */
@@ -259,8 +260,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
   /* ── PROPUESTA: feed-style vertical cards ── */
   #page-propuesta.active{margin-top:-10px;}
   .prop-dash-scaler{overflow-x:hidden!important;padding:0!important;}
-  #prop-dash{padding:0 4px!important;gap:10px!important;}
-  .prop-grid{grid-template-columns:1fr!important;}
+  #prop-dash{padding:0 4px!important;gap:10px!important;grid-template-columns:1fr!important;}
   .prop-titlebar{padding:6px 4px!important;}
   .prop-titlebar .prop-right{width:100%;display:flex;gap:8px;}
   .prop-titlebar .prop-right select{flex:1;max-width:none!important;font-size:12px!important;padding:8px 10px!important;}
@@ -273,26 +273,26 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
   #prop-title-sub,#cmp-title-sub{font-size:11px!important;}
   .prop-rule-full{margin-bottom:4px!important;}
 
-  /* Cards: compact feed items */
-  .card-comp,.card-rend,.card-deuda,.card-back,.card-pie{grid-column:span 1;height:auto!important;}
+  /* Cards: full-width stacked feed */
+  .card-comp,.card-rend,.card-deuda,.card-back,.card-pie{grid-column:1/-1!important;height:auto!important;}
   .prop-row1 .pcard,.prop-row2 .pcard{min-height:auto!important;}
   .card-comp{height:220px!important;}
-  .card-rend{height:auto!important;}
-  .card-deuda{height:auto!important;}
+  .card-rend{min-height:180px!important;}
+  .card-deuda{min-height:160px!important;}
   .card-back{height:240px!important;}
 
   /* Rendimientos: 3×2 grid compact */
-  .rh-grid{gap:3px!important;}
-  .rh-block{padding:6px 8px!important;border-left-width:3px!important;}
-  .rh-pill{font-size:9px!important;margin-bottom:1px!important;}
-  .rh-val{font-size:16px!important;font-weight:800!important;}
+  .rh-grid{gap:4px!important;}
+  .rh-block{padding:8px 10px!important;border-left-width:3px!important;overflow:visible!important;}
+  .rh-pill{font-size:10px!important;margin-bottom:2px!important;}
+  .rh-val{font-size:18px!important;font-weight:800!important;white-space:nowrap!important;}
 
   /* Deuda drilldown compact */
-  .dd-grid{gap:3px!important;}
-  .dd-hdr{padding:3px 8px!important;font-size:10px!important;}
-  .dd-block{padding:5px 8px!important;border-left-width:3px!important;}
-  .dd-block .rh-pill{font-size:9px!important;}
-  .dd-block .rh-val{font-size:15px!important;}
+  .dd-grid{gap:4px!important;}
+  .dd-hdr{padding:4px 10px!important;font-size:11px!important;}
+  .dd-block{padding:6px 10px!important;border-left-width:3px!important;overflow:visible!important;}
+  .dd-block .rh-pill{font-size:10px!important;}
+  .dd-block .rh-val{font-size:16px!important;}
 
   /* Pies: 3 per row compact gallery */
   .prop-row2{display:grid!important;grid-template-columns:1fr 1fr 1fr!important;gap:6px!important;}
@@ -367,15 +367,16 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
   .advisor-name{display:none;}
   .btn-logout{display:none;}
   .container{padding:8px 12px;}
-  .prop-grid{gap:8px;}
-  .card-comp,.card-rend,.card-deuda{grid-column:span 1;min-height:200px;}
-  .card-back{grid-column:span 3;min-height:200px;}
-  .card-pie{grid-column:span 2;min-height:170px;}
+  #prop-dash{grid-template-columns:repeat(3,1fr)!important;gap:8px!important;}
+  .card-comp,.card-rend,.card-deuda{grid-column:span 1!important;min-height:200px;}
+  .card-back{grid-column:1/-1!important;min-height:200px;}
+  .card-pie{grid-column:span 1!important;min-height:170px;}
   .prop-title{font-size:14px;}
   .rh-val{font-size:13px;}
   .rh-pill{font-size:8px;padding:2px 5px;}
-  .rh-block{padding:5px;}
+  .rh-block{padding:5px;overflow:visible!important;}
   .dd-block .rh-val{font-size:11px;}
+  .dd-block{overflow:visible!important;}
   .ph{padding:4px 10px;font-size:9.5px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .prop-note{display:none;}
   .pres-body{height:78vh;height:78dvh;}
@@ -1897,16 +1898,17 @@ async function renderPDFPages(url, containerId) {
     var viewer = document.getElementById(containerId);
     viewer.innerHTML = '';
     var containerWidth = viewer.clientWidth - 8;
+    var dpr = window.devicePixelRatio || 1;
     for (var i = 1; i <= pdf.numPages; i++) {
       var page = await pdf.getPage(i);
       var viewport = page.getViewport({ scale: 1 });
       var scale = containerWidth / viewport.width;
-      var scaledViewport = page.getViewport({ scale: scale });
+      var scaledViewport = page.getViewport({ scale: scale * dpr });
       var canvas = document.createElement('canvas');
       canvas.width = scaledViewport.width;
       canvas.height = scaledViewport.height;
-      canvas.style.width = '100%';
-      canvas.style.height = 'auto';
+      canvas.style.width = containerWidth + 'px';
+      canvas.style.height = (containerWidth * viewport.height / viewport.width) + 'px';
       canvas.style.display = 'block';
       canvas.style.borderRadius = '0';
       canvas.style.boxShadow = '0 1px 4px rgba(0,0,0,.1)';
