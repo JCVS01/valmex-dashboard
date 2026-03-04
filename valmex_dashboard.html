@@ -7,6 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
@@ -82,7 +83,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
 .pres-card{background:#fff;border-radius:0;border:none;box-shadow:none;overflow:hidden;display:flex;flex-direction:column;height:100%;}
 .pres-hdr{background:#fff;border-bottom:1px solid var(--silver);padding:4px 14px;display:flex;align-items:center;justify-content:flex-end;flex-shrink:0;}
 .pres-hdr h2{font-size:12px;font-weight:600;color:var(--navy);}
-.pres-body{width:100%;flex:1;overflow:hidden;line-height:0;position:relative;}
+.pres-body{width:100%;flex:1;overflow:hidden;line-height:0;position:relative;} #pdfjs-viewer{scroll-snap-type:y proximity;} #pdfjs-viewer canvas{scroll-snap-align:start;}
 .pres-body iframe,.pres-body object{width:100%;height:100%;border:none;display:block;}
 .pres-mobile-fallback{display:none;flex-direction:column;align-items:center;justify-content:center;gap:24px;height:100%;text-align:center;padding:60px 32px;background:linear-gradient(180deg,#f0f4f8 0%,#fff 100%);}
 .pres-mobile-fallback .pres-open-btn{display:inline-flex;align-items:center;gap:10px;padding:16px 36px;background:var(--sky);color:#fff;border:none;border-radius:14px;font-family:'Montserrat',sans-serif;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;transition:all .2s;box-shadow:0 4px 20px rgba(65,187,201,.35);}
@@ -293,11 +294,11 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
   .dd-block .rh-pill{font-size:9px!important;}
   .dd-block .rh-val{font-size:15px!important;}
 
-  /* Pies: 2 per row like Instagram gallery */
-  .prop-row2{display:grid!important;grid-template-columns:1fr 1fr!important;gap:10px!important;}
-  .card-pie{grid-column:span 1!important;height:220px!important;min-height:auto!important;}
-  /* 3rd pie (sector) takes full width if odd */
-  .prop-row2>.pcard:nth-child(3){grid-column:1/-1!important;height:200px!important;}
+  /* Pies: 3 per row compact gallery */
+  .prop-row2{display:grid!important;grid-template-columns:1fr 1fr 1fr!important;gap:6px!important;}
+  .card-pie{grid-column:span 1!important;height:200px!important;min-height:auto!important;}
+  .card-pie .ph{font-size:9px!important;padding:5px 4px!important;letter-spacing:0!important;}
+  .card-pie .pb{padding:4px!important;}
 
   /* Card styling: cleaner mobile look */
   .pcard{border-radius:10px!important;box-shadow:0 2px 8px rgba(0,0,0,.06)!important;border:1px solid rgba(0,0,0,.06)!important;}
@@ -431,8 +432,8 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;}
   .mobile-panel{width:220px!important;}
   .card-comp{height:180px!important;}
   .card-back{height:200px!important;}
-  .card-pie{height:180px!important;}
-  .prop-row2>.pcard:nth-child(3){height:170px!important;}
+  .card-pie{height:160px!important;}
+  .card-pie .ph{font-size:8px!important;padding:4px 3px!important;}
 }
 
 @media print{
@@ -1868,6 +1869,7 @@ function closeMobileNav() { document.getElementById('mobile-nav').style.display=
 // ── PRESENTACIÓN: carga inteligente según dispositivo ──
 var _presLoaded = false;
 var _isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+var _isMobileDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
 function loadPresentacion() {
   if (_presLoaded) return;
@@ -1875,20 +1877,51 @@ function loadPresentacion() {
   var container = document.getElementById('pres-body');
   if (!container) return;
 
-  if (_isIOS) {
-    // iOS: iframe con PDF se congela — mostrar botón para abrir en visor nativo
+  if (_isMobileDevice) {
+    // Mobile/Tablet: render PDF pages as scrollable canvases via PDF.js
     container.innerHTML =
-      '<div class="pres-mobile-fallback" style="display:flex;">' +
-        '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#00205C" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>' +
-        '<p>Presentación Comercial VALMEX</p>' +
-        '<a href="/PC.pdf" target="_blank" class="pres-open-btn">' +
-          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' +
-          'Abrir presentación' +
-        '</a>' +
+      '<div id="pdfjs-viewer" style="width:100%;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#e8ecf0;display:flex;flex-direction:column;align-items:center;gap:4px;padding:4px 0;">' +
+        '<div style="display:flex;align-items:center;justify-content:center;padding:40px;color:#5B6670;font-size:13px;font-weight:600;font-family:Montserrat,sans-serif;">Cargando presentación...</div>' +
       '</div>';
+    renderPDFPages('/PC.pdf', 'pdfjs-viewer');
   } else {
-    // Desktop/Android: iframe normal
+    // Desktop: iframe normal
     container.innerHTML = '<iframe src="/PC.pdf#toolbar=0&navpanes=0&scrollbar=0&view=FitH" title="Presentación Comercial"></iframe>';
+  }
+}
+
+async function renderPDFPages(url, containerId) {
+  try {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    var pdf = await pdfjsLib.getDocument(url).promise;
+    var viewer = document.getElementById(containerId);
+    viewer.innerHTML = '';
+    var containerWidth = viewer.clientWidth - 8;
+    for (var i = 1; i <= pdf.numPages; i++) {
+      var page = await pdf.getPage(i);
+      var viewport = page.getViewport({ scale: 1 });
+      var scale = containerWidth / viewport.width;
+      var scaledViewport = page.getViewport({ scale: scale });
+      var canvas = document.createElement('canvas');
+      canvas.width = scaledViewport.width;
+      canvas.height = scaledViewport.height;
+      canvas.style.width = '100%';
+      canvas.style.height = 'auto';
+      canvas.style.display = 'block';
+      canvas.style.borderRadius = '0';
+      canvas.style.boxShadow = '0 1px 4px rgba(0,0,0,.1)';
+      canvas.style.background = '#fff';
+      viewer.appendChild(canvas);
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport: scaledViewport }).promise;
+    }
+  } catch(e) {
+    console.error('PDF render error:', e);
+    var viewer = document.getElementById(containerId);
+    viewer.innerHTML =
+      '<div class="pres-mobile-fallback" style="display:flex;">' +
+        '<p>No se pudo cargar la presentación</p>' +
+        '<a href="/PC.pdf" target="_blank" class="pres-open-btn">Abrir presentación</a>' +
+      '</div>';
   }
 }
 
