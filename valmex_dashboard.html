@@ -400,7 +400,9 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
   .dd-block{overflow:visible!important;}
   .ph{padding:4px 10px;font-size:9.5px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .prop-note{display:none;}
-  .pres-body{height:78vh;height:78dvh;}
+  #page-presentacion{margin:-8px -12px!important;height:calc(100vh - 54px)!important;height:calc(100dvh - 54px)!important;}
+  .pres-card{height:100%!important;}
+  .pres-body{height:100%!important;flex:1!important;}
   /* Responsive: fondos-list 2 columnas landscape, compact */
   .fondos-list{grid-template-columns:1fr 1fr!important;max-height:45vh;gap:4px!important;}
   .fondo-row{padding:5px 6px!important;gap:2px!important;}
@@ -1914,7 +1916,7 @@ function loadPresentacion() {
   if (_isMobileDevice) {
     // Mobile/Tablet: render PDF pages as scrollable canvases via PDF.js
     container.innerHTML =
-      '<div id="pdfjs-viewer" style="width:100%;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#e8ecf0;display:flex;flex-direction:column;align-items:center;gap:4px;padding:4px 0;">' +
+      '<div id="pdfjs-viewer" style="width:100%;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#fff;display:flex;flex-direction:column;align-items:center;gap:2px;padding:0;">' +
         '<div style="display:flex;align-items:center;justify-content:center;padding:40px;color:#5B6670;font-size:13px;font-weight:600;font-family:Montserrat,sans-serif;">Cargando presentación...</div>' +
       '</div>';
     renderPDFPages('/PC.pdf', 'pdfjs-viewer');
@@ -1944,7 +1946,7 @@ async function renderPDFPages(url, containerId) {
       canvas.style.height = (containerWidth * viewport.height / viewport.width) + 'px';
       canvas.style.display = 'block';
       canvas.style.borderRadius = '0';
-      canvas.style.boxShadow = '0 1px 4px rgba(0,0,0,.1)';
+      canvas.style.boxShadow = 'none';
       canvas.style.background = '#fff';
       viewer.appendChild(canvas);
       await page.render({ canvasContext: canvas.getContext('2d'), viewport: scaledViewport }).promise;
