@@ -2554,10 +2554,12 @@ document.getElementById('btn-pdf').addEventListener('click', async () => {
     #prop-dash .card-rend{grid-column:span 1!important;height:${rowH}px!important;}
     #prop-dash .card-deuda{${deudaVisible ? `grid-column:span 1!important;height:${rowH}px!important;` : 'display:none!important;'}}
     #prop-dash .card-back{grid-column:${backSpan}!important;height:${rowH}px!important;}
-    #prop-dash .card-pie{height:${rowH}px!important;}
+    #prop-dash .card-pie{height:${rowH}px!important;max-height:none!important;min-height:auto!important;}
     #prop-dash #pcard-sector{${sectorVisible ? `grid-column:span 2!important;height:${rowH}px!important;` : 'display:none!important;'}}
     #prop-dash #pcard-clase{grid-column:${pieSpan}!important;height:${rowH}px!important;}
     #prop-dash #pcard-geo{grid-column:${pieSpan}!important;height:${rowH}px!important;}
+    /* Reset mobile card order — forces desktop DOM order */
+    #prop-dash .pcard,#prop-dash .prop-dash-title,#prop-dash .prop-rule-full,#prop-dash .prop-note-wrap{order:unset!important;}
     /* Desktop font sizes & spacing */
     #prop-dash .prop-title{font-size:32px!important;}
     #prop-dash #prop-title-sub{font-size:18px!important;}
@@ -2645,6 +2647,9 @@ document.getElementById('btn-pdf-cmp').addEventListener('click', async () => {
     .cmp-badge-a{font-size:11px!important;padding:3px 14px!important;border-radius:10px!important;}
     .cmp-badge-b{font-size:11px!important;padding:3px 14px!important;border-radius:10px!important;}
     .cmp-pie-pair{gap:8px!important;}
+    /* Reset mobile flex-direction on rendimientos/deuda inner containers */
+    #cmp-dash .cmp-rend .pb>div,#cmp-dash .cmp-deuda .pb>div{flex-direction:row!important;}
+    #cmp-dash .cmp-rend .pb>div>div[style*="width:1px"],#cmp-dash .cmp-deuda .pb>div>div[style*="width:1px"]{width:1px!important;height:auto!important;margin:0 12px!important;}
   `;
 
   // ── Page 1: Header + Fila 1 + Fila 2 ──
