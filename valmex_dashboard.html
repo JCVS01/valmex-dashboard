@@ -2487,21 +2487,44 @@ document.getElementById('btn-pdf').addEventListener('click', async () => {
 
   const tmpStyle = document.createElement('style'); tmpStyle.id='pdf-override';
   tmpStyle.textContent = `
+    /* Force desktop grid */
+    .prop-dash-scaler{overflow:visible!important;padding:0!important;}
     #prop-dash{width:${W}px!important;min-width:${W}px!important;display:grid!important;grid-template-columns:repeat(6,1fr)!important;gap:14px!important;padding:12px 16px!important;}
-    #prop-dash .prop-dash-title{grid-column:1/-1!important;}
+    #prop-dash .prop-dash-title{grid-column:1/-1!important;flex-direction:row!important;padding:4px 2px 2px!important;}
     #prop-dash .prop-dash-title img{height:75px!important;width:auto!important;min-height:75px!important;}
-    #prop-dash .prop-rule-full{grid-column:1/-1!important;}
-    #prop-dash .card-comp,#prop-dash .card-rend{grid-column:span 1!important;height:${rowH}px!important;}
+    #prop-dash .prop-rule-full{grid-column:1/-1!important;margin-bottom:2px!important;}
+    #prop-dash .prop-row1,#prop-dash .prop-row2{display:contents!important;}
+    /* Card positions — desktop */
+    #prop-dash .card-comp{grid-column:span 1!important;height:${rowH}px!important;}
+    #prop-dash .card-rend{grid-column:span 1!important;height:${rowH}px!important;}
     #prop-dash .card-deuda{${deudaVisible ? `grid-column:span 1!important;height:${rowH}px!important;` : 'display:none!important;'}}
     #prop-dash .card-back{grid-column:${backSpan}!important;height:${rowH}px!important;}
+    #prop-dash .card-pie{height:${rowH}px!important;}
     #prop-dash #pcard-sector{${sectorVisible ? `grid-column:span 2!important;height:${rowH}px!important;` : 'display:none!important;'}}
     #prop-dash #pcard-clase{grid-column:${pieSpan}!important;height:${rowH}px!important;}
     #prop-dash #pcard-geo{grid-column:${pieSpan}!important;height:${rowH}px!important;}
+    /* Desktop font sizes & spacing */
+    #prop-dash .prop-title{font-size:32px!important;}
+    #prop-dash #prop-title-sub{font-size:18px!important;}
+    #prop-dash .pcard{border-radius:12px!important;box-shadow:0 4px 14px rgba(0,0,0,.06)!important;border:1px solid rgba(0,0,0,.08)!important;}
+    #prop-dash .ph{font-size:14px!important;padding:10px 14px!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;}
+    #prop-dash .rh-grid{gap:4px!important;}
+    #prop-dash .rh-block{padding:6px 10px!important;border-left-width:4px!important;overflow:hidden!important;}
+    #prop-dash .rh-pill{font-size:13px!important;margin-bottom:2px!important;padding:0!important;}
+    #prop-dash .rh-val{font-size:17px!important;font-weight:800!important;}
+    #prop-dash .dd-grid{gap:4px!important;}
+    #prop-dash .dd-hdr{padding:4px 10px!important;font-size:11px!important;}
+    #prop-dash .dd-block{padding:6px 10px!important;border-left-width:4px!important;overflow:hidden!important;}
+    #prop-dash .dd-block .rh-pill{font-size:13px!important;}
+    #prop-dash .dd-block .rh-val{font-size:17px!important;}
+    #prop-dash .card-pie .ph{font-size:14px!important;padding:10px 14px!important;}
+    #prop-dash .card-pie .pb{padding:10px!important;}
+    #prop-dash .prop-note{font-size:11px!important;display:block!important;}
   `;
   document.head.appendChild(tmpStyle);
   Object.values(charts).forEach(c => c?.resize?.());
   await new Promise(r => setTimeout(r, 350));
-  const cv = await html2canvas(el, {scale:4, useCORS:true, backgroundColor:'#fff', logging:false, scrollX:0, scrollY:0, width:W});
+  const cv = await html2canvas(el, {scale:2, useCORS:true, backgroundColor:'#fff', logging:false, scrollX:0, scrollY:0, width:W});
   tmpStyle.remove();
   Object.values(charts).forEach(c => c?.resize?.());
 
@@ -2512,7 +2535,7 @@ document.getElementById('btn-pdf').addEventListener('click', async () => {
   const usableW = pw - mx * 2;
   const imgH = usableW * (cv.height / cv.width);
   const y = Math.min(mt, ph - imgH - mb);
-  pdf.addImage(cv.toDataURL('image/png'), 'PNG', mx, Math.max(mt, y), usableW, imgH);
+  pdf.addImage(cv.toDataURL('image/jpeg', 0.92), 'JPEG', mx, Math.max(mt, y), usableW, imgH);
   const contrato = document.getElementById('cfg-contrato')?.value?.trim() || '';
   const propName = contrato ? `Propuesta de Inversión ${contrato} - VALMEX.pdf` : 'Propuesta de Inversión - VALMEX.pdf';
   pdf.save(propName);
@@ -2544,10 +2567,29 @@ document.getElementById('btn-pdf-cmp').addEventListener('click', async () => {
   const p2h = targetH - overhead; // ~912px — pies go column layout
 
   const baseCSS = `
+    /* Force desktop grid */
+    .prop-dash-scaler{overflow:visible!important;padding:0!important;}
     #cmp-dash{width:${W}px!important;min-width:${W}px!important;display:grid!important;grid-template-columns:repeat(6,1fr)!important;gap:14px!important;padding:12px 16px!important;}
-    #cmp-dash .prop-dash-title{grid-column:1/-1!important;}
+    #cmp-dash .prop-dash-title{grid-column:1/-1!important;flex-direction:row!important;padding:4px 2px 2px!important;}
     #cmp-dash .prop-dash-title img{height:75px!important;width:auto!important;min-height:75px!important;}
-    #cmp-dash .prop-rule-full{grid-column:1/-1!important;}
+    #cmp-dash .prop-rule-full{grid-column:1/-1!important;margin-bottom:2px!important;}
+    /* Desktop font sizes & spacing */
+    #cmp-dash .prop-title{font-size:32px!important;}
+    #cmp-dash #cmp-title-sub{font-size:18px!important;}
+    #cmp-dash .pcard{border-radius:12px!important;box-shadow:0 4px 14px rgba(0,0,0,.06)!important;border:1px solid rgba(0,0,0,.08)!important;}
+    #cmp-dash .ph{font-size:14px!important;padding:10px 14px!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;}
+    #cmp-dash .rh-grid{gap:4px!important;}
+    #cmp-dash .rh-block{padding:6px 10px!important;border-left-width:4px!important;overflow:hidden!important;}
+    #cmp-dash .rh-pill{font-size:13px!important;margin-bottom:2px!important;padding:0!important;}
+    #cmp-dash .rh-val{font-size:17px!important;font-weight:800!important;}
+    #cmp-dash .dd-grid{gap:4px!important;}
+    #cmp-dash .dd-hdr{padding:4px 10px!important;font-size:11px!important;}
+    #cmp-dash .dd-block{padding:6px 10px!important;border-left-width:4px!important;overflow:hidden!important;}
+    #cmp-dash .dd-block .rh-pill{font-size:13px!important;}
+    #cmp-dash .dd-block .rh-val{font-size:17px!important;}
+    .cmp-badge-a{font-size:11px!important;padding:3px 14px!important;border-radius:10px!important;}
+    .cmp-badge-b{font-size:11px!important;padding:3px 14px!important;border-radius:10px!important;}
+    .cmp-pie-pair{gap:8px!important;}
   `;
 
   // ── Page 1: Header + Fila 1 + Fila 2 ──
@@ -2565,7 +2607,7 @@ document.getElementById('btn-pdf-cmp').addEventListener('click', async () => {
   document.head.appendChild(s1);
   Object.values(cmpCharts).forEach(c => c?.resize?.());
   await new Promise(r => setTimeout(r, 350));
-  const cv1 = await html2canvas(el, {scale:4, useCORS:true, backgroundColor:'#fff', logging:false, scrollX:0, scrollY:0, width:W});
+  const cv1 = await html2canvas(el, {scale:2, useCORS:true, backgroundColor:'#fff', logging:false, scrollX:0, scrollY:0, width:W});
   s1.remove();
 
   // ── Page 2: Header + Fila 3 (if visible) ──
@@ -2598,7 +2640,7 @@ document.getElementById('btn-pdf-cmp').addEventListener('click', async () => {
     row3Charts.forEach(c=>{if(c){c.options.cutout='60%';c.update('none');}});
     Object.values(cmpCharts).forEach(c => c?.resize?.());
     await new Promise(r => setTimeout(r, 350));
-    cv2 = await html2canvas(el, {scale:4, useCORS:true, backgroundColor:'#fff', logging:false, scrollX:0, scrollY:0, width:W});
+    cv2 = await html2canvas(el, {scale:2, useCORS:true, backgroundColor:'#fff', logging:false, scrollX:0, scrollY:0, width:W});
     s2.remove();
     cmpTitleEl.textContent = origTitle;
     row3Charts.forEach(c=>{if(c){c.options.cutout='60%';c.update('none');}});
@@ -2617,7 +2659,7 @@ document.getElementById('btn-pdf-cmp').addEventListener('click', async () => {
   function addPage(canvas) {
     const imgH = usableW * (canvas.height / canvas.width);
     const y = Math.min(mt, ph - imgH - mb);
-    pdf.addImage(canvas.toDataURL('image/png'), 'PNG', mx, Math.max(mt, y), usableW, imgH);
+    pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', mx, Math.max(mt, y), usableW, imgH);
   }
 
   addPage(cv1);
