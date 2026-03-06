@@ -303,7 +303,8 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
   #pcard-clase{order:5!important;}
   #pcard-geo{order:6!important;}
   #pcard-sector{order:7!important;}
-  .prop-note{order:8!important;}
+  .prop-note-wrap{order:10!important;}
+  .prop-note{order:10!important;}
 
   /* Card styling: sharp, institutional */
   .pcard{border-radius:12px!important;box-shadow:0 2px 12px rgba(0,32,92,.08)!important;border:1px solid rgba(0,32,92,.08)!important;}
@@ -323,8 +324,8 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
   .dd-block .rh-val{font-size:18px!important;}
 
   /* Pies: full-width, legend right — doughnut fills height */
-  .prop-row2{display:grid!important;grid-template-columns:1fr!important;gap:14px!important;}
-  .card-pie{grid-column:1/-1!important;height:420px!important;min-height:auto!important;}
+  .prop-row2{display:contents!important;}
+  .card-pie{grid-column:1/-1!important;height:380px!important;min-height:380px!important;max-height:380px!important;overflow:hidden!important;}
   .card-pie .ph{font-size:13px!important;padding:10px 14px!important;}
   .card-pie .pb{padding:10px 6px!important;}
 
@@ -392,7 +393,8 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
   #prop-dash{grid-template-columns:repeat(3,1fr)!important;gap:8px!important;}
   .card-comp,.card-rend,.card-deuda{grid-column:span 1!important;min-height:200px;}
   .card-back{grid-column:1/-1!important;min-height:200px;}
-  .card-pie{grid-column:span 1!important;min-height:170px;}
+  .card-pie{grid-column:span 1!important;min-height:306px;height:306px!important;max-height:306px!important;}
+  .prop-row2{display:grid!important;grid-column:1/-1!important;grid-template-columns:repeat(2,1fr)!important;gap:8px!important;}
   .prop-title{font-size:14px;}
   .rh-val{font-size:13px;}
   .rh-pill{font-size:8px;padding:2px 5px;}
@@ -709,7 +711,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
         </div>
       </div>
 
-      <div style="grid-column:1/-1;padding:4px 4px 2px;border-top:1px solid rgba(0,32,92,0.12);margin-top:2px;">
+      <div class="prop-note-wrap" style="grid-column:1/-1;padding:4px 4px 2px;border-top:1px solid rgba(0,32,92,0.12);margin-top:2px;">
         <p class="prop-note" id="prop-note-text">*Rendimientos con plazo menor a un año están expresados en términos efectivos y los rendimientos mayores a un año en términos anualizados. Los rendimientos se encuentran actualizados al <span id="fecha-actualizacion"></span>.</p>
       </div>
     </div>
@@ -2084,7 +2086,7 @@ function donut(id,labels,data,colors,radius,compact){
         tooltip:{backgroundColor:'#00205C',titleFont:{size:10,weight:'700',family:'Montserrat'},bodyFont:{size:10,family:'Montserrat'},padding:10,cornerRadius:6,callbacks:{label:ctx=>' '+ctx.label+': '+ctx.raw.toFixed(2)+'%'}}
       }
     },
-    plugins:[{id:'pctLabel',afterDatasetsDraw(chart){
+    plugins:[{id:'fixLegend',afterInit(chart){const orig=chart.legend.fit.bind(chart.legend);chart.legend.fit=function(){orig();const cw=chart.canvas.clientWidth;if(cw<350){this.width=Math.min(this.width,80);}else{this.width=Math.max(this.width,160);}};}},{id:'pctLabel',afterDatasetsDraw(chart){
       const {ctx,data}=chart; ctx.save();
       const small = chart.canvas.clientWidth < 400;
       const threshold = small ? 10 : 4;
