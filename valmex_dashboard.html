@@ -204,11 +204,11 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
   #cmp-dash .cmp-comp{height:260px!important;}
   #cmp-dash .cmp-back{height:220px!important;}
   #cmp-dash .cmp-rend{height:auto!important;min-height:260px!important;}
-  #cmp-dash .cmp-clase{height:480px!important;}
+  #cmp-dash .cmp-clase{height:320px!important;}
   #cmp-dash .cmp-deuda{height:auto!important;min-height:260px!important;}
-  #cmp-dash .cmp-tipodeuda{height:480px!important;}
-  #cmp-dash .cmp-geo{height:480px!important;}
-  #cmp-dash .cmp-sector{height:480px!important;}
+  #cmp-dash .cmp-tipodeuda{height:320px!important;}
+  #cmp-dash .cmp-geo{height:320px!important;}
+  #cmp-dash .cmp-sector{height:320px!important;}
 }
 
 /* ── ELITE ── */
@@ -296,7 +296,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
   #prop-dash .prop-rule-full{order:0!important;}
   .card-comp{height:340px!important;order:1!important;}
   .card-comp .pb{padding:4px 2px!important;}
-  .card-back{height:320px!important;order:2!important;}
+  .card-back{height:340px!important;order:2!important;}
   .card-rend{height:340px!important;order:3!important;}
   .card-deuda{height:340px!important;order:4!important;}
   #pcard-clase{order:5!important;}
@@ -321,11 +321,11 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
   .dd-block .rh-pill{font-size:11px!important;}
   .dd-block .rh-val{font-size:18px!important;}
 
-  /* Pies: full-width, tall, perfect circles */
+  /* Pies: full-width, legend right — doughnut fills height */
   .prop-row2{display:grid!important;grid-template-columns:1fr!important;gap:14px!important;}
-  .card-pie{grid-column:1/-1!important;height:480px!important;min-height:auto!important;}
+  .card-pie{grid-column:1/-1!important;height:320px!important;min-height:auto!important;}
   .card-pie .ph{font-size:13px!important;padding:10px 14px!important;}
-  .card-pie .pb{padding:10px!important;aspect-ratio:1;max-width:100%;margin:0 auto;}
+  .card-pie .pb{padding:10px 6px!important;}
 
   /* Footer note */
   .prop-note{font-size:10px!important;line-height:1.4!important;padding:4px 6px!important;}
@@ -2053,7 +2053,6 @@ charts.linea = new Chart(document.getElementById('c-linea'),{
 });
 
 function donut(id,labels,data,colors,radius,compact){
-  const isMobile = window.innerWidth<=600 && window.innerHeight>window.innerWidth;
   const lblSize = 12;
   const lblPad  = compact ? 8 : 10;
   const lblPSW  = compact ? 10 : 12;
@@ -2061,9 +2060,9 @@ function donut(id,labels,data,colors,radius,compact){
     type:'doughnut',
     data:{labels,datasets:[{data,backgroundColor:colors||PAL.slice(0,data.length),borderWidth:2,borderColor:'#fff',hoverOffset:8,hoverBorderWidth:3,...(radius?{radius}:{})}]},
     options:{
-      responsive:true,maintainAspectRatio:false,cutout:'65%',
+      responsive:true,maintainAspectRatio:false,cutout:'60%',
       plugins:{
-        legend:{position:isMobile?'bottom':'right',labels:{boxWidth:lblPSW,font:{size:lblSize,family:'Montserrat',weight:'600'},padding:lblPad,color:'#00205C',usePointStyle:true,pointStyleWidth:lblPSW}},
+        legend:{position:'right',labels:{boxWidth:lblPSW,font:{size:lblSize,family:'Montserrat',weight:'600'},padding:lblPad,color:'#00205C',usePointStyle:true,pointStyleWidth:lblPSW}},
         tooltip:{backgroundColor:'#00205C',titleFont:{size:10,weight:'700',family:'Montserrat'},bodyFont:{size:10,family:'Montserrat'},padding:10,cornerRadius:6,callbacks:{label:ctx=>' '+ctx.label+': '+ctx.raw.toFixed(2)+'%'}}
       }
     },
