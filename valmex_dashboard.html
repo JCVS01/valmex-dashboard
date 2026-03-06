@@ -336,29 +336,29 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
   .cfg-layout{grid-template-columns:1fr!important;gap:12px!important;}
   .cfg-card{border-radius:10px!important;}
   .cfg-hdr{padding:10px 14px!important;}
-  .cfg-hdr h3{font-size:12px!important;}
-  .cfg-body{padding:12px!important;gap:8px!important;}
-  .cfg-card:not(:first-child) .cfg-body{padding:8px 12px 12px!important;}
+  .cfg-hdr h3{font-size:clamp(10px,3.08vw,13px)!important;}
+  .cfg-body{padding:clamp(8px,3vw,14px)!important;gap:clamp(6px,2vw,10px)!important;}
+  .cfg-card:not(:first-child) .cfg-body{padding:clamp(6px,2vw,10px) clamp(8px,3vw,14px) clamp(8px,3vw,14px)!important;}
 
   /* Fondos: 2 per row for compact scroll */
-  .fondos-list{grid-template-columns:1fr 1fr!important;gap:6px!important;max-height:none!important;overflow-y:visible!important;}
-  .fondo-row{padding:7px 8px!important;gap:3px!important;border-radius:6px!important;border-left-width:3px!important;}
-  .fondo-nombre{font-size:11px!important;}
-  .fondo-input{padding:5px 6px!important;font-size:12px!important;border-radius:5px!important;}
-  .fondo-pct,.fondo-monto{font-size:10px!important;}
-  .fsec-hdr{padding:5px 10px!important;font-size:10px!important;border-radius:5px!important;margin:4px 0 2px!important;}
+  .fondos-list{grid-template-columns:1fr 1fr!important;gap:clamp(4px,1.5vw,8px)!important;max-height:none!important;overflow-y:visible!important;}
+  .fondo-row{padding:clamp(5px,1.8vw,9px) clamp(6px,2vw,10px)!important;gap:3px!important;border-radius:6px!important;border-left-width:3px!important;}
+  .fondo-nombre{font-size:clamp(9px,2.82vw,12px)!important;}
+  .fondo-input{padding:clamp(4px,1.3vw,7px) clamp(4px,1.5vw,8px)!important;font-size:clamp(10px,3.08vw,13px)!important;border-radius:5px!important;}
+  .fondo-pct,.fondo-monto{font-size:clamp(8px,2.56vw,11px)!important;}
+  .fsec-hdr{padding:clamp(4px,1.3vw,7px) clamp(6px,2.5vw,12px)!important;font-size:clamp(8px,2.56vw,11px)!important;border-radius:5px!important;margin:4px 0 2px!important;}
 
   /* Acciones: 2 per row */
-  #act-acciones-grid,#prop-acciones-grid{grid-template-columns:1fr 1fr!important;gap:6px!important;}
+  #act-acciones-grid,#prop-acciones-grid{grid-template-columns:1fr 1fr!important;gap:clamp(4px,1.5vw,8px)!important;}
 
   /* Buttons compact */
-  .btn-primary{padding:10px 16px!important;font-size:12px!important;border-radius:8px!important;}
-  .fondo-total{font-size:11px!important;padding:4px 0 2px!important;}
-  .fondo-total span{font-size:14px!important;}
+  .btn-primary{padding:clamp(8px,2.5vw,12px) clamp(12px,4vw,18px)!important;font-size:clamp(10px,3.08vw,13px)!important;border-radius:8px!important;}
+  .fondo-total{font-size:clamp(9px,2.82vw,12px)!important;padding:4px 0 2px!important;}
+  .fondo-total span{font-size:clamp(12px,3.59vw,15px)!important;}
 
   /* Inputs */
-  .fg label{font-size:10px!important;}
-  .fg input,.fg select{font-size:12px!important;padding:8px 10px!important;}
+  .fg label{font-size:clamp(8px,2.56vw,11px)!important;}
+  .fg input,.fg select{font-size:clamp(10px,3.08vw,13px)!important;padding:clamp(6px,2vw,10px) clamp(6px,2.5vw,12px)!important;}
 
   /* ── COMPARATIVA mobile ── */
   #page-comparativa.active{margin-top:-10px;}
@@ -410,12 +410,12 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
   .pres-hdr{position:absolute!important;right:8px!important;top:4px!important;z-index:10!important;background:transparent!important;border:none!important;padding:0!important;}
   .pres-body{height:100%!important;width:100%!important;flex:1!important;overflow:hidden!important;}
   /* Responsive: fondos-list 2 columnas landscape, fill card */
-  .fondos-list{grid-template-columns:1fr 1fr!important;max-height:none!important;flex:1!important;min-height:0!important;overflow-y:auto!important;gap:4px!important;}
-  .fondo-row{padding:5px 6px!important;gap:2px!important;}
-  .fondo-nombre{font-size:10px!important;}
-  .fondo-input{padding:4px 5px!important;font-size:10px!important;}
-  .fondo-pct,.fondo-monto{font-size:9px!important;}
-  .fsec-hdr{padding:3px 8px!important;font-size:9px!important;margin:2px 0 1px!important;}
+  .fondos-list{grid-template-columns:1fr 1fr!important;max-height:none!important;flex:1!important;min-height:0!important;overflow-y:auto!important;gap:clamp(2px,0.8vh,5px)!important;}
+  .fondo-row{padding:clamp(3px,1.2vh,6px) clamp(4px,1.5vh,7px)!important;gap:2px!important;}
+  .fondo-nombre{font-size:clamp(8px,2.5vh,11px)!important;}
+  .fondo-input{padding:clamp(3px,1vh,5px) clamp(3px,1.2vh,6px)!important;font-size:clamp(8px,2.5vh,11px)!important;}
+  .fondo-pct,.fondo-monto{font-size:clamp(7px,2.2vh,10px)!important;}
+  .fsec-hdr{padding:clamp(2px,0.8vh,4px) clamp(5px,2vh,10px)!important;font-size:clamp(7px,2.2vh,10px)!important;margin:2px 0 1px!important;}
   /* Responsive: acciones-grid 2 columnas */
   #act-acciones-grid,#prop-acciones-grid{grid-template-columns:1fr 1fr!important;}
   /* Responsive: CMP grid 2 columnas landscape phone */
@@ -425,10 +425,10 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
   #cmp-dash .cmp-rend,#cmp-dash .cmp-clase,#cmp-dash .cmp-deuda{grid-column:1/-1!important;}
   #cmp-dash .cmp-tipodeuda,#cmp-dash .cmp-geo,#cmp-dash .cmp-sector{grid-column:span 1!important;}
   /* Responsive: CMP font sizes reducidos */
-  #cmp-dash .rh-val{font-size:12px!important;}
-  #cmp-dash .rh-pill{font-size:8px!important;}
-  #cmp-dash .dd-block .rh-val{font-size:11px!important;}
-  .cmp-badge-a,.cmp-badge-b{font-size:8px!important;padding:2px 8px!important;}
+  #cmp-dash .rh-val{font-size:clamp(10px,3vh,13px)!important;}
+  #cmp-dash .rh-pill{font-size:clamp(6px,2vh,9px)!important;}
+  #cmp-dash .dd-block .rh-val{font-size:clamp(9px,2.8vh,12px)!important;}
+  .cmp-badge-a,.cmp-badge-b{font-size:clamp(6px,2vh,9px)!important;padding:2px 8px!important;}
   /* Responsive: CMP toolbar wrap */
   #page-comparativa .prop-titlebar .prop-right{flex-wrap:wrap;gap:4px;}
   /* Responsive: cfg-layout 3 columnas en landscape, fit viewport */
@@ -439,14 +439,14 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
   .cfg-card:first-child .btn-primary{margin-top:0!important;}
   .cfg-card:not(:first-child) .cfg-body{padding:6px 10px 6px!important;overflow:hidden!important;min-height:0!important;display:flex!important;flex-direction:column!important;}
   .cfg-card:not(:first-child) .fondos-list{flex:1!important;min-height:0!important;overflow-y:auto!important;}
-  .cfg-card .btn-primary{padding:6px 8px!important;font-size:10px!important;flex-shrink:0!important;}
-  .cfg-card .fondo-total{font-size:10px!important;padding:3px 0 1px!important;flex-shrink:0!important;}
-  .cfg-card .fondo-total span{font-size:12px!important;}
-  .cfg-hdr{padding:6px 12px!important;flex-shrink:0!important;}
-  .cfg-hdr h3{font-size:11px!important;}
-  .fg label{font-size:8px!important;margin-bottom:-1px!important;}
-  .fg input{font-size:10px!important;padding:4px 6px!important;}
-  .fg select{font-size:12px!important;padding:5px 6px!important;}
+  .cfg-card .btn-primary{padding:clamp(4px,1.5vh,7px) clamp(6px,2vh,10px)!important;font-size:clamp(8px,2.5vh,11px)!important;flex-shrink:0!important;}
+  .cfg-card .fondo-total{font-size:clamp(8px,2.5vh,11px)!important;padding:3px 0 1px!important;flex-shrink:0!important;}
+  .cfg-card .fondo-total span{font-size:clamp(10px,3vh,13px)!important;}
+  .cfg-hdr{padding:clamp(4px,1.5vh,7px) clamp(8px,3vh,14px)!important;flex-shrink:0!important;}
+  .cfg-hdr h3{font-size:clamp(9px,2.8vh,12px)!important;}
+  .fg label{font-size:clamp(6px,2vh,9px)!important;margin-bottom:-1px!important;}
+  .fg input{font-size:clamp(8px,2.5vh,11px)!important;padding:clamp(3px,1vh,5px) clamp(4px,1.5vh,7px)!important;}
+  .fg select{font-size:clamp(10px,3vh,13px)!important;padding:clamp(3px,1.2vh,6px) clamp(4px,1.5vh,7px)!important;}
   .fg{gap:1px!important;}
 }
 
