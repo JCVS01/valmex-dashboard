@@ -155,7 +155,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
 .cfg-hdr h3{font-size:13px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.8px;font-family:'Montserrat',sans-serif;}
 .cfg-body{padding:18px;display:flex;flex-direction:column;gap:12px;flex:1;}
 .cfg-card:not(:first-child) .cfg-body{padding:9px 18px 18px;gap:6px;}
-.cfg-layout>.cfg-card:first-child .cfg-body .btn-primary{margin-top:auto;}
+.cfg-layout>.cfg-card .cfg-body .btn-primary{margin-top:auto;}
 .fg{display:flex;flex-direction:column;gap:5px;}
 .fg label{font-size:11px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;font-family:'Montserrat',sans-serif;}
 .fg input,.fg select{width:100%;padding:9px 12px;border:1.5px solid var(--silver);border-radius:7px;font-size:13px;font-family:'Montserrat',sans-serif;color:#1A2540;background:#fff;outline:none;transition:border-color .18s;box-sizing:border-box;}
@@ -204,11 +204,11 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
   #cmp-dash .cmp-comp{height:260px!important;}
   #cmp-dash .cmp-back{height:220px!important;}
   #cmp-dash .cmp-rend{height:auto!important;min-height:260px!important;}
-  #cmp-dash .cmp-clase{height:260px!important;}
+  #cmp-dash .cmp-clase{height:380px!important;}
   #cmp-dash .cmp-deuda{height:auto!important;min-height:260px!important;}
-  #cmp-dash .cmp-tipodeuda{height:260px!important;}
-  #cmp-dash .cmp-geo{height:260px!important;}
-  #cmp-dash .cmp-sector{height:260px!important;}
+  #cmp-dash .cmp-tipodeuda{height:380px!important;}
+  #cmp-dash .cmp-geo{height:380px!important;}
+  #cmp-dash .cmp-sector{height:380px!important;}
 }
 
 /* ── ELITE ── */
@@ -308,11 +308,11 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
   .dd-block .rh-pill{font-size:10px!important;}
   .dd-block .rh-val{font-size:16px!important;}
 
-  /* Pies: full-width stacked on mobile */
+  /* Pies: full-width stacked on mobile — tall enough for perfect circle */
   .prop-row2{display:grid!important;grid-template-columns:1fr!important;gap:10px!important;}
-  .card-pie{grid-column:1/-1!important;height:280px!important;min-height:auto!important;}
+  .card-pie{grid-column:1/-1!important;height:380px!important;min-height:auto!important;}
   .card-pie .ph{font-size:11px!important;padding:6px 10px!important;}
-  .card-pie .pb{padding:8px!important;}
+  .card-pie .pb{padding:8px!important;aspect-ratio:1;max-width:100%;margin:0 auto;}
 
   /* Card styling: cleaner mobile look */
   .pcard{border-radius:10px!important;box-shadow:0 2px 8px rgba(0,0,0,.06)!important;border:1px solid rgba(0,0,0,.06)!important;}
