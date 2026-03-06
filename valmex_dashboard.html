@@ -2579,11 +2579,19 @@ document.getElementById('btn-pdf').addEventListener('click', async () => {
     #prop-dash .prop-note{font-size:11px!important;display:block!important;}
   `;
   document.head.appendChild(tmpStyle);
-  Object.values(charts).forEach(c => c?.resize?.());
-  await new Promise(r => setTimeout(r, 350));
+  // Force layout reflow so containers reach desktop size before Chart.js resize
+  void el.offsetWidth;
+  // Resize each chart to its actual new container dimensions (forces canvas re-render)
+  Object.values(charts).forEach(c => {
+    if(c?.canvas?.parentElement){const p=c.canvas.parentElement;c.resize(p.clientWidth,p.clientHeight);}
+  });
+  await new Promise(r => setTimeout(r, 500));
   const cv = await html2canvas(el, {scale:2, useCORS:true, backgroundColor:'#fff', logging:false, scrollX:0, scrollY:0, width:W});
   tmpStyle.remove();
-  Object.values(charts).forEach(c => c?.resize?.());
+  void el.offsetWidth;
+  Object.values(charts).forEach(c => {
+    if(c?.canvas?.parentElement){const p=c.canvas.parentElement;c.resize(p.clientWidth,p.clientHeight);}
+  });
 
   const pdf = new jsPDF({orientation:'landscape', unit:'mm', format:'letter'});
   const pw = pdf.internal.pageSize.getWidth();
@@ -2665,8 +2673,11 @@ document.getElementById('btn-pdf-cmp').addEventListener('click', async () => {
     #cmp-dash .cmp-sector{display:none!important;}
   `;
   document.head.appendChild(s1);
-  Object.values(cmpCharts).forEach(c => c?.resize?.());
-  await new Promise(r => setTimeout(r, 350));
+  void el.offsetWidth;
+  Object.values(cmpCharts).forEach(c => {
+    if(c?.canvas?.parentElement){const p=c.canvas.parentElement;c.resize(p.clientWidth,p.clientHeight);}
+  });
+  await new Promise(r => setTimeout(r, 500));
   const cv1 = await html2canvas(el, {scale:2, useCORS:true, backgroundColor:'#fff', logging:false, scrollX:0, scrollY:0, width:W});
   s1.remove();
 
@@ -2698,16 +2709,22 @@ document.getElementById('btn-pdf-cmp').addEventListener('click', async () => {
     cmpTitleEl.textContent = p2contrato ? `Exposición de la estrategia de inversión - ${p2contrato}` : 'Exposición de la estrategia de inversión';
     const row3Charts=[cmpCharts.tipoDeudaA,cmpCharts.tipoDeudaB,cmpCharts.geoA,cmpCharts.geoB,cmpCharts.sectorA,cmpCharts.sectorB];
     row3Charts.forEach(c=>{if(c){c.options.cutout='60%';c.update('none');}});
-    Object.values(cmpCharts).forEach(c => c?.resize?.());
-    await new Promise(r => setTimeout(r, 350));
+    void el.offsetWidth;
+    Object.values(cmpCharts).forEach(c => {
+      if(c?.canvas?.parentElement){const p=c.canvas.parentElement;c.resize(p.clientWidth,p.clientHeight);}
+    });
+    await new Promise(r => setTimeout(r, 500));
     cv2 = await html2canvas(el, {scale:2, useCORS:true, backgroundColor:'#fff', logging:false, scrollX:0, scrollY:0, width:W});
     s2.remove();
     cmpTitleEl.textContent = origTitle;
     row3Charts.forEach(c=>{if(c){c.options.cutout='60%';c.update('none');}});
   }
 
-  // Restore charts
-  Object.values(cmpCharts).forEach(c => c?.resize?.());
+  // Restore charts to current viewport size
+  void el.offsetWidth;
+  Object.values(cmpCharts).forEach(c => {
+    if(c?.canvas?.parentElement){const p=c.canvas.parentElement;c.resize(p.clientWidth,p.clientHeight);}
+  });
 
   // ── Build PDF — fill page, centred vertically ──
   const pdf = new jsPDF({orientation:'landscape', unit:'mm', format:'letter'});
