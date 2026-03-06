@@ -287,13 +287,19 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
   #prop-title-sub,#cmp-title-sub{font-size:11px!important;}
   .prop-rule-full{margin-bottom:4px!important;}
 
-  /* Cards: full-width stacked feed — explicit heights */
+  /* Cards: full-width stacked feed — institutional sizes + reorder */
   .card-comp,.card-rend,.card-deuda,.card-back,.card-pie{grid-column:1/-1!important;}
   .prop-row1 .pcard,.prop-row2 .pcard{min-height:auto!important;}
-  .card-comp{height:260px!important;}
-  .card-rend{height:260px!important;}
-  .card-deuda{height:260px!important;}
-  .card-back{height:220px!important;}
+  #prop-dash .prop-dash-title{order:0!important;}
+  #prop-dash .prop-rule-full{order:0!important;}
+  .card-comp{height:320px!important;order:1!important;}
+  .card-back{height:300px!important;order:2!important;}
+  .card-rend{height:320px!important;order:3!important;}
+  .card-deuda{height:320px!important;order:4!important;}
+  #pcard-clase{order:5!important;}
+  #pcard-geo{order:6!important;}
+  #pcard-sector{order:7!important;}
+  .prop-note{order:8!important;}
 
   /* Rendimientos: 3×2 grid compact */
   .rh-grid{gap:4px!important;}
@@ -310,13 +316,13 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
 
   /* Pies: full-width stacked on mobile — tall enough for perfect circle */
   .prop-row2{display:grid!important;grid-template-columns:1fr!important;gap:10px!important;}
-  .card-pie{grid-column:1/-1!important;height:380px!important;min-height:auto!important;}
-  .card-pie .ph{font-size:11px!important;padding:6px 10px!important;}
-  .card-pie .pb{padding:8px!important;aspect-ratio:1;max-width:100%;margin:0 auto;}
+  .card-pie{grid-column:1/-1!important;height:420px!important;min-height:auto!important;}
+  .card-pie .ph{font-size:12px!important;padding:8px 10px!important;}
+  .card-pie .pb{padding:10px!important;aspect-ratio:1;max-width:100%;margin:0 auto;}
 
   /* Card styling: cleaner mobile look */
   .pcard{border-radius:10px!important;box-shadow:0 2px 8px rgba(0,0,0,.06)!important;border:1px solid rgba(0,0,0,.06)!important;}
-  .ph{font-size:11px!important;padding:7px 10px!important;letter-spacing:.4px;}
+  .ph{font-size:12px!important;padding:8px 12px!important;letter-spacing:.4px;}
 
   /* Footer note compact */
   .prop-note{font-size:9px!important;line-height:1.3!important;}
@@ -392,8 +398,13 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
   .ph{padding:4px 10px;font-size:9.5px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .prop-note{display:none;}
   .pres-body{height:78vh;height:78dvh;}
-  /* Responsive: fondos-list 2 columnas, max-height */
-  .fondos-list{grid-template-columns:1fr 1fr!important;max-height:50vh;}
+  /* Responsive: fondos-list 3 columnas landscape, scrollable */
+  .fondos-list{grid-template-columns:1fr 1fr 1fr!important;max-height:45vh;gap:4px!important;}
+  .fondo-row{padding:5px 6px!important;gap:2px!important;}
+  .fondo-nombre{font-size:10px!important;}
+  .fondo-input{padding:4px 5px!important;font-size:10px!important;}
+  .fondo-pct,.fondo-monto{font-size:9px!important;}
+  .fsec-hdr{padding:3px 8px!important;font-size:9px!important;margin:2px 0 1px!important;}
   /* Responsive: acciones-grid 2 columnas */
   #act-acciones-grid,#prop-acciones-grid{grid-template-columns:1fr 1fr!important;}
   /* Responsive: CMP grid 2 columnas landscape phone */
