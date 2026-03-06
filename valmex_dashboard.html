@@ -409,8 +409,15 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
   .cmp-badge-a,.cmp-badge-b{font-size:8px!important;padding:2px 8px!important;}
   /* Responsive: CMP toolbar wrap */
   #page-comparativa .prop-titlebar .prop-right{flex-wrap:wrap;gap:4px;}
-  /* Responsive: cfg-layout 1 columna */
-  .cfg-layout{grid-template-columns:1fr!important;}
+  /* Responsive: cfg-layout 3 columnas en landscape (hay espacio horizontal) */
+  .cfg-layout{grid-template-columns:repeat(3,1fr)!important;gap:10px!important;}
+  .cfg-card{border-radius:10px!important;}
+  .cfg-hdr{padding:8px 12px!important;}
+  .cfg-hdr h3{font-size:11px!important;}
+  .cfg-body{padding:10px!important;gap:6px!important;}
+  .cfg-card:not(:first-child) .cfg-body{padding:6px 10px 10px!important;}
+  .fg label{font-size:9px!important;}
+  .fg input,.fg select{font-size:11px!important;padding:6px 8px!important;}
 }
 
 /* ══ TABLET LANDSCAPE ══ */
@@ -2048,11 +2055,14 @@ function donut(id,labels,data,colors,radius,compact){
     },
     plugins:[{id:'pctLabel',afterDatasetsDraw(chart){
       const {ctx,data}=chart; ctx.save();
+      const small = chart.canvas.clientWidth < 400;
+      const threshold = small ? 10 : 4;
+      const fontSize = small ? 11 : 13;
       chart.getDatasetMeta(0).data.forEach((arc,i)=>{
         const val=data.datasets[0].data[i];
-        if(val<4) return;
+        if(val<threshold) return;
         const {x,y}=arc.tooltipPosition();
-        ctx.fillStyle='#fff';ctx.font='bold 13px Montserrat,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillStyle='#fff';ctx.font=`bold ${fontSize}px Montserrat,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
         ctx.fillText(val.toFixed(1)+'%',x,y);
       });
       ctx.restore();
