@@ -34,7 +34,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
 .vx-snack-icon{width:28px;height:28px;border-radius:50%;background:var(--sky);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;flex-shrink:0;}
 
 /* ── TOPBAR ── */
-.topbar{background:var(--navy);width:100%;box-shadow:0 2px 12px rgba(0,0,0,.25);}
+.topbar{background:var(--navy);width:100%;box-shadow:0 2px 12px rgba(0,0,0,.25);position:relative;z-index:100;}
 .brand{max-width:1600px;margin:0 auto;padding:0 40px;height:72px;display:flex;align-items:center;justify-content:space-between;}
 .logo-btn{display:flex;align-items:center;cursor:pointer;background:none;border:none;padding:6px 8px;border-radius:8px;transition:background .18s;flex-shrink:0;}
 .logo-btn:hover{background:rgba(255,255,255,.10);}
@@ -264,8 +264,9 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
 
   /* ── PRESENTACIÓN: full-height, no empty space ── */
   #page-presentacion{margin:-10px -12px;height:calc(100vh - 56px);height:calc(100dvh - 56px);}
-  .pres-card{border-radius:0;}
-  .pres-body{height:calc(100vh - 100px);height:calc(100dvh - 100px);}
+  .pres-card{border-radius:0;position:relative;}
+  .pres-hdr{position:absolute!important;right:8px!important;top:8px!important;z-index:10!important;background:transparent!important;border:none!important;padding:0!important;}
+  .pres-body{height:calc(100vh - 56px);height:calc(100dvh - 56px);}
   .pres-mobile-fallback{padding:60px 32px!important;gap:28px!important;background:linear-gradient(180deg,#f0f4f8 0%,#fff 100%);}
   .pres-mobile-fallback svg{width:64px!important;height:64px!important;opacity:.6;}
   .pres-mobile-fallback p{font-size:15px!important;font-weight:600;color:var(--navy);max-width:320px!important;}
@@ -400,11 +401,12 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
   .dd-block{overflow:visible!important;}
   .ph{padding:4px 10px;font-size:9.5px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .prop-note{display:none;}
-  #page-presentacion{margin:-8px -12px!important;height:calc(100vh - 54px)!important;height:calc(100dvh - 54px)!important;}
-  .pres-card{height:100%!important;}
-  .pres-body{height:100%!important;flex:1!important;}
-  /* Responsive: fondos-list 2 columnas landscape, compact */
-  .fondos-list{grid-template-columns:1fr 1fr!important;max-height:45vh;gap:4px!important;}
+  #page-presentacion{margin:-8px -12px!important;width:calc(100% + 24px)!important;height:calc(100dvh - 54px)!important;overflow:hidden!important;}
+  .pres-card{height:100%!important;width:100%!important;position:relative!important;overflow:hidden!important;}
+  .pres-hdr{position:absolute!important;right:8px!important;top:4px!important;z-index:10!important;background:transparent!important;border:none!important;padding:0!important;}
+  .pres-body{height:100%!important;width:100%!important;flex:1!important;overflow:hidden!important;}
+  /* Responsive: fondos-list 2 columnas landscape, fill card */
+  .fondos-list{grid-template-columns:1fr 1fr!important;max-height:none!important;flex:1!important;min-height:0!important;overflow-y:auto!important;gap:4px!important;}
   .fondo-row{padding:5px 6px!important;gap:2px!important;}
   .fondo-nombre{font-size:10px!important;}
   .fondo-input{padding:4px 5px!important;font-size:10px!important;}
@@ -425,15 +427,23 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
   .cmp-badge-a,.cmp-badge-b{font-size:8px!important;padding:2px 8px!important;}
   /* Responsive: CMP toolbar wrap */
   #page-comparativa .prop-titlebar .prop-right{flex-wrap:wrap;gap:4px;}
-  /* Responsive: cfg-layout 3 columnas en landscape (hay espacio horizontal) */
-  .cfg-layout{grid-template-columns:repeat(3,1fr)!important;gap:10px!important;}
-  .cfg-card{border-radius:10px!important;}
-  .cfg-hdr{padding:8px 12px!important;}
+  /* Responsive: cfg-layout 3 columnas en landscape, fit viewport */
+  #page-configuracion{height:calc(100dvh - 54px);overflow:hidden;}
+  .cfg-layout{grid-template-columns:repeat(3,1fr)!important;gap:10px!important;height:100%!important;}
+  .cfg-card{border-radius:10px!important;max-height:100%!important;overflow:hidden!important;flex:1!important;}
+  .cfg-card:first-child .cfg-body{padding:6px 10px!important;gap:3px!important;overflow:hidden!important;justify-content:space-between!important;}
+  .cfg-card:first-child .btn-primary{margin-top:0!important;}
+  .cfg-card:not(:first-child) .cfg-body{padding:6px 10px 6px!important;overflow:hidden!important;min-height:0!important;display:flex!important;flex-direction:column!important;}
+  .cfg-card:not(:first-child) .fondos-list{flex:1!important;min-height:0!important;overflow-y:auto!important;}
+  .cfg-card .btn-primary{padding:6px 8px!important;font-size:10px!important;flex-shrink:0!important;}
+  .cfg-card .fondo-total{font-size:10px!important;padding:3px 0 1px!important;flex-shrink:0!important;}
+  .cfg-card .fondo-total span{font-size:12px!important;}
+  .cfg-hdr{padding:6px 12px!important;flex-shrink:0!important;}
   .cfg-hdr h3{font-size:11px!important;}
-  .cfg-body{padding:10px!important;gap:6px!important;}
-  .cfg-card:not(:first-child) .cfg-body{padding:6px 10px 10px!important;}
-  .fg label{font-size:9px!important;}
-  .fg input,.fg select{font-size:11px!important;padding:6px 8px!important;}
+  .fg label{font-size:8px!important;margin-bottom:-1px!important;}
+  .fg input{font-size:10px!important;padding:4px 6px!important;}
+  .fg select{font-size:12px!important;padding:5px 6px!important;}
+  .fg{gap:1px!important;}
 }
 
 /* ══ TABLET LANDSCAPE ══ */
@@ -1916,7 +1926,7 @@ function loadPresentacion() {
   if (_isMobileDevice) {
     // Mobile/Tablet: render PDF pages as scrollable canvases via PDF.js
     container.innerHTML =
-      '<div id="pdfjs-viewer" style="width:100%;height:100%;overflow-y:auto;-webkit-overflow-scrolling:touch;background:#fff;display:flex;flex-direction:column;align-items:center;gap:2px;padding:0;">' +
+      '<div id="pdfjs-viewer" style="width:100%;height:100%;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;background:#fff;display:flex;flex-direction:column;align-items:center;gap:2px;padding:0;">' +
         '<div style="display:flex;align-items:center;justify-content:center;padding:40px;color:#5B6670;font-size:13px;font-weight:600;font-family:Montserrat,sans-serif;">Cargando presentación...</div>' +
       '</div>';
     renderPDFPages('/PC.pdf', 'pdfjs-viewer');
@@ -1932,19 +1942,25 @@ async function renderPDFPages(url, containerId) {
     var pdf = await pdfjsLib.getDocument(url).promise;
     var viewer = document.getElementById(containerId);
     viewer.innerHTML = '';
-    var containerWidth = viewer.clientWidth - 8;
+    var containerWidth = viewer.clientWidth - 4;
+    var containerHeight = viewer.clientHeight - 4;
     var dpr = window.devicePixelRatio || 1;
     for (var i = 1; i <= pdf.numPages; i++) {
       var page = await pdf.getPage(i);
       var viewport = page.getViewport({ scale: 1 });
-      var scale = containerWidth / viewport.width;
+      var scaleW = containerWidth / viewport.width;
+      var scaleH = containerHeight / viewport.height;
+      var scale = Math.min(scaleW, scaleH);
+      var finalW = viewport.width * scale;
+      var finalH = viewport.height * scale;
       var scaledViewport = page.getViewport({ scale: scale * dpr });
       var canvas = document.createElement('canvas');
       canvas.width = scaledViewport.width;
       canvas.height = scaledViewport.height;
-      canvas.style.width = containerWidth + 'px';
-      canvas.style.height = (containerWidth * viewport.height / viewport.width) + 'px';
+      canvas.style.width = finalW + 'px';
+      canvas.style.height = finalH + 'px';
       canvas.style.display = 'block';
+      canvas.style.maxWidth = '100%';
       canvas.style.borderRadius = '0';
       canvas.style.boxShadow = 'none';
       canvas.style.background = '#fff';
