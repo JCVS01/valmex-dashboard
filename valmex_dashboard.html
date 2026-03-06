@@ -325,7 +325,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
 
   /* Pies: full-width, legend right — doughnut fills height */
   .prop-row2{display:contents!important;}
-  .card-pie{grid-column:1/-1!important;height:clamp(260px,48vw,340px)!important;min-height:clamp(260px,48vw,340px)!important;max-height:clamp(260px,48vw,340px)!important;}
+  .card-pie{grid-column:1/-1!important;height:clamp(340px,95vw,420px)!important;min-height:clamp(340px,95vw,420px)!important;max-height:clamp(340px,95vw,420px)!important;}
   .card-pie .ph{font-size:clamp(11px,3.33vw,14px)!important;padding:clamp(8px,2.5vw,12px) clamp(10px,3.5vw,16px)!important;}
   .card-pie .pb{padding:clamp(6px,2.5vw,12px) clamp(4px,1.5vw,8px)!important;}
 
@@ -2098,7 +2098,7 @@ function donut(id,labels,data,colors,radius,compact){
         tooltip:{backgroundColor:'#00205C',titleFont:{size:10,weight:'700',family:'Montserrat'},bodyFont:{size:10,family:'Montserrat'},padding:10,cornerRadius:6,callbacks:{label:ctx=>' '+ctx.label+': '+ctx.raw.toFixed(2)+'%'}}
       }
     },
-    plugins:[{id:'fixLegend',afterInit(chart){const orig=chart.legend.fit.bind(chart.legend);chart.legend.fit=function(){orig();const cw=chart.canvas.clientWidth;if(cw<350){this.width=Math.min(this.width,80);}else{this.width=Math.max(this.width,160);}};}},{id:'pctLabel',afterDatasetsDraw(chart){
+    plugins:[{id:'fixLegend',afterInit(chart){const orig=chart.legend.fit.bind(chart.legend);chart.legend.fit=function(){orig();const cw=chart.canvas.clientWidth;if(cw<250){this.width=Math.min(this.width,80);}else{this.width=Math.max(this.width,160);}};}},{id:'pctLabel',afterDatasetsDraw(chart){
       const {ctx,data}=chart; ctx.save();
       const small = chart.canvas.clientWidth < 400;
       const threshold = small ? 10 : 4;
