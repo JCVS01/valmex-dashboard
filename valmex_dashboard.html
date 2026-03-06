@@ -1869,6 +1869,7 @@ let _propuestaCargada = false;
 function showPage(name, el) {
   PAGES.forEach(id => document.getElementById('page-'+id).classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
+  try { localStorage.setItem('vx-active-page', name); } catch(e) {}
   document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.mobile-tab').forEach(b => b.classList.remove('active'));
   if (el && (el.classList.contains('nav-tab') || el.classList.contains('mobile-tab'))) {
@@ -1982,8 +1983,17 @@ async function renderPDFPages(url, containerId) {
   }
 }
 
-// Cargar presentación al inicio (es la página por defecto)
-loadPresentacion();
+// Restaurar pestaña activa o cargar presentación por defecto
+(function(){
+  try {
+    var saved = localStorage.getItem('vx-active-page');
+    if (saved && PAGES.includes(saved) && saved !== 'presentacion') {
+      showPage(saved);
+    } else {
+      loadPresentacion();
+    }
+  } catch(e) { loadPresentacion(); }
+})();
 
 // ── USUARIO ──
 document.getElementById('logo-tab').classList.add('logo-active');
