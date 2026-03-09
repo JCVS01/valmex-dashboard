@@ -1703,7 +1703,7 @@ def _fetch_factor_series():
 
     # ── Submit all fetches in parallel ──
     tasks = []
-    with ThreadPoolExecutor(max_workers=12) as executor:
+    with ThreadPoolExecutor(max_workers=15) as executor:
         # Banxico (5 series)
         tasks.append(executor.submit(_banxico, "fx", "SF43718"))
         tasks.append(executor.submit(_banxico, "bono_m10", "SF44071"))
@@ -2304,7 +2304,7 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
         def _fetch_nav(args):
             isin, f, s = args
             get_ms_nav(isin, expect_fund=f, expect_serie=s)
-        with ThreadPoolExecutor(max_workers=8) as executor:
+        with ThreadPoolExecutor(max_workers=15) as executor:
             list(executor.map(_fetch_nav, _prefetch_items))
 
     for fondo, pct in fondos_pct.items():
@@ -3775,7 +3775,7 @@ def _compute_quilt_fondos():
         data = get_ms_nav(isin, start="2015-12-01")
         return fondo, data
 
-    with ThreadPoolExecutor(max_workers=8) as executor:
+    with ThreadPoolExecutor(max_workers=15) as executor:
         futures = {executor.submit(fetch_fund, f, i): f for f, i in fondos.items()}
         for future in as_completed(futures):
             try:
