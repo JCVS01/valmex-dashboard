@@ -250,6 +250,9 @@ ETF_GEO_STATIC = {
     "IAU":     {"Global": 100.0},
     "NAFTRAC": {"Latin America": 100.0},
     "IVVPESO": {"United States": 100.0},
+    "SPY":     {"United States": 100.0},
+    "QQQ":     {"United States": 100.0},
+    "DIA":     {"United States": 100.0},
 }
 
 # Cache de geo+sec por ticker de ETF (evita re-fetches dentro de la sesión)
@@ -2646,11 +2649,16 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
             geo_acc[yfd["pais"]] = geo_acc.get(yfd["pais"], 0) + 100 * w
 
         # Look-through for Acciones/ETFs
-        _acc_is_usd = yfd.get("moneda", "USD") == "USD"
+        _acc_is_usd = not ticker.endswith(".MX")
+        # Override for index aliases: use actual index currency
+        _raw_upper = ticker.upper().replace(".MX", "")
+        if _raw_upper in INDEX_ALIASES:
+            _idx_tk = INDEX_ALIASES[_raw_upper]
+            _idx_meta = INDEX_META.get(_idx_tk, {})
+            _acc_is_usd = _idx_meta.get("moneda", "USD") == "USD"
         _acc_geo = yfd.get("geo", {})
-        _acc_is_mx_asset = ticker.endswith(".MX") or yfd.get("moneda") == "MXN"
-        _acc_mx = sum(v for k, v in _acc_geo.items() if k.lower() in ("méxico", "mexico", "latin america")) if _acc_geo else (100 if _acc_is_mx_asset else 0)
-        _acc_us = _acc_geo.get("United States", _acc_geo.get("united states", 0)) if _acc_geo else (100 if not _acc_is_mx_asset else 0)
+        _acc_mx = sum(v for k, v in _acc_geo.items() if k.lower() in ("méxico", "mexico", "latin america")) if _acc_geo else (100 if ticker.endswith(".MX") else 0)
+        _acc_us = _acc_geo.get("United States", _acc_geo.get("united states", 0)) if _acc_geo else (100 if not ticker.endswith(".MX") else 0)
         # Factor betas via multivariate regression: [gold, oil, (fx)]
         # Gold and oil compete with each other (avoiding cross-attribution),
         # but sp500 is NOT included — it would absorb all variance for equity ETFs
@@ -2904,7 +2912,12 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
                     weights = np.array([bt_components[ci]["weight"] for ci in valid_idx])
                     weights = weights / weights.sum()
                     ret_matrix = np.array([[comp_monthly[ci][m] for m in common_months] for ci in valid_idx])
-                    cov = np.cov(ret_matrix) * 12
+                    # Ledoit-Wolf shrinkage for robust covariance estimation
+                    try:
+                        lw = LedoitWolf().fit(ret_matrix.T)  # expects (n_samples, n_features)
+                        cov = lw.covariance_ * 12
+                    except Exception:
+                        cov = np.cov(ret_matrix) * 12  # fallback to sample covariance
                     port_vol = np.sqrt(float(weights @ cov @ weights))
                     if port_vol > 1e-10:
                         marginal = cov @ weights / port_vol

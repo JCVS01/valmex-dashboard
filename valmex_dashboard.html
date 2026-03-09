@@ -2212,12 +2212,12 @@ charts.comp = new Chart(document.getElementById('c-comp'),{
     plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.raw+'%'},backgroundColor:'#00205C',titleFont:{size:10},bodyFont:{size:10},padding:8,cornerRadius:6}},
     layout:{padding:{right:70,left:8,top:4,bottom:4}},
     scales:{
-      x:{display:false,max:36,grid:{display:false}},
+      x:{display:false,grid:{display:false}},
       y:{grid:{display:false},ticks:{font:{size:12,weight:'700',family:'Montserrat'},color:'#00205C'},border:{display:false},afterFit(scale){scale.width=95;}}
     }
   },
   plugins:[{id:'pct',afterDatasetsDraw(chart){
-    const {ctx,scales:{x,y}}=chart; ctx.save();
+    const {ctx,scales:{x,y},chartArea}=chart; ctx.save();
     chart.data.datasets[0].data.forEach((val,i)=>{
       const bar=chart.getDatasetMeta(0).data[i];
       const barRight=x.getPixelForValue(val);
@@ -2227,8 +2227,14 @@ charts.comp = new Chart(document.getElementById('c-comp'),{
       ctx.font='700 13px Montserrat,sans-serif';
       ctx.textBaseline='middle';
       const textW=ctx.measureText(label).width;
-      if(barWidth > textW+12){ctx.fillStyle='#00205C';ctx.textAlign='right';ctx.fillText(label, barRight-6, bar.y);}
-      else{ctx.fillStyle='#00205C';ctx.textAlign='left';ctx.fillText(label, barRight+6, bar.y);}
+      const spaceOutside=chart.width-barRight;
+      if(barWidth > textW+12){
+        ctx.fillStyle='#FFFFFF';ctx.textAlign='right';ctx.fillText(label, barRight-6, bar.y);
+      } else if(spaceOutside > textW+12){
+        ctx.fillStyle='#00205C';ctx.textAlign='left';ctx.fillText(label, barRight+6, bar.y);
+      } else {
+        ctx.fillStyle='#FFFFFF';ctx.textAlign='right';ctx.fillText(label, barRight-6, bar.y);
+      }
     });
     ctx.restore();
   }}]
@@ -4578,7 +4584,7 @@ function aplicarDatos(data, valor) {
     });
     charts.comp.data.datasets[0].data = sorted.map(f => f.pct);
     charts.comp.data.datasets[0].backgroundColor = '#3DA5E0';
-    charts.comp.options.scales.x.max  = Math.max(...sorted.map(f => f.pct)) * 1.18;
+    charts.comp.options.scales.x.max  = Math.max(...sorted.map(f => f.pct)) * 1.25;
     // Barras: ajustar grosor según cantidad
     const n = sorted.length;
     charts.comp.data.datasets[0].barPercentage    = n <= 3 ? 0.95 : n <= 5 ? 0.88 : n <= 10 ? 0.82 : 0.75;
