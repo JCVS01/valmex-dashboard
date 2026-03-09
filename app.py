@@ -42,11 +42,6 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=12)
 
-@app.before_request
-def _auto_login_localhost():
-    if request.remote_addr in ("127.0.0.1", "::1") and "usuario" not in session:
-        session["usuario"] = "jvilla"
-        session.permanent = True
 
 USERS = {
     "jvilla":  {"password": "scrypt:32768:8:1$8NSI0TYUylmMRgpu$f8f46e0116cc6d0de4af97d4f47b96fb8bd4ad2d71ceec46fe6ab4add66a07d8b1d6dec548919199351e06b880862b1a556eb90d5c186b15605f5b372e90cdd3", "nombre": "José Carlos Villa", "iniciales": "JV", "rol": "admin"},
