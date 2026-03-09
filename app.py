@@ -3050,6 +3050,21 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
         "risk_driver_matrix": risk_driver_matrix,
     }
 
+    # ACWI benchmark for overweight/underweight visualization
+    if stock_t + accion_t + etf_t + indice_t > 0:
+        try:
+            _acwi = get_etf_data("ACWI")
+            _acwi_geo = _acwi.get("geo", {})
+            _acwi_sec = _acwi.get("sec", {})
+            result["acwi_benchmark"] = {
+                "geo": filter_pct(_acwi_geo, min_pct=0.5, translate=GEO_TRANSLATE),
+                "sectores": filter_pct(_acwi_sec, min_pct=0.5),
+            }
+            print(f"[ACWI] geo={len(result['acwi_benchmark']['geo'].get('labels',[]))} sec={len(result['acwi_benchmark']['sectores'].get('labels',[]))}")
+        except Exception as e:
+            print(f"[ACWI] benchmark error: {e}")
+            result["acwi_benchmark"] = {}
+
     # Compute real factor betas from regression
     # Use bt_full (full history) for maximum data → most stable betas and covariance
     try:
