@@ -1518,6 +1518,17 @@ def get_accion(ticker: str) -> dict | None:
     # Normalizar caracteres especiales BMV (ñ/Ñ → & para Yahoo Finance)
     db_key = db_key.replace("Ñ", "&").replace("ñ", "&")
 
+    # 0. Resolver aliases de índices (IPC → ^MXX, SPX → ^GSPC, etc.)
+    idx_alias = INDEX_ALIASES.get(db_key)
+    if idx_alias:
+        data = get_accion_yf(idx_alias)
+        if data:
+            return data
+    if ticker.startswith("^"):
+        data = get_accion_yf(ticker)
+        if data:
+            return data
+
     # 1. Yahoo Finance SIC — ticker con .MX (MXN), precio más preciso
     mx_ticker = db_key + ".MX"
     data = get_accion_yf(mx_ticker)
@@ -2606,7 +2617,12 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
         else:
             accion_t += 100 * w
 
-        display_tk = yfd.get("ticker", ticker).replace(".MX", "").lstrip("^")
+        # Use original ticker for index aliases (IPC stays as "IPC", not "MXX")
+        _raw_tk = ticker.upper().replace(".MX", "")
+        if _raw_tk in INDEX_ALIASES:
+            display_tk = _raw_tk
+        else:
+            display_tk = yfd.get("ticker", ticker).replace(".MX", "").lstrip("^")
         lista.append({
             "fondo": display_tk, "serie": yfd.get("tipo", "Acción"), "pct": round(pct, 2),
             "r1m": round(yfd.get("r1m") or 0, 6), "r3m": round(yfd.get("r3m") or 0, 6),
@@ -2630,10 +2646,11 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
             geo_acc[yfd["pais"]] = geo_acc.get(yfd["pais"], 0) + 100 * w
 
         # Look-through for Acciones/ETFs
-        _acc_is_usd = not ticker.endswith(".MX")
+        _acc_is_usd = yfd.get("moneda", "USD") == "USD"
         _acc_geo = yfd.get("geo", {})
-        _acc_mx = sum(v for k, v in _acc_geo.items() if k.lower() in ("méxico", "mexico", "latin america")) if _acc_geo else (100 if ticker.endswith(".MX") else 0)
-        _acc_us = _acc_geo.get("United States", _acc_geo.get("united states", 0)) if _acc_geo else (100 if not ticker.endswith(".MX") else 0)
+        _acc_is_mx_asset = ticker.endswith(".MX") or yfd.get("moneda") == "MXN"
+        _acc_mx = sum(v for k, v in _acc_geo.items() if k.lower() in ("méxico", "mexico", "latin america")) if _acc_geo else (100 if _acc_is_mx_asset else 0)
+        _acc_us = _acc_geo.get("United States", _acc_geo.get("united states", 0)) if _acc_geo else (100 if not _acc_is_mx_asset else 0)
         # Factor betas via multivariate regression: [gold, oil, (fx)]
         # Gold and oil compete with each other (avoiding cross-attribution),
         # but sp500 is NOT included — it would absorb all variance for equity ETFs
@@ -2893,10 +2910,18 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
                         marginal = cov @ weights / port_vol
                         rc = weights * marginal
                         total_rc = rc.sum()
-                        for i, ci in enumerate(valid_idx):
-                            pct_rc = rc[i] / total_rc if abs(total_rc) > 1e-10 else 0
-                            name = bt_components[ci].get("name", f"Comp {ci}")
-                            fund_risk_contrib[name] = round(float(pct_rc), 4)
+                        if abs(total_rc) > 1e-10:
+                            raw_pcts = {}
+                            for i, ci in enumerate(valid_idx):
+                                name = bt_components[ci].get("name", f"Comp {ci}")
+                                raw_pcts[name] = float(rc[i] / total_rc)
+                            # Normalize rounding: ensure values sum to exactly 1.0
+                            rounded = {n: round(v, 4) for n, v in raw_pcts.items()}
+                            diff = round(1.0 - sum(rounded.values()), 4)
+                            if abs(diff) > 0:
+                                largest = max(rounded, key=lambda n: abs(rounded[n]))
+                                rounded[largest] = round(rounded[largest] + diff, 4)
+                            fund_risk_contrib = rounded
             elif len(valid_idx) == 1:
                 # Single component = 100% risk
                 ci = valid_idx[0]
@@ -3075,6 +3100,7 @@ _TICKER_RE = re.compile(r'^[A-Za-z0-9.&Ññ^]{1,20}$')
 
 # Aliases para índices — el usuario escribe sin ^ y el sistema lo resuelve
 INDEX_ALIASES = {
+    "IPC":   "^MXX",    # S&P/BMV IPC (alias común)
     "MXX":   "^MXX",    # S&P/BMV IPC
     "GSPC":  "^GSPC",   # S&P 500
     "SPX":   "^GSPC",   # S&P 500 (alias Bloomberg)
