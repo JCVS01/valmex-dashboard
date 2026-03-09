@@ -2731,7 +2731,7 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
         # For single stocks, check sector directly
         _acc_sector_single = (yfd.get("sector") or "").lower()
         _show_oil = _acc_energy > 10 or "energ" in _acc_sector_single
-        _show_gold = _acc_materials > 15 or "miner" in _acc_sector_single or "metal" in _acc_sector_single
+        _show_gold = _acc_materials > 15 or "miner" in _acc_sector_single or "metal" in _acc_sector_single or "basic material" in _acc_sector_single
         _acc_drivers = {
             "sp500": round(w * _acc_us / 100, 4) if _acc_us > 0 else 0,
             "ipc": round(w * _acc_mx / 100, 4) if _acc_mx > 0 else 0,
