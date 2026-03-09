@@ -1553,25 +1553,32 @@ def get_accion(ticker: str) -> dict | None:
                             print(f"[SIC FIX] {mx_ticker} bt={bt_return*100:.1f}% vs {db_key} bt={g_return*100:.1f}% → usando global")
                             return global_data
 
-        # Enriquecer backtesting: si el .MX no tiene historia antes de 2005,
-        # usar el ticker global (USD→MXN) para tener el historial completo
-        # necesario para escenarios históricos (GFC 2008, etc.)
-        if hist:
-            first_date = hist[0]["fecha"]
-            if first_date > "2005-01-01" and db_key != mx_ticker:
-                try:
-                    global_data = get_accion_yf(db_key)
-                    if global_data:
+        # ── Enriquecer con datos del ticker global (risk/geo/sectors) ──
+        # .MX = precio + rendimientos + backtesting MXN (lo que ve el cliente)
+        # Global = geo, sectores, historico_usd (para risk drivers y factor betas)
+        if not ticker.endswith(".MX"):
+            try:
+                global_data = get_accion_yf(db_key)
+                if global_data:
+                    # Geo y sectores del global (más precisos para risk)
+                    if global_data.get("geo"):
+                        data["geo"] = global_data["geo"]
+                        print(f"[RISK-ENRICH] {mx_ticker} → geo from {db_key}: {list(global_data['geo'].keys())}")
+                    if global_data.get("sectores"):
+                        data["sectores"] = global_data["sectores"]
+                    # USD historico para factor betas (sin distorsión FX)
+                    g_usd = global_data.get("historico_usd") or global_data.get("historico", [])
+                    if g_usd:
+                        data["historico_usd"] = g_usd
+                    # Enriquecer backtesting MXN si .MX tiene historia corta
+                    if hist:
+                        first_date = hist[0]["fecha"]
                         g_hist = global_data.get("historico", [])
-                        if g_hist and g_hist[0]["fecha"] < first_date:
-                            print(f"[BT-ENRICH] {mx_ticker} starts {first_date}, {db_key} starts {g_hist[0]['fecha']} → using global BT ({len(g_hist)} pts)")
+                        if g_hist and g_hist[0]["fecha"] < first_date and first_date > "2005-01-01":
+                            print(f"[BT-ENRICH] {mx_ticker} starts {first_date}, {db_key} starts {g_hist[0]['fecha']} → extending BT")
                             data["historico"] = g_hist
-                            # Also copy USD historico for factor beta calculations
-                            g_usd = global_data.get("historico_usd", [])
-                            if g_usd:
-                                data["historico_usd"] = g_usd
-                except Exception as e:
-                    print(f"[BT-ENRICH] {db_key} global fetch failed: {e}")
+            except Exception as e:
+                print(f"[RISK-ENRICH] {db_key} global fetch failed: {e}")
 
         return data
 
