@@ -1629,203 +1629,44 @@ _factor_cache = {}
 _factor_cache_ts = 0
 
 def _fetch_factor_series():
-    """Fetch daily price series for all sensitivity factors. Cached 6h."""
+    """Fetch daily price series for all sensitivity factors. Cached daily."""
     global _factor_cache, _factor_cache_ts
     now = time.time()
     if _factor_cache and not _cache_expired(_factor_cache_ts):
         return _factor_cache
 
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
     today = date.today()
-    start = "1990-01-01"  # Max history for longer-lived funds + full FX coverage
+    start = "1990-01-01"
     end = today.isoformat()
     factors = {}
+    results = {}  # name → pd.Series
 
-    # 1. USD/MXN (Banxico SF43718)
-    try:
-        url = f"https://www.banxico.org.mx/SieAPIRest/service/v1/series/SF43718/datos/{start}/{end}"
-        r = requests.get(url, headers={"Bmx-Token": BANXICO_TOKEN, "Accept": "application/json"}, timeout=30)
-        r.raise_for_status()
-        datos = r.json()["bmx"]["series"][0]["datos"]
-        fx = {}
-        for d in datos:
-            try:
-                f = datetime.strptime(d["fecha"], "%d/%m/%Y")
-                fx[f] = float(d["dato"].replace(",", ""))
-            except: pass
-        factors["fx"] = pd.Series(fx).sort_index()
-        print(f"[BETAS] FX: {len(factors['fx'])} prices")
-    except Exception as e:
-        print(f"[BETAS] FX error: {e}")
-        factors["fx"] = pd.Series(dtype=float)
-
-    # 2. Bono M10 MX yield — Banxico SF44071 (weekly auction) with FRED monthly fallback
-    try:
-        url_b10 = f"https://www.banxico.org.mx/SieAPIRest/service/v1/series/SF44071/datos/{start}/{end}"
-        r = requests.get(url_b10, headers={"Bmx-Token": BANXICO_TOKEN, "Accept": "application/json"}, timeout=30)
-        r.raise_for_status()
-        datos = r.json()["bmx"]["series"][0]["datos"]
-        b10 = {}
-        for d in datos:
-            try:
-                f = datetime.strptime(d["fecha"], "%d/%m/%Y")
-                b10[f] = float(d["dato"].replace(",", ""))
-            except: pass
-        if len(b10) >= 12:
-            factors["bono_m10"] = pd.Series(b10).sort_index()
-            print(f"[BETAS] Bono M10 MX (Banxico SF44071 weekly): {len(factors['bono_m10'])} obs")
-        else:
-            raise ValueError(f"Only {len(b10)} obs from Banxico, falling back to FRED")
-    except Exception as e:
-        print(f"[BETAS] Banxico Bono M10 failed ({e}), falling back to FRED monthly")
+    # ── Helper: fetch Banxico series ──
+    def _banxico(name, serie_id):
         try:
-            params = {"series_id": "IRLTLT01MXM156N", "api_key": FRED_API_KEY, "file_type": "json",
-                      "observation_start": start, "observation_end": end}
-            r = requests.get(FRED_BASE, params=params, timeout=15)
-            obs = r.json().get("observations", [])
-            b10 = {}
-            for o in obs:
-                try: b10[datetime.strptime(o["date"], "%Y-%m-%d")] = float(o["value"])
+            url = f"https://www.banxico.org.mx/SieAPIRest/service/v1/series/{serie_id}/datos/{start}/{end}"
+            r = requests.get(url, headers={"Bmx-Token": BANXICO_TOKEN, "Accept": "application/json"}, timeout=30)
+            r.raise_for_status()
+            datos = r.json()["bmx"]["series"][0]["datos"]
+            vals = {}
+            for d in datos:
+                try:
+                    f = datetime.strptime(d["fecha"], "%d/%m/%Y")
+                    vals[f] = float(d["dato"].replace(",", ""))
                 except: pass
-            factors["bono_m10"] = pd.Series(b10).sort_index()
-            print(f"[BETAS] Bono M10 MX (FRED fallback): {len(factors['bono_m10'])} monthly obs")
-        except Exception as e2:
-            print(f"[BETAS] Bono M10 MX error: {e2}")
-            factors["bono_m10"] = pd.Series(dtype=float)
+            s = pd.Series(vals).sort_index()
+            print(f"[BETAS] {name} (Banxico {serie_id}): {len(s)} obs")
+            return (name, s)
+        except Exception as e:
+            print(f"[BETAS] {name} error: {e}")
+            return (name, pd.Series(dtype=float))
 
-    # 3. US Treasury 10Y yield (FRED DGS10 — daily)
-    try:
-        params = {"series_id": "DGS10", "api_key": FRED_API_KEY, "file_type": "json",
-                  "observation_start": start, "observation_end": end}
-        r = requests.get(FRED_BASE, params=params, timeout=15)
-        obs = r.json().get("observations", [])
-        ust = {}
-        for o in obs:
-            try: ust[datetime.strptime(o["date"], "%Y-%m-%d")] = float(o["value"])
-            except: pass
-        factors["ust_10y"] = pd.Series(ust).sort_index()
-        print(f"[BETAS] UST 10Y: {len(factors['ust_10y'])} daily obs")
-    except Exception as e:
-        print(f"[BETAS] UST 10Y error: {e}")
-        factors["ust_10y"] = pd.Series(dtype=float)
-
-    # 3b. TIIE 28d (Banxico SF43783 — daily, key MX monetary policy rate)
-    try:
-        url_tiie = f"https://www.banxico.org.mx/SieAPIRest/service/v1/series/SF43783/datos/{start}/{end}"
-        r = requests.get(url_tiie, headers={"Bmx-Token": BANXICO_TOKEN, "Accept": "application/json"}, timeout=30)
-        r.raise_for_status()
-        datos = r.json()["bmx"]["series"][0]["datos"]
-        tiie = {}
-        for d in datos:
-            try:
-                f = datetime.strptime(d["fecha"], "%d/%m/%Y")
-                tiie[f] = float(d["dato"].replace(",", ""))
-            except: pass
-        if len(tiie) >= 60:
-            factors["tiie_28d"] = pd.Series(tiie).sort_index()
-            print(f"[BETAS] TIIE 28d (Banxico SF43783): {len(factors['tiie_28d'])} daily obs")
-        else:
-            print(f"[BETAS] TIIE 28d: only {len(tiie)} obs, skipped")
-    except Exception as e:
-        print(f"[BETAS] TIIE 28d error: {e}")
-
-    # 3c. Udibonos 10Y real yield (Banxico SF43924) — for MX breakeven inflation
-    try:
-        url_udi = f"https://www.banxico.org.mx/SieAPIRest/service/v1/series/SF43924/datos/{start}/{end}"
-        r = requests.get(url_udi, headers={"Bmx-Token": BANXICO_TOKEN, "Accept": "application/json"}, timeout=30)
-        r.raise_for_status()
-        datos = r.json()["bmx"]["series"][0]["datos"]
-        udi10 = {}
-        for d in datos:
-            try:
-                f = datetime.strptime(d["fecha"], "%d/%m/%Y")
-                udi10[f] = float(d["dato"].replace(",", ""))
-            except: pass
-        if len(udi10) >= 60:
-            factors["udibono_10y"] = pd.Series(udi10).sort_index()
-            print(f"[BETAS] Udibono 10Y (Banxico SF43924): {len(factors['udibono_10y'])} obs")
-            # Derive MX breakeven inflation = Bono M10 nominal - Udibono 10Y real
-            if "bono_m10" in factors and len(factors["bono_m10"]) >= 60:
-                # Align and compute spread
-                b10 = factors["bono_m10"].reindex(factors["udibono_10y"].index, method="ffill")
-                mx_be = b10 - factors["udibono_10y"]
-                mx_be = mx_be.dropna()
-                if len(mx_be) >= 60:
-                    factors["mx_breakeven"] = mx_be
-                    print(f"[BETAS] MX Breakeven Inflation (derived): {len(mx_be)} obs")
-        else:
-            print(f"[BETAS] Udibono 10Y: only {len(udi10)} obs, skipped")
-    except Exception as e:
-        print(f"[BETAS] Udibono 10Y error: {e}")
-
-    # 3d. Bono M 30Y yield (Banxico SF60696) — for MX yield curve slope
-    try:
-        url_b30 = f"https://www.banxico.org.mx/SieAPIRest/service/v1/series/SF60696/datos/{start}/{end}"
-        r = requests.get(url_b30, headers={"Bmx-Token": BANXICO_TOKEN, "Accept": "application/json"}, timeout=30)
-        r.raise_for_status()
-        datos = r.json()["bmx"]["series"][0]["datos"]
-        b30 = {}
-        for d in datos:
-            try:
-                f = datetime.strptime(d["fecha"], "%d/%m/%Y")
-                b30[f] = float(d["dato"].replace(",", ""))
-            except: pass
-        if len(b30) >= 60:
-            factors["bono_m30"] = pd.Series(b30).sort_index()
-            print(f"[BETAS] Bono M30 (Banxico SF60696): {len(factors['bono_m30'])} obs")
-            # Derive MX curve slope = Bono M30 - Bono M10
-            if "bono_m10" in factors and len(factors["bono_m10"]) >= 60:
-                b10_aligned = factors["bono_m10"].reindex(factors["bono_m30"].index, method="ffill")
-                mx_slope = factors["bono_m30"] - b10_aligned
-                mx_slope = mx_slope.dropna()
-                if len(mx_slope) >= 60:
-                    factors["mx_slope"] = mx_slope
-                    print(f"[BETAS] MX Curve Slope 30-10 (derived): {len(mx_slope)} obs")
-        else:
-            print(f"[BETAS] Bono M30: only {len(b30)} obs, skipped")
-    except Exception as e:
-        print(f"[BETAS] Bono M30 error: {e}")
-
-    # 4-10. Yahoo Finance: IPC, SP500, Gold, Oil, VIX, Copper, DXY, EWW
-    yf_tickers = {
-        "ipc":    ["^MXX", "NAFTRACISHRS.MX"],  # IPC with NAFTRAC fallback
-        "sp500":  ["^GSPC"],
-        "gold":   ["GC=F"],
-        "oil":    ["CL=F"],
-        "vix":    ["^VIX"],      # CBOE Volatility Index — regime/fear
-        "copper": ["HG=F"],      # Dr. Copper — global growth proxy
-        "dxy":    ["DX-Y.NYB"],  # US Dollar Index — broad USD strength
-        "eww":    ["EWW"],       # iShares MSCI Mexico — MX equity in USD (6500+ obs from 2000)
-    }
-    for name, tickers in yf_tickers.items():
-        downloaded = False
-        for ticker in tickers:
-            try:
-                df = yf.download(ticker, start=start, end=end, auto_adjust=True, progress=False)
-                if isinstance(df.columns, pd.MultiIndex):
-                    df.columns = df.columns.get_level_values(0)
-                s = df["Close"].dropna()
-                if len(s) >= 60:
-                    factors[name] = s
-                    print(f"[BETAS] {name} ({ticker}): {len(s)} prices")
-                    downloaded = True
-                    break
-            except Exception as e:
-                print(f"[BETAS] {name} ({ticker}) failed: {e}")
-        if not downloaded:
-            print(f"[BETAS] {name}: ALL tickers failed")
-            factors[name] = pd.Series(dtype=float)
-
-    # 11-15. FRED spread, inflation, and term premium series
-    fred_series = {
-        "em_spread":     ("BAMLEMCBPIOAS",  "EM Corp OAS"),         # EM corporate credit spread (global)
-        "latam_oas":     ("BAMLEMRLCRPILAOAS", "LatAm EM Corp OAS"), # LatAm credit — better MX proxy
-        "hy_spread":     ("BAMLH0A0HYM2",  "US HY OAS"),           # US High Yield spread — #1 stress indicator
-        "breakeven":     ("T10YIE",         "US 10Y Breakeven"),    # Inflation expectations
-        "term_premium":  ("THREEFYTP10",    "US 10Y Term Premium"), # Adrian-Crump-Moench (NY Fed) — Aladdin uses this
-    }
-    for name, (sid, label) in fred_series.items():
+    # ── Helper: fetch FRED series ──
+    def _fred(name, serie_id, label):
         try:
-            params = {"series_id": sid, "api_key": FRED_API_KEY, "file_type": "json",
+            params = {"series_id": serie_id, "api_key": FRED_API_KEY, "file_type": "json",
                       "observation_start": start, "observation_end": end}
             r = requests.get(FRED_BASE, params=params, timeout=15)
             obs = r.json().get("observations", [])
@@ -1833,15 +1674,98 @@ def _fetch_factor_series():
             for o in obs:
                 try: vals[datetime.strptime(o["date"], "%Y-%m-%d")] = float(o["value"])
                 except: pass
-            if len(vals) >= 60:
-                factors[name] = pd.Series(vals).sort_index()
-                print(f"[BETAS] {label} ({sid}): {len(factors[name])} daily obs")
+            s = pd.Series(vals).sort_index()
+            if len(s) >= 60:
+                print(f"[BETAS] {label} ({serie_id}): {len(s)} obs")
+                return (name, s)
             else:
-                factors[name] = pd.Series(dtype=float)
-                print(f"[BETAS] {label} ({sid}): only {len(vals)} obs, skipped")
+                print(f"[BETAS] {label} ({serie_id}): only {len(s)} obs, skipped")
+                return (name, pd.Series(dtype=float))
         except Exception as e:
             print(f"[BETAS] {label} error: {e}")
-            factors[name] = pd.Series(dtype=float)
+            return (name, pd.Series(dtype=float))
+
+    # ── Helper: fetch Yahoo Finance series ──
+    def _yf(name, tickers):
+        for ticker in tickers:
+            try:
+                df = yf.download(ticker, start=start, end=end, auto_adjust=True, progress=False)
+                if isinstance(df.columns, pd.MultiIndex):
+                    df.columns = df.columns.get_level_values(0)
+                s = df["Close"].dropna()
+                if len(s) >= 60:
+                    print(f"[BETAS] {name} ({ticker}): {len(s)} prices")
+                    return (name, s)
+            except Exception as e:
+                print(f"[BETAS] {name} ({ticker}) failed: {e}")
+        print(f"[BETAS] {name}: ALL tickers failed")
+        return (name, pd.Series(dtype=float))
+
+    # ── Submit all fetches in parallel ──
+    tasks = []
+    with ThreadPoolExecutor(max_workers=12) as executor:
+        # Banxico (5 series)
+        tasks.append(executor.submit(_banxico, "fx", "SF43718"))
+        tasks.append(executor.submit(_banxico, "bono_m10", "SF44071"))
+        tasks.append(executor.submit(_banxico, "tiie_28d", "SF43783"))
+        tasks.append(executor.submit(_banxico, "udibono_10y", "SF43924"))
+        tasks.append(executor.submit(_banxico, "bono_m30", "SF60696"))
+        # FRED (6 series)
+        tasks.append(executor.submit(_fred, "ust_10y", "DGS10", "UST 10Y"))
+        tasks.append(executor.submit(_fred, "em_spread", "BAMLEMCBPIOAS", "EM Corp OAS"))
+        tasks.append(executor.submit(_fred, "latam_oas", "BAMLEMRLCRPILAOAS", "LatAm EM Corp OAS"))
+        tasks.append(executor.submit(_fred, "hy_spread", "BAMLH0A0HYM2", "US HY OAS"))
+        tasks.append(executor.submit(_fred, "breakeven", "T10YIE", "US 10Y Breakeven"))
+        tasks.append(executor.submit(_fred, "term_premium", "THREEFYTP10", "US 10Y Term Premium"))
+        # Yahoo Finance (8 series)
+        tasks.append(executor.submit(_yf, "ipc", ["^MXX", "NAFTRACISHRS.MX"]))
+        tasks.append(executor.submit(_yf, "sp500", ["^GSPC"]))
+        tasks.append(executor.submit(_yf, "gold", ["GC=F"]))
+        tasks.append(executor.submit(_yf, "oil", ["CL=F"]))
+        tasks.append(executor.submit(_yf, "vix", ["^VIX"]))
+        tasks.append(executor.submit(_yf, "copper", ["HG=F"]))
+        tasks.append(executor.submit(_yf, "dxy", ["DX-Y.NYB"]))
+        tasks.append(executor.submit(_yf, "eww", ["EWW"]))
+
+        for future in as_completed(tasks):
+            try:
+                name, series = future.result()
+                if len(series) > 0:
+                    factors[name] = series
+                else:
+                    factors[name] = pd.Series(dtype=float)
+            except Exception as e:
+                print(f"[BETAS] Future error: {e}")
+
+    # ── Bono M10 FRED fallback if Banxico failed ──
+    if "bono_m10" not in factors or len(factors.get("bono_m10", [])) < 12:
+        print("[BETAS] Banxico Bono M10 insufficient, falling back to FRED monthly")
+        _, s = _fred("bono_m10", "IRLTLT01MXM156N", "Bono M10 MX (FRED fallback)")
+        factors["bono_m10"] = s
+
+    # ── Derived: filter low-obs Banxico series ──
+    for k in ["tiie_28d", "udibono_10y", "bono_m30"]:
+        if k in factors and len(factors[k]) < 60:
+            print(f"[BETAS] {k}: only {len(factors[k])} obs, removed")
+            factors[k] = pd.Series(dtype=float)
+
+    # ── Derived: MX breakeven inflation ──
+    if "udibono_10y" in factors and len(factors["udibono_10y"]) >= 60:
+        if "bono_m10" in factors and len(factors["bono_m10"]) >= 60:
+            b10 = factors["bono_m10"].reindex(factors["udibono_10y"].index, method="ffill")
+            mx_be = (b10 - factors["udibono_10y"]).dropna()
+            if len(mx_be) >= 60:
+                factors["mx_breakeven"] = mx_be
+                print(f"[BETAS] MX Breakeven Inflation (derived): {len(mx_be)} obs")
+
+    # ── Derived: MX curve slope 30-10 ──
+    if "bono_m30" in factors and len(factors["bono_m30"]) >= 60:
+        if "bono_m10" in factors and len(factors["bono_m10"]) >= 60:
+            b10_a = factors["bono_m10"].reindex(factors["bono_m30"].index, method="ffill")
+            mx_slope = (factors["bono_m30"] - b10_a).dropna()
+            if len(mx_slope) >= 60:
+                factors["mx_slope"] = mx_slope
+                print(f"[BETAS] MX Curve Slope 30-10 (derived): {len(mx_slope)} obs")
 
     _factor_cache = factors
     _factor_cache_ts = now
@@ -2359,6 +2283,29 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
     dur_usd_num = ytm_usd_num = bond_usd_denom = 0.0
     cred_mxn = {}; cred_usd = {}
     bt_components = []  # {"weight": float, "series": {fecha: valor_base100}, "is_repo": bool}
+
+    # ── Pre-fetch NAVs en paralelo para todos los fondos ──
+    _prefetch_items = []
+    for _f, _p in fondos_pct.items():
+        if _p <= 0:
+            continue
+        _s = resolve_serie(_f, tipo_cliente)
+        _tk = f"{_f} {_s}"
+        _dd = universe.get(_tk, {})
+        if not _dd:
+            for _ss in ["B1FI", "B0FI", "B1CF", "B1NC", "B1CO", "B0CO", "B1", "B0", "A"]:
+                if f"{_f} {_ss}" in universe:
+                    _s = _ss; break
+        _isin = ISIN_MAP.get(_f, {}).get(_s)
+        if _isin:
+            _prefetch_items.append((_isin, _f, _s))
+    if _prefetch_items:
+        from concurrent.futures import ThreadPoolExecutor
+        def _fetch_nav(args):
+            isin, f, s = args
+            get_ms_nav(isin, expect_fund=f, expect_serie=s)
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            list(executor.map(_fetch_nav, _prefetch_items))
 
     for fondo, pct in fondos_pct.items():
         if pct <= 0:
@@ -4312,4 +4259,4 @@ if __name__ == "__main__":
     if DB_TOKEN:
         import threading
         threading.Thread(target=cargar_catalogo_emisoras, daemon=True).start()
-    app.run(host="0.0.0.0", port=port, debug=False)
+    app.run(host="0.0.0.0", port=port, debug=False, threaded=True)

@@ -74,7 +74,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
   gap:16px;
   align-content:start;
 }
-.page{display:none;background:#fff;}.page.active{display:block;background:#fff;} #page-presentacion.active{display:flex;} #page-propuesta.active{display:flex;flex-direction:column;margin-top:-24px;} #page-comparativa.active{display:flex;flex-direction:column;margin-top:-24px;} #page-comparativa2.active{display:flex;flex-direction:column;margin-top:-24px;}
+.page{display:none;background:#fff;}.page.active{display:block;background:#fff;} #page-presentacion.active{display:flex;} #page-propuesta.active{display:flex;flex-direction:column;margin-top:-24px;} #page-comparativa2.active{display:flex;flex-direction:column;margin-top:-24px;}
 
 /* ── BOTÓN DESCARGA ── */
 .btn-dl{width:36px;height:36px;border-radius:8px;background:var(--navy);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;transition:background .18s;text-decoration:none;flex-shrink:0;}
@@ -179,7 +179,6 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
 /* ── COMPARATIVA TAB (Institutional) ── */
 .cmp-select{padding:9px 14px;border:1.5px solid var(--silver);border-radius:7px;font-size:14px;font-family:'Montserrat',sans-serif;font-weight:600;color:var(--navy);background:#fff;outline:none;cursor:pointer;transition:border-color .18s;max-width:280px;}
 .cmp-select:focus{border-color:var(--sky);}
-#cmp-dash{display:flex;flex-direction:column;gap:0;background:#fff;width:100%;}
 .cmp-row-2col{display:grid;grid-template-columns:1fr 1fr;gap:0;}
 .cmp-row-2col > div{min-width:0;}
 .cmp-header-bar{display:flex;align-items:center;justify-content:space-between;padding:16px 24px 12px;}
@@ -312,7 +311,6 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
   /* Responsive: acciones-grid 2 columnas */
   #act-acciones-grid,#prop-acciones-grid{grid-template-columns:1fr 1fr!important;}
   /* Responsive: comparativa toolbar wrap */
-  #page-comparativa .prop-titlebar .prop-right{flex-wrap:wrap;gap:8px;}
   #page-comparativa2 .prop-titlebar .prop-right{flex-wrap:wrap;gap:8px;}
 }
 
@@ -354,7 +352,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
   .prop-dash-title{flex-direction:row!important;align-items:center!important;gap:12px!important;padding:12px 6px 6px!important;}
   .prop-dash-title img{height:48px!important;}
   .prop-title{font-size:clamp(14px,4.1vw,17px)!important;letter-spacing:.5px!important;}
-  #prop-title-sub,#cmp-title-sub{font-size:clamp(10px,3.08vw,13px)!important;}
+  #prop-title-sub{font-size:clamp(10px,3.08vw,13px)!important;}
   .prop-rule-full{margin-bottom:6px!important;height:2.5px!important;}
 
   /* Cards: full-width stacked — institutional sizes + reorder */
@@ -428,9 +426,6 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
   .fg input,.fg select{font-size:clamp(10px,3.08vw,13px)!important;padding:clamp(6px,2vw,10px) clamp(6px,2.5vw,12px)!important;}
 
   /* ── COMPARATIVA mobile ── */
-  #page-comparativa.active{margin-top:-10px;}
-  #page-comparativa .prop-titlebar .prop-right{flex-wrap:wrap;gap:6px;justify-content:center;}
-  #page-comparativa .prop-titlebar .prop-right .cmp-select{max-width:100%!important;width:100%!important;font-size:12px!important;}
   #page-comparativa2.active{margin-top:-10px;}
   #page-comparativa2 .prop-titlebar .prop-right{flex-wrap:wrap;gap:6px;justify-content:center;}
   /* ── ELITE ── */
@@ -477,8 +472,6 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
   .fsec-hdr{padding:clamp(2px,0.8vh,4px) clamp(5px,2vh,10px)!important;font-size:clamp(7px,2.2vh,10px)!important;margin:2px 0 1px!important;}
   /* Responsive: acciones-grid 2 columnas */
   #act-acciones-grid,#prop-acciones-grid{grid-template-columns:1fr 1fr!important;}
-  /* Responsive: CMP toolbar wrap */
-  #page-comparativa .prop-titlebar .prop-right{flex-wrap:wrap;gap:4px;}
   /* Responsive: cfg-layout 3 columnas en landscape, fit viewport */
   #page-configuracion{height:calc(100dvh - 54px);overflow:hidden;}
   .cfg-layout{grid-template-columns:repeat(3,1fr)!important;gap:10px!important;height:100%!important;}
@@ -511,7 +504,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
   .logo-img{height:26px!important;}
   .container{padding:6px!important;}
   .prop-title{font-size:12px!important;}
-  #prop-title-sub,#cmp-title-sub{font-size:10px!important;}
+  #prop-title-sub{font-size:10px!important;}
   .prop-dash-title img{height:32px!important;}
   .ph{font-size:9px!important;padding:5px 8px!important;}
   .rh-val{font-size:14px!important;}
@@ -599,8 +592,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
       <nav class="nav">
         <button class="nav-tab" onclick="showPage('configuracion',this)">Configuración</button>
         <button class="nav-tab" onclick="showPage('propuesta',this)">Propuesta</button>
-        <button class="nav-tab" onclick="showPage('comparativa',this)">Comparativa</button>
-        <button class="nav-tab" onclick="showPage('comparativa2',this)">Comparativa 2</button>
+        <button class="nav-tab" onclick="showPage('comparativa2',this)">Comparativa</button>
         <button class="nav-tab" onclick="showPage('elite',this)">VALMEX Elite</button>
       </nav>
     </div>
@@ -627,8 +619,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
     <button class="mobile-tab" onclick="showPage('presentacion',this);closeMobileNav()">Presentación</button>
     <button class="mobile-tab" onclick="showPage('configuracion',this);closeMobileNav()">Configuración</button>
     <button class="mobile-tab" onclick="showPage('propuesta',this);closeMobileNav()">Propuesta</button>
-    <button class="mobile-tab" onclick="showPage('comparativa',this);closeMobileNav()">Comparativa</button>
-    <button class="mobile-tab" onclick="showPage('comparativa2',this);closeMobileNav()">Comparativa 2</button>
+    <button class="mobile-tab" onclick="showPage('comparativa2',this);closeMobileNav()">Comparativa</button>
     <button class="mobile-tab" onclick="showPage('elite',this);closeMobileNav()">VALMEX Elite</button>
     <button class="mobile-tab" onclick="openChangePwModal();closeMobileNav()">Cambiar contraseña</button>
     <button class="mobile-logout" onclick="window.location.href='/logout'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h7"/><polyline points="17 15 20 12 17 9"/><line x1="20" y1="12" x2="9" y2="12"/></svg> Cerrar sesión</button>
@@ -904,292 +895,6 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
     </div>
   </div>
 
-  <!-- COMPARATIVA -->
-  <div id="page-comparativa" class="page">
-
-    <!-- Toolbar: selectores + PDF -->
-    <div class="prop-titlebar">
-      <div></div>
-      <div class="prop-right">
-        <label style="font-size:13px;font-weight:700;color:var(--navy);font-family:'Montserrat',sans-serif;">A:</label>
-        <select id="cmp-sel-a" class="cmp-select" onchange="cargarComparativa()">
-          <option value="perfil_0">Perfil 0 - 100% RF low risk</option>
-          <option value="perfil_1">Perfil 1 - 100% RF high risk</option>
-          <option value="perfil_2">Perfil 2 - 80% RF / 20% RV</option>
-          <option value="perfil_3">Perfil 3 - 60% RF / 40% RV</option>
-          <option value="perfil_4">Perfil 4 - 40% RF / 60% RV</option>
-          <option value="actual" selected>Portafolio Actual</option>
-          <option value="propuesta">Portafolio Propuesta</option>
-        </select>
-        <span style="font-size:16px;font-weight:800;color:var(--navy);font-family:'Montserrat',sans-serif;padding:0 4px;">vs</span>
-        <label style="font-size:13px;font-weight:700;color:var(--navy);font-family:'Montserrat',sans-serif;">B:</label>
-        <select id="cmp-sel-b" class="cmp-select" onchange="cargarComparativa()">
-          <option value="perfil_0">Perfil 0 - 100% RF low risk</option>
-          <option value="perfil_1">Perfil 1 - 100% RF high risk</option>
-          <option value="perfil_2">Perfil 2 - 80% RF / 20% RV</option>
-          <option value="perfil_3" selected>Perfil 3 - 60% RF / 40% RV</option>
-          <option value="perfil_4">Perfil 4 - 40% RF / 60% RV</option>
-          <option value="actual">Portafolio Actual</option>
-          <option value="propuesta">Portafolio Propuesta</option>
-        </select>
-        <div style="position:relative;">
-        <button class="btn-dl" id="btn-pdf-cmp-toggle" title="Descargar PDF">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        </button>
-        <div id="pdf-cmp-menu" style="display:none;position:absolute;top:100%;right:0;margin-top:6px;background:#fff;border-radius:8px;box-shadow:0 4px 20px rgba(0,32,92,0.18);padding:14px 18px;z-index:999;min-width:220px;font-family:'Montserrat',sans-serif;">
-          <div style="font-size:12px;font-weight:800;color:#00205C;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Selecciona hojas</div>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 0;font-size:13px;font-weight:600;color:#334155;">
-            <input type="checkbox" id="pdf-cmp-quilt" checked style="accent-color:#00205C;width:16px;height:16px;"> Quilt Clases de Activo
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 0;font-size:13px;font-weight:600;color:#334155;">
-            <input type="checkbox" id="pdf-cmp-fondos" checked style="accent-color:#00205C;width:16px;height:16px;"> Quilt Fondos
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 0;font-size:13px;font-weight:600;color:#334155;">
-            <input type="checkbox" id="pdf-cmp-perfiles" checked style="accent-color:#00205C;width:16px;height:16px;"> Perfiles
-          </label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 0;font-size:13px;font-weight:600;color:#334155;">
-            <input type="checkbox" id="pdf-cmp-comp" checked style="accent-color:#00205C;width:16px;height:16px;"> Comparativa
-          </label>
-          <button id="btn-pdf-cmp" style="margin-top:10px;width:100%;padding:8px 0;background:#00205C;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;font-family:'Montserrat',sans-serif;cursor:pointer;">Descargar PDF</button>
-        </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ═══ QUILT CHART: Rendimientos por Clase de Activo ═══ -->
-    <div class="prop-dash-scaler" id="quilt-activos-scaler" style="margin-bottom:20px;">
-      <div style="background:#fff;width:100%;">
-        <div class="cmp-header-bar">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div style="width:8px;align-self:stretch;background:var(--sky);border-radius:3px;flex-shrink:0;"></div>
-            <div>
-              <div class="cmp-main-title">Rendimientos por Clase de Activo</div>
-              <div class="cmp-sub-title">An&aacute;lisis Hist&oacute;rico de Mercado</div>
-            </div>
-          </div>
-          <img src="/VALMEX2.png" style="height:75px;width:auto;" alt="VALMEX">
-        </div>
-        <div style="height:2px;background:var(--navy);margin:0 20px 2px;"></div>
-        <div class="cmp-sec">
-          <p class="quilt-desc">Mediante un portafolio diversificado se busca: i) intentar disminuir el impacto de la volatilidad del mercado en la cartera de inversi&oacute;n de nuestros clientes y ii) lograr rendimientos consistentes con el riesgo y el horizonte de inversi&oacute;n del portafolio. El portafolio &ldquo;Diversificado&rdquo; representa una asignaci&oacute;n equiponderada entre las 9 clases de activo.</p>
-          <div class="quilt-table-wrap" id="quilt-table-wrap">
-            <p style="text-align:center;color:var(--gray);padding:40px 0;font-family:'Montserrat',sans-serif;font-size:13px;">Cargando datos de mercado...</p>
-          </div>
-          <p class="quilt-note" id="quilt-note"></p>
-        </div>
-      </div>
-    </div>
-
-    <!-- ═══ QUILT FONDOS: Top 10 Fondos Valmex ═══ -->
-    <div class="prop-dash-scaler" id="quilt-fondos-scaler" style="margin-bottom:20px;">
-      <div style="background:#fff;width:100%;">
-        <div class="cmp-header-bar">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div style="width:8px;align-self:stretch;background:var(--sky);border-radius:3px;flex-shrink:0;"></div>
-            <div>
-              <div class="cmp-main-title">Rendimientos por Fondos de VALMEX</div>
-              <div class="cmp-sub-title">An&aacute;lisis Hist&oacute;rico de los Fondos Serie A</div>
-            </div>
-          </div>
-          <img src="/VALMEX2.png" style="height:75px;width:auto;" alt="VALMEX">
-        </div>
-        <div style="height:2px;background:var(--navy);margin:0 20px 2px;"></div>
-        <div class="cmp-sec">
-          <p class="quilt-desc">Mediante un portafolio diversificado se busca: i) intentar disminuir el impacto de la volatilidad del mercado en la cartera de inversi&oacute;n de nuestros clientes y ii) lograr rendimientos consistentes con el riesgo y el horizonte de inversi&oacute;n del portafolio.</p>
-          <div class="quilt-table-wrap" id="quilt-fondos-wrap">
-            <p style="text-align:center;color:var(--gray);padding:40px 0;font-family:'Montserrat',sans-serif;font-size:13px;">Cargando rendimientos de fondos...</p>
-          </div>
-          <p class="quilt-note" id="quilt-fondos-note"></p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Slide 3: Familia de Portafolios -->
-    <div class="cmp-slide" id="slide-perfiles">
-      <div class="cmp-header-bar">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div style="width:8px;align-self:stretch;background:var(--sky);border-radius:3px;flex-shrink:0;"></div>
-          <div>
-            <div class="cmp-main-title">Familia de Portafolios VALMEX</div>
-            <div class="cmp-sub-title">Estrategias de Inversi&oacute;n por Perfil de Riesgo</div>
-          </div>
-        </div>
-        <img src="/VALMEX2.png" style="height:75px;width:auto;" alt="VALMEX">
-      </div>
-      <div style="height:2px;background:var(--navy);margin:0 20px 2px;"></div>
-      <div class="cmp-sec" style="display:flex;flex-direction:column;">
-        <p class="quilt-desc" style="margin:0 0 10px 0;">El dise&ntilde;o de una cartera razonable est&aacute; basado en el perfil de inversi&oacute;n, es decir, una relaci&oacute;n de inversi&oacute;n efectiva requiere de un rebalanceo anual que considere los objetivos en materia de inversi&oacute;n, as&iacute; como las necesidades de liquidez de los clientes.</p>
-        <!-- Profile labels bar -->
-        <div id="perfiles-labels" style="display:flex;margin:0 10px 0 50px;flex-shrink:0;">
-          <div style="flex:1;text-align:center;padding:8px 4px;background:#00205C;color:#fff;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:700;border-radius:3px 0 0 3px;">Preservaci&oacute;n</div>
-          <div style="flex:1;text-align:center;padding:8px 4px;background:#3DA5E0;color:#fff;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:700;">Conservador</div>
-          <div style="flex:1;text-align:center;padding:8px 4px;background:#41BBC9;color:#fff;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:700;">Balanceado</div>
-          <div style="flex:1;text-align:center;padding:8px 4px;background:#7CC677;color:#fff;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:700;">Arriesgado</div>
-          <div style="flex:1;text-align:center;padding:8px 4px;background:#5B6670;color:#fff;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:700;border-radius:0 3px 3px 0;">Agresivo</div>
-        </div>
-        <!-- Chart area with axes -->
-        <div style="position:relative;flex:1;min-height:650px;margin:6px 0 0 0;">
-          <!-- Y axis label -->
-          <div style="position:absolute;left:-45px;top:50%;transform:translateY(-50%) rotate(-90deg);font-family:'Montserrat',sans-serif;font-size:12px;font-weight:800;color:var(--navy);letter-spacing:2px;white-space:nowrap;">RENDIMIENTO</div>
-          <!-- Y axis arrow -->
-          <div style="position:absolute;left:32px;top:5px;bottom:35px;width:2px;background:var(--navy);">
-            <div style="position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:8px solid var(--navy);"></div>
-          </div>
-          <!-- X axis arrow -->
-          <div style="position:absolute;left:32px;bottom:28px;right:8px;height:2px;background:var(--navy);">
-            <div style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:8px solid var(--navy);"></div>
-          </div>
-          <!-- X axis label -->
-          <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-family:'Montserrat',sans-serif;font-size:12px;font-weight:800;color:var(--navy);letter-spacing:2px;">RIESGO</div>
-          <!-- Pie charts — same size, aligned to label columns, ascending diagonal -->
-          <div id="perfiles-pies" style="position:absolute;left:50px;right:10px;top:5px;bottom:42px;">
-            <div class="perfil-pie-col" style="position:absolute;bottom:1%;left:1.5%;width:18%;">
-              <div class="perfil-pie-title">Perfil 0</div>
-              <div class="perfil-pie-wrap" style="width:100%;aspect-ratio:1;"><canvas id="pie-p0"></canvas></div>
-            </div>
-            <div class="perfil-pie-col" style="position:absolute;bottom:13%;left:21%;width:18%;">
-              <div class="perfil-pie-title">Perfil 1</div>
-              <div class="perfil-pie-wrap" style="width:100%;aspect-ratio:1;"><canvas id="pie-p1"></canvas></div>
-            </div>
-            <div class="perfil-pie-col" style="position:absolute;bottom:27%;left:41%;width:18%;">
-              <div class="perfil-pie-title">Perfil 2</div>
-              <div class="perfil-pie-wrap" style="width:100%;aspect-ratio:1;"><canvas id="pie-p2"></canvas></div>
-            </div>
-            <div class="perfil-pie-col" style="position:absolute;bottom:41%;left:61%;width:18%;">
-              <div class="perfil-pie-title">Perfil 3</div>
-              <div class="perfil-pie-wrap" style="width:100%;aspect-ratio:1;"><canvas id="pie-p3"></canvas></div>
-            </div>
-            <div class="perfil-pie-col" style="position:absolute;bottom:55%;left:81%;width:18%;">
-              <div class="perfil-pie-title">Perfil 4</div>
-              <div class="perfil-pie-wrap" style="width:100%;aspect-ratio:1;"><canvas id="pie-p4"></canvas></div>
-            </div>
-          </div>
-        </div>
-        <!-- Legend -->
-        <div id="perfiles-legend" style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;margin:4px 20px 0;flex-shrink:0;"></div>
-        <p class="quilt-note" style="margin-top:16px;">* Composici&oacute;n de carteras con fines ilustrativos, no reflejan la posici&oacute;n actual de la Familia de Portafolios VALMEX. La informaci&oacute;n contenida en este material no deber&aacute; interpretarse como asesoramiento de inversi&oacute;n.</p>
-      </div>
-    </div>
-
-    <div class="prop-dash-scaler"><div id="cmp-dash">
-
-      <!-- Header -->
-      <div class="cmp-header-bar">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div style="width:8px;align-self:stretch;background:var(--sky);border-radius:3px;flex-shrink:0;"></div>
-          <div>
-            <div class="cmp-main-title" id="cmp-title-main">Comparativa de Estrategias</div>
-            <div class="cmp-sub-title" id="cmp-title-sub"></div>
-          </div>
-        </div>
-        <img src="/VALMEX2.png" style="height:75px;width:auto;" alt="VALMEX">
-      </div>
-      <div style="height:2px;background:var(--navy);margin:0 20px 2px;"></div>
-
-      <!-- Row 1: Portfolio Summary | Holdings -->
-      <div class="cmp-row-2col">
-        <div>
-          <div class="cmp-sec-hdr">Portfolio Summary</div>
-          <div class="cmp-sec">
-            <div class="cmp-summary-grid">
-              <div class="cmp-summary-donuts">
-                <div class="cmp-donut-wrap">
-                  <span class="cmp-badge-a" id="cmp-sum-badge-a">A</span>
-                  <canvas id="c-cmp-donut-a"></canvas>
-                </div>
-                <div class="cmp-donut-wrap">
-                  <span class="cmp-badge-b" id="cmp-sum-badge-b">B</span>
-                  <canvas id="c-cmp-donut-b"></canvas>
-                </div>
-              </div>
-              <div style="overflow-x:auto;">
-                <table class="cmp-tbl">
-                  <thead><tr><th>Clase de Activo</th><th class="num" id="cmp-ov-th-a">A</th><th class="num" id="cmp-ov-th-b">B</th><th class="num">Diff</th></tr></thead>
-                  <tbody id="cmp-overview-tbody"></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div>
-          <div class="cmp-sec-hdr">Holdings</div>
-          <div class="cmp-sec" style="overflow-x:auto;">
-            <table class="cmp-tbl">
-              <thead><tr><th>Fondo</th><th>Serie</th><th class="num" id="cmp-h-th-a">A (%)</th><th class="num" id="cmp-h-th-b">B (%)</th><th class="num">Diff</th><th class="num">MTD</th><th class="num">YTD</th><th class="num">12M</th></tr></thead>
-              <tbody id="cmp-holdings-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- Row 2: Rendimientos | Historical Returns -->
-      <div class="cmp-row-2col">
-        <div>
-          <div class="cmp-sec-hdr">Rendimientos</div>
-          <div class="cmp-sec">
-            <table class="cmp-tbl">
-              <thead><tr><th>Per&iacute;odo</th><th class="num" id="cmp-r-th-a">A</th><th class="num" id="cmp-r-th-b">B</th><th class="num">Diff</th></tr></thead>
-              <tbody id="cmp-rend-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-        <div>
-          <div class="cmp-sec-hdr">Historical Returns</div>
-          <div class="cmp-sec">
-            <div class="cmp-perf-grid" style="grid-template-columns:1fr!important;">
-              <div class="cmp-chart-wrap"><canvas id="c-cmp-perf"></canvas></div>
-              <div style="overflow-x:auto;">
-                <table class="cmp-tbl">
-                  <thead><tr><th>M&eacute;trica</th><th class="num" id="cmp-st-th-a">A</th><th class="num" id="cmp-st-th-b">B</th></tr></thead>
-                  <tbody id="cmp-stats-tbody"></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Row 3: Risk Analysis | Risk / Return -->
-      <div class="cmp-row-2col">
-        <div>
-          <div class="cmp-sec-hdr">Risk Analysis</div>
-          <div class="cmp-sec">
-            <div class="cmp-risk-grid" style="grid-template-columns:1fr!important;">
-              <div class="cmp-risk-card"><canvas id="c-cmp-risk"></canvas></div>
-              <div class="cmp-risk-card"><canvas id="c-cmp-scenarios"></canvas></div>
-            </div>
-          </div>
-        </div>
-        <div>
-          <div class="cmp-sec-hdr">Risk / Return</div>
-          <div class="cmp-sec">
-            <div class="cmp-rr-grid" style="grid-template-columns:1fr!important;">
-              <div class="cmp-scatter-wrap"><canvas id="c-cmp-scatter"></canvas></div>
-              <div style="overflow-x:auto;">
-                <table class="cmp-tbl">
-                  <thead><tr><th>Caracter&iacute;stica</th><th class="num" id="cmp-ch-th-a">A</th><th class="num" id="cmp-ch-th-b">B</th></tr></thead>
-                  <tbody id="cmp-chars-tbody"></tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Exposición (full width) -->
-      <div class="cmp-sec-hdr" id="cmp-expo-hdr" style="display:none;">Exposici&oacute;n</div>
-      <div class="cmp-sec" id="cmp-expo-sec" style="display:none;">
-        <div class="cmp-expo-grid" id="cmp-expo-grid"></div>
-      </div>
-
-      <!-- Footer -->
-      <div style="padding:12px 24px 8px;border-top:1px solid #E5E7EB;">
-        <p class="prop-note">*Rendimientos con plazo menor a un a&ntilde;o est&aacute;n expresados en t&eacute;rminos efectivos y los rendimientos mayores a un a&ntilde;o en t&eacute;rminos anualizados. Los rendimientos se encuentran actualizados al <span id="cmp-fecha-actualizacion"></span>.</p>
-      </div>
-
-    </div></div>
-
-  </div>
 
   <!-- COMPARATIVA 2 (3-Way: Actual vs Modelo vs Propuesta) -->
   <div id="page-comparativa2" class="page">
@@ -1203,6 +908,15 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
         </button>
         <div id="pdf-cmp2-menu" style="display:none;position:absolute;top:100%;right:0;margin-top:6px;background:#fff;border-radius:8px;box-shadow:0 4px 20px rgba(0,32,92,0.18);padding:14px 18px;z-index:999;min-width:220px;font-family:'Montserrat',sans-serif;">
           <div style="font-size:12px;font-weight:800;color:#00205C;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Selecciona hojas</div>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 0;font-size:13px;font-weight:600;color:#334155;">
+            <input type="checkbox" id="pdf-cmp2-quilt" checked style="accent-color:#00205C;width:16px;height:16px;"> Quilt Clases de Activo
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 0;font-size:13px;font-weight:600;color:#334155;">
+            <input type="checkbox" id="pdf-cmp2-fondos" checked style="accent-color:#00205C;width:16px;height:16px;"> Quilt Fondos
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 0;font-size:13px;font-weight:600;color:#334155;">
+            <input type="checkbox" id="pdf-cmp2-perfiles" checked style="accent-color:#00205C;width:16px;height:16px;"> Perfiles
+          </label>
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 0;font-size:13px;font-weight:600;color:#334155;">
             <input type="checkbox" id="pdf-cmp2-p1" checked style="accent-color:#00205C;width:16px;height:16px;"> Resumen
           </label>
@@ -1220,6 +934,113 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
       </div>
     </div>
 
+    <!-- ═══ CMP2: QUILT CHART: Rendimientos por Clase de Activo ═══ -->
+    <div class="prop-dash-scaler" id="cmp2-quilt-activos-scaler" style="margin-bottom:20px;">
+      <div style="background:#fff;width:100%;">
+        <div class="cmp-header-bar">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:8px;align-self:stretch;background:var(--sky);border-radius:3px;flex-shrink:0;"></div>
+            <div>
+              <div class="cmp-main-title">Desempe&ntilde;o Hist&oacute;rico por Clase de Activo</div>
+              <div class="cmp-sub-title">Rendimientos Anuales y Acumulados del Mercado</div>
+            </div>
+          </div>
+          <img src="/VALMEX2.png" style="height:75px;width:auto;" alt="VALMEX">
+        </div>
+        <div style="height:2px;background:var(--navy);margin:0 20px 2px;"></div>
+        <div class="cmp-sec">
+          <p class="quilt-desc">Mediante un portafolio diversificado se busca: i) intentar disminuir el impacto de la volatilidad del mercado en la cartera de inversi&oacute;n de nuestros clientes y ii) lograr rendimientos consistentes con el riesgo y el horizonte de inversi&oacute;n del portafolio. El portafolio &ldquo;Diversificado&rdquo; representa una asignaci&oacute;n equiponderada entre las 9 clases de activo.</p>
+          <div class="quilt-table-wrap" id="cmp2-quilt-table-wrap">
+            <p style="text-align:center;color:var(--gray);padding:40px 0;font-family:'Montserrat',sans-serif;font-size:13px;">Cargando datos de mercado...</p>
+          </div>
+          <p class="quilt-note" id="cmp2-quilt-note"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ CMP2: QUILT FONDOS: Top 10 Fondos Valmex ═══ -->
+    <div class="prop-dash-scaler" id="cmp2-quilt-fondos-scaler" style="margin-bottom:20px;">
+      <div style="background:#fff;width:100%;">
+        <div class="cmp-header-bar">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:8px;align-self:stretch;background:var(--sky);border-radius:3px;flex-shrink:0;"></div>
+            <div>
+              <div class="cmp-main-title">Desempe&ntilde;o Hist&oacute;rico por Fondo de Inversi&oacute;n</div>
+              <div class="cmp-sub-title">Ranking Anual de Fondos VALMEX &mdash; Serie A</div>
+            </div>
+          </div>
+          <img src="/VALMEX2.png" style="height:75px;width:auto;" alt="VALMEX">
+        </div>
+        <div style="height:2px;background:var(--navy);margin:0 20px 2px;"></div>
+        <div class="cmp-sec">
+          <p class="quilt-desc">Mediante un portafolio diversificado se busca: i) intentar disminuir el impacto de la volatilidad del mercado en la cartera de inversi&oacute;n de nuestros clientes y ii) lograr rendimientos consistentes con el riesgo y el horizonte de inversi&oacute;n del portafolio.</p>
+          <div class="quilt-table-wrap" id="cmp2-quilt-fondos-wrap">
+            <p style="text-align:center;color:var(--gray);padding:40px 0;font-family:'Montserrat',sans-serif;font-size:13px;">Cargando rendimientos de fondos...</p>
+          </div>
+          <p class="quilt-note" id="cmp2-quilt-fondos-note"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CMP2: Familia de Portafolios -->
+    <div class="cmp-slide" id="cmp2-slide-perfiles">
+      <div class="cmp-header-bar">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:8px;align-self:stretch;background:var(--sky);border-radius:3px;flex-shrink:0;"></div>
+          <div>
+            <div class="cmp-main-title">Familia de Portafolios de Inversi&oacute;n</div>
+            <div class="cmp-sub-title">Asignaci&oacute;n Estrat&eacute;gica de Activos por Perfil de Riesgo</div>
+          </div>
+        </div>
+        <img src="/VALMEX2.png" style="height:75px;width:auto;" alt="VALMEX">
+      </div>
+      <div style="height:2px;background:var(--navy);margin:0 20px 2px;"></div>
+      <div class="cmp-sec" style="display:flex;flex-direction:column;">
+        <p class="quilt-desc" style="margin:0 0 10px 0;">El dise&ntilde;o de una cartera razonable est&aacute; basado en el perfil de inversi&oacute;n, es decir, una relaci&oacute;n de inversi&oacute;n efectiva requiere de un rebalanceo anual que considere los objetivos en materia de inversi&oacute;n, as&iacute; como las necesidades de liquidez de los clientes.</p>
+        <div id="cmp2-perfiles-labels" style="display:flex;margin:0 10px 0 50px;flex-shrink:0;">
+          <div style="flex:1;text-align:center;padding:8px 4px;background:#00205C;color:#fff;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:700;border-radius:3px 0 0 3px;">Preservaci&oacute;n</div>
+          <div style="flex:1;text-align:center;padding:8px 4px;background:#3DA5E0;color:#fff;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:700;">Conservador</div>
+          <div style="flex:1;text-align:center;padding:8px 4px;background:#41BBC9;color:#fff;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:700;">Balanceado</div>
+          <div style="flex:1;text-align:center;padding:8px 4px;background:#7CC677;color:#fff;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:700;">Arriesgado</div>
+          <div style="flex:1;text-align:center;padding:8px 4px;background:#5B6670;color:#fff;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:700;border-radius:0 3px 3px 0;">Agresivo</div>
+        </div>
+        <div style="position:relative;flex:1;min-height:650px;margin:6px 0 0 0;">
+          <div style="position:absolute;left:-45px;top:50%;transform:translateY(-50%) rotate(-90deg);font-family:'Montserrat',sans-serif;font-size:12px;font-weight:800;color:var(--navy);letter-spacing:2px;white-space:nowrap;">RENDIMIENTO</div>
+          <div style="position:absolute;left:32px;top:5px;bottom:35px;width:2px;background:var(--navy);">
+            <div style="position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:8px solid var(--navy);"></div>
+          </div>
+          <div style="position:absolute;left:32px;bottom:28px;right:8px;height:2px;background:var(--navy);">
+            <div style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:8px solid var(--navy);"></div>
+          </div>
+          <div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-family:'Montserrat',sans-serif;font-size:12px;font-weight:800;color:var(--navy);letter-spacing:2px;">RIESGO</div>
+          <div id="cmp2-perfiles-pies" style="position:absolute;left:50px;right:10px;top:5px;bottom:42px;">
+            <div class="perfil-pie-col" style="position:absolute;bottom:1%;left:1.5%;width:18%;">
+              <div class="perfil-pie-title">Perfil 0</div>
+              <div class="perfil-pie-wrap" style="width:100%;aspect-ratio:1;"><canvas id="cmp2-pie-p0"></canvas></div>
+            </div>
+            <div class="perfil-pie-col" style="position:absolute;bottom:13%;left:21%;width:18%;">
+              <div class="perfil-pie-title">Perfil 1</div>
+              <div class="perfil-pie-wrap" style="width:100%;aspect-ratio:1;"><canvas id="cmp2-pie-p1"></canvas></div>
+            </div>
+            <div class="perfil-pie-col" style="position:absolute;bottom:27%;left:41%;width:18%;">
+              <div class="perfil-pie-title">Perfil 2</div>
+              <div class="perfil-pie-wrap" style="width:100%;aspect-ratio:1;"><canvas id="cmp2-pie-p2"></canvas></div>
+            </div>
+            <div class="perfil-pie-col" style="position:absolute;bottom:41%;left:61%;width:18%;">
+              <div class="perfil-pie-title">Perfil 3</div>
+              <div class="perfil-pie-wrap" style="width:100%;aspect-ratio:1;"><canvas id="cmp2-pie-p3"></canvas></div>
+            </div>
+            <div class="perfil-pie-col" style="position:absolute;bottom:55%;left:81%;width:18%;">
+              <div class="perfil-pie-title">Perfil 4</div>
+              <div class="perfil-pie-wrap" style="width:100%;aspect-ratio:1;"><canvas id="cmp2-pie-p4"></canvas></div>
+            </div>
+          </div>
+        </div>
+        <div id="cmp2-perfiles-legend" style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;margin:4px 20px 0;flex-shrink:0;"></div>
+        <p class="quilt-note" style="margin-top:16px;">* Composici&oacute;n de carteras con fines ilustrativos, no reflejan la posici&oacute;n actual de la Familia de Portafolios VALMEX. La informaci&oacute;n contenida en este material no deber&aacute; interpretarse como asesoramiento de inversi&oacute;n.</p>
+      </div>
+    </div>
+
     <div class="prop-dash-scaler"><div id="cmp2-dash">
 
       <!-- ═══ HEADER (same classes as Comparativa 1) ═══ -->
@@ -1227,8 +1048,8 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
         <div style="display:flex;align-items:center;gap:10px;">
           <div style="width:8px;align-self:stretch;background:var(--sky);border-radius:3px;flex-shrink:0;"></div>
           <div>
-            <div class="cmp-main-title" id="cmp2-title-main">Comparativa de Estrategias</div>
-            <div class="cmp-sub-title" id="cmp2-title-sub">Portafolio Actual vs Portafolio Modelo vs Portafolio Propuesta</div>
+            <div class="cmp-main-title" id="cmp2-title-main">Composici&oacute;n y Desempe&ntilde;o</div>
+            <div class="cmp-sub-title" id="cmp2-title-sub">Asignaci&oacute;n Estrat&eacute;gica de los Portafolios</div>
           </div>
         </div>
         <img src="/VALMEX2.png" style="height:75px;width:auto;" alt="VALMEX">
@@ -1627,9 +1448,9 @@ function calcTotalPropuesta(){
 
 function guardarCliente(){
   vxToast('Datos del cliente guardados.','ok');
-  _cmpLoaded = false; _cmp2Loaded = false;
+  _cmp2Loaded = false;
   if (document.getElementById('page-propuesta').classList.contains('active')) { cargarPortafolio(); }
-  if (document.getElementById('page-comparativa').classList.contains('active')) { _cmpLoaded = true; cargarComparativa(); }
+
   if (document.getElementById('page-comparativa2').classList.contains('active')) { _cmp2Loaded = true; cargarComparativa2(); }
 }
 // Alias para llamadas desde renderAccionProp
@@ -2180,10 +2001,10 @@ function guardarActual(){
     return;
   } else if (tasaUSDEl) tasaUSDEl.style.border = '';
   vxToast('Portafolio Actual guardado.','ok');
-  _cmpLoaded = false; _cmp2Loaded = false;
+  _cmp2Loaded = false;
   // Recargar inmediatamente cualquier pestaña activa
   if (document.getElementById('page-propuesta').classList.contains('active')) { cargarPortafolio(); }
-  if (document.getElementById('page-comparativa').classList.contains('active')) { _cmpLoaded = true; cargarComparativa(); }
+
   if (document.getElementById('page-comparativa2').classList.contains('active')) { _cmp2Loaded = true; cargarComparativa2(); }
 }
 // guardarPropuesta — definida en sección principal
@@ -2232,19 +2053,21 @@ async function cargarTasasRef(){
 }
 
 // ── NAVEGACIÓN ──
-const PAGES = ['presentacion','propuesta','configuracion','comparativa','comparativa2','elite'];
+const PAGES = ['presentacion','propuesta','configuracion','comparativa2','elite'];
 
 let _propuestaCargada = false;
 function showPage(name, el) {
-  PAGES.forEach(id => document.getElementById('page-'+id).classList.remove('active'));
-  document.getElementById('page-'+name).classList.add('active');
+  PAGES.forEach(id => { const pg = document.getElementById('page-'+id); if (pg) pg.classList.remove('active'); });
+  const targetPage = document.getElementById('page-'+name);
+  if (!targetPage) return;
+  targetPage.classList.add('active');
   try { localStorage.setItem('vx-active-page', name); } catch(e) {}
   document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.mobile-tab').forEach(b => b.classList.remove('active'));
   if (el && (el.classList.contains('nav-tab') || el.classList.contains('mobile-tab'))) {
     el.classList.add('active');
   }
-  const nameMap = {'presentacion':'presentación','configuracion':'configuración','propuesta':'propuesta','comparativa':'comparativa','comparativa2':'comparativa 2','elite':'valmex elite'};
+  const nameMap = {'presentacion':'presentación','configuracion':'configuración','propuesta':'propuesta','comparativa2':'comparativa','elite':'valmex elite'};
   const label = nameMap[name] || name;
   if (el && el.classList.contains('nav-tab')) {
     document.querySelectorAll('.mobile-tab').forEach(b => { if(b.textContent.trim().toLowerCase()===label) b.classList.add('active'); });
@@ -2272,20 +2095,9 @@ function showPage(name, el) {
     }
   }
   if (name === 'configuracion') { cargarTasasRef(); }
-  if (name === 'comparativa') {
-    initCmpCharts();
-    if (!_cmpLoaded) {
-      _cmpLoaded = true;
-      cargarComparativa();
-    } else {
-      setTimeout(() => { Object.values(cmpCharts).forEach(c => c && c.resize && c.resize()); }, 80);
-    }
-    loadQuiltChart();
-    loadQuiltFondos();
-    loadPerfiles();
-  }
   if (name === 'comparativa2') {
     initCmp2Charts();
+    loadCmp2Quilts();
     if (!_cmp2Loaded) {
       _cmp2Loaded = true;
       cargarComparativa2();
@@ -2498,13 +2310,10 @@ requestAnimationFrame(()=>{
 });
 
 // ══════════════════════════════════════════════════════════════════════════
-// COMPARATIVA — Aladdin-inspired Dashboard
+// Shared utilities — Rendimientos & Risk Metrics
 // ══════════════════════════════════════════════════════════════════════════
-let _cmpInited = false, _cmpLoaded = false;
-const cmpCharts = {};
 
 // ── Rendimientos desde backtesting (retorno real compuesto) ──
-// Usado en Propuesta, Comparativa 1, Comparativa 2
 function calcRendFromBt(bt) {
   if (!bt || bt.length < 2) return {};
   const last = bt[bt.length - 1];
@@ -2681,486 +2490,6 @@ function computeRiskMetrics(bt, rfOverride) {
   };
 }
 
-function initCmpCharts() {
-  if (_cmpInited) return;
-  _cmpInited = true;
-
-  // Donut A
-  cmpCharts.donutA = new Chart(document.getElementById('c-cmp-donut-a'), {
-    type:'doughnut',
-    data:{labels:[],datasets:[{data:[],backgroundColor:PAL,borderWidth:2,borderColor:'#fff'}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',layout:{padding:4},
-      plugins:{legend:{display:false},tooltip:{backgroundColor:'#00205C',titleFont:{size:10,weight:'700',family:'Montserrat'},bodyFont:{size:10,family:'Montserrat'},padding:6,cornerRadius:4,callbacks:{label:ctx=>' '+ctx.label+': '+ctx.raw.toFixed(1)+'%'}}}},
-    plugins:[{id:'pctLabel',afterDatasetsDraw(chart){const{ctx,data}=chart;ctx.save();chart.getDatasetMeta(0).data.forEach((arc,i)=>{const val=data.datasets[0].data[i];if(val<5)return;const{x,y}=arc.tooltipPosition();ctx.fillStyle='#fff';ctx.font='bold 11px Montserrat,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(val.toFixed(0)+'%',x,y);});ctx.restore();}}]
-  });
-
-  // Donut B
-  cmpCharts.donutB = new Chart(document.getElementById('c-cmp-donut-b'), {
-    type:'doughnut',
-    data:{labels:[],datasets:[{data:[],backgroundColor:PAL,borderWidth:2,borderColor:'#fff'}]},
-    options:{responsive:true,maintainAspectRatio:false,cutout:'62%',layout:{padding:4},
-      plugins:{legend:{display:false},tooltip:{backgroundColor:'#00205C',titleFont:{size:10,weight:'700',family:'Montserrat'},bodyFont:{size:10,family:'Montserrat'},padding:6,cornerRadius:4,callbacks:{label:ctx=>' '+ctx.label+': '+ctx.raw.toFixed(1)+'%'}}}},
-    plugins:[{id:'pctLabel2',afterDatasetsDraw(chart){const{ctx,data}=chart;ctx.save();chart.getDatasetMeta(0).data.forEach((arc,i)=>{const val=data.datasets[0].data[i];if(val<5)return;const{x,y}=arc.tooltipPosition();ctx.fillStyle='#fff';ctx.font='bold 11px Montserrat,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(val.toFixed(0)+'%',x,y);});ctx.restore();}}]
-  });
-
-  // Performance line chart (backtesting)
-  cmpCharts.perf = new Chart(document.getElementById('c-cmp-perf'), {
-    type:'line',
-    data:{labels:[],datasets:[
-      {label:'A',data:[],borderColor:'#00205C',backgroundColor:'rgba(0,32,92,0.06)',fill:true,borderWidth:2.5,pointRadius:0,pointHitRadius:6,pointHoverRadius:4,tension:.35},
-      {label:'B',data:[],borderColor:'#41BBC9',backgroundColor:'transparent',borderWidth:2,pointRadius:0,pointHitRadius:6,pointHoverRadius:4,tension:.35}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
-      plugins:{legend:{position:'bottom',labels:{boxWidth:14,boxHeight:14,font:{size:12,family:'Montserrat',weight:'600'},padding:16,usePointStyle:true,pointStyle:'rectRounded',color:'#00205C'}},
-        tooltip:{backgroundColor:'#00205C',titleFont:{size:10,weight:'600'},bodyFont:{size:10},padding:10,cornerRadius:6,callbacks:{title:_btTooltipTitle,label:ctx=>' '+ctx.dataset.label+': '+ctx.raw}}},
-      layout:{padding:{right:55,top:18}},
-      scales:{x:{grid:{display:false},ticks:{font:{size:10,family:'Montserrat'},color:'#00205C',maxTicksLimit:8,maxRotation:0,autoSkip:true,callback:_btTickFmt},border:{display:false}},
-        y:{grid:{display:false},ticks:{font:{size:10,family:'Montserrat'},color:'#00205C'},border:{display:false}}}},
-    plugins:[{id:'endLabels',afterDatasetsDraw(chart){const{ctx}=chart;ctx.save();const pts=chart.data.datasets.map((ds,i)=>{const meta=chart.getDatasetMeta(i);const lp=meta.data[meta.data.length-1];if(!lp||!ds.data.length)return null;return{x:lp.x,y:lp.y,val:ds.data[ds.data.length-1],color:ds.borderColor};}).filter(Boolean);if(pts.length>=2&&Math.abs(pts[0].y-pts[1].y)<18){pts[0].y=Math.min(pts[0].y,pts[1].y)-9;pts[1].y=Math.min(pts[0].y,pts[1].y)+18;}pts.forEach(p=>{ctx.fillStyle=p.color;ctx.font='bold 11px Montserrat,sans-serif';ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(p.val,p.x+6,p.y);});ctx.restore();}}]
-  });
-
-  // Risk bar chart (VaR + ES + MaxDD)
-  cmpCharts.risk = new Chart(document.getElementById('c-cmp-risk'), {
-    type:'bar',
-    data:{labels:['VaR 95% (1M)','Expected Shortfall','Max Drawdown'],datasets:[
-      {label:'A',data:[0,0,0],backgroundColor:'#00205C',borderRadius:4,barPercentage:.7,categoryPercentage:.8},
-      {label:'B',data:[0,0,0],backgroundColor:'#41BBC9',borderRadius:4,barPercentage:.7,categoryPercentage:.8}
-    ]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{position:'bottom',labels:{boxWidth:14,boxHeight:14,font:{size:11,family:'Montserrat',weight:'700'},padding:14,usePointStyle:true,pointStyle:'rectRounded',color:'#00205C'}},
-        tooltip:{callbacks:{label:ctx=>' '+ctx.dataset.label+': '+(ctx.raw*100).toFixed(2)+'%'},backgroundColor:'#00205C',titleFont:{size:10},bodyFont:{size:10},padding:8,cornerRadius:6}},
-      scales:{x:{ticks:{callback:v=>(v*100).toFixed(1)+'%',font:{size:10,family:'Montserrat'},color:'#00205C'},grid:{color:'rgba(0,32,92,0.06)'},border:{display:false}},
-        y:{grid:{display:false},ticks:{font:{size:11,weight:'700',family:'Montserrat'},color:'#00205C'},border:{display:false}}}}
-  });
-
-  // Scenarios bar chart
-  cmpCharts.scenarios = new Chart(document.getElementById('c-cmp-scenarios'), {
-    type:'bar',
-    data:{labels:['Peor Mes','Peor Trimestre'],datasets:[
-      {label:'A',data:[0,0],backgroundColor:'#00205C',borderRadius:4,barPercentage:.7,categoryPercentage:.8},
-      {label:'B',data:[0,0],backgroundColor:'#41BBC9',borderRadius:4,barPercentage:.7,categoryPercentage:.8}
-    ]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{position:'bottom',labels:{boxWidth:14,boxHeight:14,font:{size:11,family:'Montserrat',weight:'700'},padding:14,usePointStyle:true,pointStyle:'rectRounded',color:'#00205C'}},
-        tooltip:{callbacks:{label:ctx=>{const v=ctx.raw;return ' '+ctx.dataset.label+': '+(v!=null?(v*100).toFixed(2)+'%':'N/A');}},backgroundColor:'#00205C',titleFont:{size:10},bodyFont:{size:10},padding:8,cornerRadius:6}},
-      scales:{x:{ticks:{callback:v=>(v*100).toFixed(1)+'%',font:{size:10,family:'Montserrat'},color:'#00205C'},grid:{color:'rgba(0,32,92,0.06)'},border:{display:false}},
-        y:{grid:{display:false},ticks:{font:{size:11,weight:'700',family:'Montserrat'},color:'#00205C'},border:{display:false}}}}
-  });
-
-  // Risk-Return scatter
-  cmpCharts.scatter = new Chart(document.getElementById('c-cmp-scatter'), {
-    type:'scatter',
-    data:{datasets:[
-      {label:'A',data:[],backgroundColor:'#00205C',borderColor:'#00205C',pointRadius:10,pointHoverRadius:12},
-      {label:'B',data:[],backgroundColor:'#41BBC9',borderColor:'#41BBC9',pointRadius:10,pointHoverRadius:12}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22,right:22}},
-      plugins:{legend:{position:'bottom',labels:{boxWidth:14,boxHeight:14,font:{size:11,family:'Montserrat',weight:'700'},padding:14,usePointStyle:true,pointStyle:'rectRounded',color:'#00205C'}},
-        tooltip:{callbacks:{label:ctx=>' '+ctx.dataset.label+': Rend. '+(ctx.parsed.y*100).toFixed(2)+'%, Vol. '+(ctx.parsed.x*100).toFixed(2)+'%'},backgroundColor:'#00205C',padding:8,cornerRadius:6}},
-      scales:{x:{title:{display:true,text:'Volatilidad Anualizada',font:{size:11,weight:'700',family:'Montserrat'},color:'#00205C'},ticks:{callback:v=>(v*100).toFixed(2)+'%',font:{size:10,family:'Montserrat'},color:'#00205C'},grid:{color:'rgba(0,32,92,0.06)'},border:{display:false}},
-        y:{title:{display:true,text:'Rendimiento Anualizado',font:{size:11,weight:'700',family:'Montserrat'},color:'#00205C'},ticks:{callback:v=>(v*100).toFixed(2)+'%',font:{size:10,family:'Montserrat'},color:'#00205C'},grid:{color:'rgba(0,32,92,0.06)'},border:{display:false}}}},
-    plugins:[{id:'ptLabels',afterDatasetsDraw(chart){
-      const{ctx,chartArea:{left,right,top,bottom}}=chart;
-      ctx.save();
-      ctx.font='bold 11px Montserrat,sans-serif';
-      const H=14,PAD=6,GAP=4,PR=10;
-      // Collect items
-      const items=[];
-      chart.data.datasets.forEach((ds,i)=>{
-        const meta=chart.getDatasetMeta(i);
-        if(!meta.visible||!meta.data.length) return;
-        const pt=meta.data[0];
-        const w=ctx.measureText(ds.label).width;
-        items.push({label:ds.label,color:ds.borderColor,px:pt.x,py:pt.y,w,h:H});
-      });
-      // Generate candidate positions for each label: above, left, right, below
-      function candidates(it){
-        const c=[];
-        c.push({x:it.px-it.w/2, y:it.py-PR-GAP-it.h, align:'center-above'});
-        c.push({x:it.px-it.w-PR-GAP, y:it.py-it.h/2, align:'left'});
-        c.push({x:it.px+PR+GAP, y:it.py-it.h/2, align:'right'});
-        c.push({x:it.px-it.w/2, y:it.py+PR+GAP, align:'center-below'});
-        c.push({x:it.px-it.w-PR-GAP, y:it.py-PR-GAP-it.h, align:'left-above'});
-        c.push({x:it.px+PR+GAP, y:it.py-PR-GAP-it.h, align:'right-above'});
-        c.push({x:it.px-it.w-PR-GAP, y:it.py+PR+GAP, align:'left-below'});
-        c.push({x:it.px+PR+GAP, y:it.py+PR+GAP, align:'right-below'});
-        return c.filter(p=>p.x>=left+PAD && p.x+it.w<=right-PAD && p.y>=top && p.y+it.h<=bottom-PAD);
-      }
-      function overlaps(x,y,w,h,placed){
-        for(const p of placed){
-          if(x<p.x+p.w+GAP && x+w+GAP>p.x && y<p.y+p.h+GAP && y+h+GAP>p.y) return true;
-        }
-        return false;
-      }
-      const placed=[];
-      items.forEach(it=>{
-        const cands=candidates(it);
-        let best=cands[0]||{x:it.px-it.w/2,y:it.py-PR-GAP-it.h};
-        for(const c of cands){
-          if(!overlaps(c.x,c.y,it.w,it.h,placed)){best=c;break;}
-        }
-        placed.push({x:best.x,y:best.y,w:it.w,h:it.h,label:it.label,color:it.color});
-      });
-      placed.forEach(r=>{
-        ctx.fillStyle=r.color;
-        ctx.textAlign='left';
-        ctx.textBaseline='top';
-        ctx.fillText(r.label,r.x,r.y);
-      });
-      ctx.restore();
-    }}]
-  });
-}
-
-function aplicarDatosCmp(dataA, dataB, valA, valB) {
-  const fmtR = v => (v == null) ? '\u2014' : (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
-  const fmtPct = v => v != null ? (v * 100).toFixed(2) + '%' : 'N/A';
-  const fmtNum = v => v != null ? v.toFixed(2) : 'N/A';
-  const clsR = v => v == null ? 'num' : v >= 0 ? 'num pos' : 'num neg';
-  const clsD = v => v == null ? 'num' : v > 0.005 ? 'num diff-pos' : v < -0.005 ? 'num diff-neg' : 'num';
-  const labelMap = {
-    perfil_0:'Perfil 0 \u00b7 100% RF low risk', perfil_1:'Perfil 1 \u00b7 100% RF high risk',
-    perfil_2:'Perfil 2 \u00b7 80% RF / 20% RV', perfil_3:'Perfil 3 \u00b7 60% RF / 40% RV',
-    perfil_4:'Perfil 4 \u00b7 40% RF / 60% RV', actual:'Portafolio Actual', propuesta:'Portafolio Propuesta',
-  };
-  const shortMap = {
-    perfil_0:'Perfil 0', perfil_1:'Perfil 1', perfil_2:'Perfil 2',
-    perfil_3:'Perfil 3', perfil_4:'Perfil 4', actual:'P. Actual', propuesta:'P. Propuesta',
-  };
-  const lblA = shortMap[valA] || 'A';
-  const lblB = shortMap[valB] || 'B';
-
-  // Title
-  const cmpMain = document.getElementById('cmp-title-main');
-  if (cmpMain) {
-    const contrato = document.getElementById('cfg-contrato')?.value?.trim() || '';
-    cmpMain.textContent = contrato ? `Comparativa de Estrategias - ${contrato}` : 'Comparativa de Estrategias';
-  }
-  const sub = document.getElementById('cmp-title-sub');
-  if (sub) sub.innerHTML = (labelMap[valA]||valA) + '  <span style="color:var(--navy)">vs</span>  ' + (labelMap[valB]||valB);
-
-  // Update all column headers & badges
-  const setT = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
-  ['cmp-ov-th-a','cmp-h-th-a','cmp-r-th-a','cmp-st-th-a','cmp-ch-th-a'].forEach(id => setT(id, lblA));
-  ['cmp-ov-th-b','cmp-h-th-b','cmp-r-th-b','cmp-st-th-b','cmp-ch-th-b'].forEach(id => setT(id, lblB));
-  setT('cmp-sum-badge-a', lblA); setT('cmp-sum-badge-b', lblB);
-
-  // Chart labels
-  [cmpCharts.perf, cmpCharts.risk, cmpCharts.scenarios, cmpCharts.scatter].forEach(c => {
-    if (c) { c.data.datasets[0].label = lblA; c.data.datasets[1].label = lblB; }
-  });
-
-  // ── Portfolio Summary: Donuts + Overview Table ──
-  {
-    const labelsA = dataA?.clase_activos?.labels || [];
-    const valuesA = dataA?.clase_activos?.values || [];
-    const labelsB = dataB?.clase_activos?.labels || [];
-    const valuesB = dataB?.clase_activos?.values || [];
-    const union = []; const seen = new Set();
-    [...labelsA, ...labelsB].forEach(l => { if (!seen.has(l)) { seen.add(l); union.push(l); } });
-    const colorMap = {}; union.forEach((l, i) => { colorMap[l] = PAL[i % PAL.length]; });
-
-    function fillDonut(chart, labels, values) {
-      if (!chart) return;
-      const pairs = labels.map((l,i) => [l, values[i]]).filter(p => p[1] > 0.01);
-      chart.data.labels = pairs.map(p => p[0]);
-      chart.data.datasets[0].data = pairs.map(p => p[1]);
-      chart.data.datasets[0].backgroundColor = pairs.map(p => colorMap[p[0]]);
-      chart.update();
-    }
-    fillDonut(cmpCharts.donutA, labelsA, valuesA);
-    fillDonut(cmpCharts.donutB, labelsB, valuesB);
-
-    const mapA = {}; labelsA.forEach((l,i) => { mapA[l] = valuesA[i]; });
-    const mapB = {}; labelsB.forEach((l,i) => { mapB[l] = valuesB[i]; });
-    const tbody = document.getElementById('cmp-overview-tbody');
-    if (tbody) {
-      tbody.innerHTML = '';
-      union.forEach(label => {
-        const a = mapA[label] || 0;
-        const b = mapB[label] || 0;
-        const diff = b - a;
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${colorMap[label]};margin-right:8px;vertical-align:middle;"></span>${label}</td><td class="num">${a.toFixed(1)}%</td><td class="num">${b.toFixed(1)}%</td><td class="${clsD(diff)}">${diff > 0 ? '+' : ''}${diff.toFixed(1)}%</td>`;
-        tbody.appendChild(tr);
-      });
-    }
-  }
-
-  // ── Holdings Table ──
-  {
-    const FUND_ORDER = ['Reporto MXN','Reporto USD','VXREPO1','VXGUBCP','VLMXETF','VXUDIMP','VXDEUDA','VXGUBLP','VXCOBER','VXTBILL','VLMXDME','VALMXA','VALMX28','VALMX20','VALMXVL','VALMXES','VLMXTEC','VLMXESG','VALMXHC','VXINFRA','Fondos Ciclo de Vida','Acciones',"ETF's"];
-    const compA = dataA?.composicion || [];
-    const compB = dataB?.composicion || [];
-    const mA = {}; compA.forEach(f => { mA[f.fondo] = f; });
-    const mB = {}; compB.forEach(f => { mB[f.fondo] = f; });
-    const allFunds = new Set([...compA.map(f=>f.fondo), ...compB.map(f=>f.fondo)]);
-    const sortedFunds = [...allFunds].sort((a,b) => {
-      const iA = FUND_ORDER.indexOf(a), iB = FUND_ORDER.indexOf(b);
-      if (iA !== -1 && iB !== -1) return iA - iB;
-      if (iA !== -1) return -1; if (iB !== -1) return 1;
-      return a.localeCompare(b);
-    });
-    const tbody = document.getElementById('cmp-holdings-tbody');
-    if (tbody) {
-      tbody.innerHTML = '';
-      sortedFunds.forEach(fund => {
-        const a = mA[fund]; const b = mB[fund];
-        const pctA = a ? a.pct : 0; const pctB = b ? b.pct : 0;
-        const diff = pctB - pctA;
-        const serie = a?.serie || b?.serie || '\u2014';
-        const src = a || b;
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td style="font-weight:700;color:var(--navy);">${fund}</td><td>${serie}</td><td class="num">${pctA > 0 ? pctA.toFixed(2) + '%' : '\u2014'}</td><td class="num">${pctB > 0 ? pctB.toFixed(2) + '%' : '\u2014'}</td><td class="${clsD(diff)}">${Math.abs(diff) > 0.005 ? (diff > 0 ? '+' : '') + diff.toFixed(2) + '%' : '\u2014'}</td><td class="${clsR(src?.r1m)}">${fmtR(src?.r1m != null && src.r1m !== 0 ? src.r1m : null)}</td><td class="${clsR(src?.ytd)}">${fmtR(src?.ytd != null && src.ytd !== 0 ? src.ytd : null)}</td><td class="${clsR(src?.r1y)}">${fmtR(src?.r1y != null && src.r1y !== 0 ? src.r1y : null)}</td>`;
-        tbody.appendChild(tr);
-      });
-    }
-  }
-
-  // ── Rendimientos Table (desde backtesting real, igual que Comparativa 2) ──
-  {
-    const rendA = calcRendFromBt(dataA?.bt_portafolio);
-    const rendB = calcRendFromBt(dataB?.bt_portafolio);
-    const periods = [['MTD','mtd'],['3 Meses','r3m'],['YTD','ytd'],['12 Meses','r1y'],['24 Meses','r2y'],['36 Meses','r3y']];
-    const tbody = document.getElementById('cmp-rend-tbody');
-    if (tbody) {
-      tbody.innerHTML = '';
-      periods.forEach(([label, key]) => {
-        const a = rendA[key] != null ? rendA[key] * 100 : null;
-        const b = rendB[key] != null ? rendB[key] * 100 : null;
-        const diff = (a != null && b != null) ? b - a : null;
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td style="font-weight:700;">${label}</td><td class="${clsR(a)}">${fmtR(a)}</td><td class="${clsR(b)}">${fmtR(b)}</td><td class="${clsD(diff)}">${diff != null ? fmtR(diff) : '\u2014'}</td>`;
-        tbody.appendChild(tr);
-      });
-    }
-  }
-
-  // ── Backtesting Line Chart ──
-  if (cmpCharts.perf) {
-    const rawA = dataA?.bt_portafolio || [];
-    const rawB = dataB?.bt_portafolio || [];
-    const mapA = {}, mapB = {};
-    if (rawA.length) { const base = rawA[0].valor; if (base > 0) rawA.forEach(p => { mapA[p.fecha] = Math.round((p.valor / base) * 100 * 100) / 100; }); }
-    if (rawB.length) { const base = rawB[0].valor; if (base > 0) rawB.forEach(p => { mapB[p.fecha] = Math.round((p.valor / base) * 100 * 100) / 100; }); }
-    const allDates = [...new Set([...Object.keys(mapA), ...Object.keys(mapB)])].sort();
-    function lerpCmp(map, dates) {
-      const known = [];
-      dates.forEach((dt, i) => { if (map[dt] != null) known.push({i, v: map[dt]}); });
-      if (!known.length) return dates.map(() => null);
-      const arr = new Array(dates.length).fill(null);
-      for (let j = 0; j <= known[0].i; j++) arr[j] = known[0].v;
-      for (let k = 0; k < known.length - 1; k++) {
-        const {i: i0, v: v0} = known[k], {i: i1, v: v1} = known[k+1];
-        for (let j = i0; j <= i1; j++) arr[j] = v0 + (v1 - v0) * (j - i0) / (i1 - i0);
-      }
-      for (let j = known[known.length-1].i; j < dates.length; j++) arr[j] = known[known.length-1].v;
-      return arr.map(v => v != null ? Math.round(v * 100) / 100 : null);
-    }
-    cmpCharts.perf.data.labels = allDates;
-    cmpCharts.perf.data.datasets[0].data = lerpCmp(mapA, allDates);
-    cmpCharts.perf.data.datasets[1].data = lerpCmp(mapB, allDates);
-    const allVals = [...Object.values(mapA), ...Object.values(mapB)].filter(v => v != null);
-    if (allVals.length) cmpCharts.perf.options.scales.y.min = Math.floor(Math.min(...allVals) * 0.95);
-    cmpCharts.perf.update('none');
-  }
-
-  // ── Risk Metrics ──
-  const riskA = computeRiskMetrics(dataA?.bt_portafolio, dataA?.rf_annual);
-  const riskB = computeRiskMetrics(dataB?.bt_portafolio, dataB?.rf_annual);
-
-  // Stats table — with positive metrics + color coding
-  {
-    const metrics = [
-      ['Rendimiento Anualizado', riskA?.annRet, riskB?.annRet, fmtPct, 'neutral'],
-      ['Volatilidad Anualizada', riskA?.annVol, riskB?.annVol, fmtPct, 'neutral'],
-      ['Sharpe Ratio*', riskA?.sharpe, riskB?.sharpe, fmtNum, 'neutral'],
-      ['Mejor Mes', riskA?.bestMonth, riskB?.bestMonth, fmtPct, 'pos'],
-      ['Peor Mes', riskA?.worstMonth, riskB?.worstMonth, fmtPct, 'neg'],
-      ['Mejor Semestre', riskA?.bestSem, riskB?.bestSem, fmtPct, 'pos'],
-      ['Peor Semestre', riskA?.worstSem, riskB?.worstSem, fmtPct, 'neg'],
-      ['% Meses Positivos', riskA?.pctPositive, riskB?.pctPositive, fmtPct, 'pos'],
-      ['% Meses Negativos', riskA?.pctPositive != null ? 1 - riskA.pctPositive : null, riskB?.pctPositive != null ? 1 - riskB.pctPositive : null, fmtPct, 'neg'],
-      ['Max. Drawdown', riskA?.maxDD, riskB?.maxDD, fmtPct, 'neg'],
-    ];
-    const colorVal = (v, sign) => {
-      if (v == null) return 'color:#00205C';
-      if (sign === 'neutral') return 'color:#00205C';
-      if (sign === 'pos') return v >= 0 ? 'color:#0D9488' : 'color:#DC2626';
-      if (sign === 'neg') return v < 0 ? 'color:#DC2626' : 'color:#0D9488';
-      return 'color:#00205C';
-    };
-    const tbody = document.getElementById('cmp-stats-tbody');
-    if (tbody) {
-      tbody.innerHTML = '';
-      metrics.forEach(row => {
-        const [label, a, b, fmt, sign] = row;
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td style="font-weight:600;">${label}</td>`
-          + `<td class="num" style="${colorVal(a,sign)};font-weight:600;">${fmt(a)}</td>`
-          + `<td class="num" style="${colorVal(b,sign)};font-weight:600;">${fmt(b)}</td>`;
-        tbody.appendChild(tr);
-      });
-      // Footnote for Sharpe
-      const rfVal = dataA?.rf_annual ?? dataB?.rf_annual;
-      const rfPct = rfVal != null ? (rfVal * 100).toFixed(2) + '%' : 'N/A';
-      const fnRow = document.createElement('tr');
-      fnRow.innerHTML = `<td colspan="3" style="font-size:10px;color:#64748B;padding-top:6px;font-style:italic;">*Rf = CETES 28d promedio del per\u00edodo (${rfPct} anual)</td>`;
-      tbody.appendChild(fnRow);
-    }
-  }
-
-  // Risk bar chart
-  if (cmpCharts.risk) {
-    cmpCharts.risk.data.datasets[0].data = [riskA?.var95 ?? 0, riskA?.es ?? 0, riskA?.maxDD ?? 0];
-    cmpCharts.risk.data.datasets[1].data = [riskB?.var95 ?? 0, riskB?.es ?? 0, riskB?.maxDD ?? 0];
-    cmpCharts.risk.update();
-  }
-
-  // Scenarios bar chart
-  // Worst periods use dynamic bt (filtered by date range)
-  // Named crises use FULL history from backend (always available)
-  if (cmpCharts.scenarios) {
-    const hsA = dataA?.historical_scenarios || {};
-    const hsB = dataB?.historical_scenarios || {};
-    const scenarios = [
-      ['Peor Mes', i => [riskA, riskB][i]?.worstMonth],
-      ['Peor Trimestre', i => [riskA, riskB][i]?.worstQ],
-      ['Peor Semestre', i => [riskA, riskB][i]?.worstSem],
-      ['Crisis Financiera 2008 (Sep 08 \u2013 Mar 09)', i => [hsA, hsB][i]?.gfc2008],
-      ['Disminuci\u00f3n Grado Inv. MX (Dic 19 \u2013 Abr 20)', i => [hsA, hsB][i]?.mxDowngrade],
-      ['COVID-19 (Feb \u2013 Mar 20)', i => [hsA, hsB][i]?.covid],
-      ['Crisis Bancaria USA (Mar 6\u201315, 23)', i => [hsA, hsB][i]?.bankCrisis],
-      ['Recuperaci\u00f3n Bancaria (Mar\u2013Jun 23)', i => [hsA, hsB][i]?.bankRecovery],
-      ['Crisis Arancelaria (Feb \u2013 Abr 25)', i => [hsA, hsB][i]?.tariffCrisis],
-    ];
-    const active = scenarios.filter(([, fn]) => [0, 1].some(i => fn(i) != null));
-    cmpCharts.scenarios.data.labels = active.map(([l]) => l);
-    cmpCharts.scenarios.data.datasets[0].data = active.map(([, fn]) => { const v = fn(0); return v != null ? v : 0; });
-    cmpCharts.scenarios.data.datasets[1].data = active.map(([, fn]) => { const v = fn(1); return v != null ? v : 0; });
-    cmpCharts.scenarios.update();
-  }
-
-  // Scatter plot
-  if (cmpCharts.scatter) {
-    cmpCharts.scatter.data.datasets[0].data = riskA ? [{x: riskA.annVol, y: riskA.annRet}] : [];
-    cmpCharts.scatter.data.datasets[1].data = riskB ? [{x: riskB.annVol, y: riskB.annRet}] : [];
-    cmpCharts.scatter.update();
-  }
-
-  // Portfolio Characteristics table
-  {
-    const anyDeuda = dataA?.has_deuda || dataB?.has_deuda;
-    const chars = [];
-    if (anyDeuda) {
-      const dd = [dataA?.deuda, dataB?.deuda];
-      if (dd[0]?.has_mxn || dd[1]?.has_mxn) {
-        chars.push(['Duraci\u00f3n MXN (a\u00f1os)', dd[0]?.has_mxn ? dd[0].dur_mxn.toFixed(2) : '\u2014', dd[1]?.has_mxn ? dd[1].dur_mxn.toFixed(2) : '\u2014']);
-        chars.push(['YTM MXN', dd[0]?.has_mxn && dd[0].ytm_mxn > 0 ? dd[0].ytm_mxn.toFixed(2)+'%' : '\u2014', dd[1]?.has_mxn && dd[1].ytm_mxn > 0 ? dd[1].ytm_mxn.toFixed(2)+'%' : '\u2014']);
-        chars.push(['Cal. Crediticia MXN', dd[0]?.cred_mxn || '\u2014', dd[1]?.cred_mxn || '\u2014']);
-      }
-      if (dd[0]?.has_usd || dd[1]?.has_usd) {
-        chars.push(['Duraci\u00f3n USD (a\u00f1os)', dd[0]?.has_usd ? dd[0].dur_usd.toFixed(2) : '\u2014', dd[1]?.has_usd ? dd[1].dur_usd.toFixed(2) : '\u2014']);
-        chars.push(['YTM USD', dd[0]?.has_usd && dd[0].ytm_usd > 0 ? dd[0].ytm_usd.toFixed(2)+'%' : '\u2014', dd[1]?.has_usd && dd[1].ytm_usd > 0 ? dd[1].ytm_usd.toFixed(2)+'%' : '\u2014']);
-        chars.push(['Cal. Crediticia USD', dd[0]?.cred_usd || '\u2014', dd[1]?.cred_usd || '\u2014']);
-      }
-    }
-    const acA = {}; (dataA?.clase_activos?.labels||[]).forEach((l,i) => { acA[l] = (dataA?.clase_activos?.values||[])[i]; });
-    const acB = {}; (dataB?.clase_activos?.labels||[]).forEach((l,i) => { acB[l] = (dataB?.clase_activos?.values||[])[i]; });
-    ['Deuda','Renta Variable','Reporto','Acciones','ETF'].forEach(cls => {
-      if ((acA[cls] || 0) > 0 || (acB[cls] || 0) > 0) chars.push(['% ' + cls, (acA[cls] || 0).toFixed(1) + '%', (acB[cls] || 0).toFixed(1) + '%']);
-    });
-    if (riskA || riskB) {
-      chars.push(['Meses de datos', riskA ? riskA.nMonths.toString() : '\u2014', riskB ? riskB.nMonths.toString() : '\u2014']);
-    }
-    const tbody = document.getElementById('cmp-chars-tbody');
-    if (tbody) {
-      tbody.innerHTML = '';
-      chars.forEach(([label, a, b]) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td style="font-weight:600;">${label}</td><td class="num">${a}</td><td class="num">${b}</td>`;
-        tbody.appendChild(tr);
-      });
-    }
-  }
-
-  // ── Exposure Section ──
-  {
-    const anyRV = dataA?.has_rv || dataB?.has_rv;
-    const anyDeuda = dataA?.has_deuda || dataB?.has_deuda;
-    const expoHdr = document.getElementById('cmp-expo-hdr');
-    const expoSec = document.getElementById('cmp-expo-sec');
-    const expoGrid = document.getElementById('cmp-expo-grid');
-
-    if (!anyRV && !anyDeuda) {
-      if (expoHdr) expoHdr.style.display = 'none';
-      if (expoSec) expoSec.style.display = 'none';
-    } else {
-      if (expoHdr) expoHdr.style.display = '';
-      if (expoSec) expoSec.style.display = '';
-      if (expoGrid) expoGrid.innerHTML = '';
-
-      function buildExpoCard(title, labelsA, valuesA, labelsB, valuesB) {
-        const union = []; const seen = new Set();
-        [...(labelsA||[]), ...(labelsB||[])].forEach(l => { if (!seen.has(l)) { seen.add(l); union.push(l); } });
-        if (!union.length) return;
-        const mA = {}; (labelsA||[]).forEach((l,i) => { mA[l] = (valuesA||[])[i] || 0; });
-        const mB = {}; (labelsB||[]).forEach((l,i) => { mB[l] = (valuesB||[])[i] || 0; });
-        const maxVal = Math.max(...union.map(l => Math.max(mA[l]||0, mB[l]||0)), 1);
-        const card = document.createElement('div');
-        card.className = 'cmp-expo-card';
-        let html = `<div class="cmp-expo-hdr">${title}</div>`;
-        union.forEach(label => {
-          const a = mA[label] || 0;
-          const b = mB[label] || 0;
-          const wA = (a / maxVal * 100).toFixed(1);
-          const wB = (b / maxVal * 100).toFixed(1);
-          html += `<div class="cmp-expo-bar-row"><div class="cmp-expo-label" title="${label}">${label}</div><div class="cmp-expo-bars-wrap"><div class="cmp-expo-bar-half left"><div class="cmp-expo-bar a" style="width:${wA}%;"></div></div><div class="cmp-expo-bar-half right"><div class="cmp-expo-bar b" style="width:${wB}%;"></div></div></div><div class="cmp-expo-pct">${a.toFixed(1)} / ${b.toFixed(1)}</div></div>`;
-        });
-        card.innerHTML = html;
-        expoGrid.appendChild(card);
-      }
-
-      if (anyRV) {
-        buildExpoCard('Exposici\u00f3n Geogr\u00e1fica', dataA?.geo?.labels, dataA?.geo?.values, dataB?.geo?.labels, dataB?.geo?.values);
-        buildExpoCard('Exposici\u00f3n Sectorial', dataA?.sectores?.labels, dataA?.sectores?.values, dataB?.sectores?.labels, dataB?.sectores?.values);
-      }
-      if (anyDeuda) {
-        buildExpoCard('Tipo de Deuda', dataA?.supersectores?.labels, dataA?.supersectores?.values, dataB?.supersectores?.labels, dataB?.supersectores?.values);
-      }
-    }
-  }
-}
-
-async function cargarComparativa() {
-  const selA = document.getElementById('cmp-sel-a');
-  const selB = document.getElementById('cmp-sel-b');
-  const valA = selA ? selA.value : 'actual';
-  const valB = selB ? selB.value : 'perfil_3';
-  const bodyA = buildApiBody(valA);
-  const bodyB = buildApiBody(valB);
-  if (!bodyA && !bodyB) {
-    vxToast('No se pudieron construir ambas carteras.<br>Verifica la configuraci\u00f3n.');
-    return;
-  }
-  showSpinner(true);
-  try {
-    const fA = bodyA ? fetch('/api/propuesta', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(bodyA) }).then(r => r.json()) : Promise.resolve(null);
-    const fB = bodyB ? fetch('/api/propuesta', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(bodyB) }).then(r => r.json()) : Promise.resolve(null);
-    const [dataA, dataB] = await Promise.all([fA, fB]);
-    showSpinner(false);
-    initCmpCharts();
-    aplicarDatosCmp(
-      dataA && dataA.ok ? dataA : null,
-      dataB && dataB.ok ? dataB : null,
-      valA, valB
-    );
-  } catch(e) {
-    showSpinner(false);
-    vxToast('Error de conexi\u00f3n: ' + e.message, 'err');
-  }
-}
-
 // ══════════════════════════════════════════════════════════════════════════
 // COMPARATIVA 2 — 3-Way (Actual vs Modelo vs Propuesta)
 // ══════════════════════════════════════════════════════════════════════════
@@ -3333,10 +2662,10 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
   const cmpMain = document.getElementById('cmp2-title-main');
   if (cmpMain) {
     const contrato = document.getElementById('cfg-contrato')?.value?.trim() || '';
-    cmpMain.textContent = contrato ? `Comparativa de Estrategias — ${contrato}` : 'Comparativa de Estrategias';
+    cmpMain.textContent = contrato ? `Composición y Desempeño — ${contrato}` : 'Composición y Desempeño';
   }
   const sub = document.getElementById('cmp2-title-sub');
-  if (sub) sub.innerHTML = `Portafolio Actual <span style="color:var(--navy)">vs</span> ${_cmp2LblB} <span style="color:var(--navy)">vs</span> Portafolio Propuesta`;
+  if (sub) sub.innerHTML = `Asignación Estratégica de los Portafolios`;
   const toolbarLbl = document.getElementById('cmp2-toolbar-labels');
   if (toolbarLbl) toolbarLbl.innerHTML = `A: Portafolio Actual &nbsp;|&nbsp; B: ${_cmp2LblB} &nbsp;|&nbsp; C: Portafolio Propuesta`;
 
@@ -4014,12 +3343,14 @@ async function cargarComparativa2() {
 
 // ── QUILT CHART (Rendimientos por Clase de Activo) ──
 let _quiltLoaded = false;
+let _quiltData = null;
 async function loadQuiltChart() {
   if (_quiltLoaded) return;
   try {
     const resp = await fetch('/api/quilt');
     const data = await resp.json();
     if (!data.ok) { document.getElementById('quilt-table-wrap').innerHTML = '<p style="color:#DC2626;text-align:center;padding:20px;">Error: ' + (data.error||'') + '</p>'; return; }
+    _quiltData = data;
     renderQuiltChart(data);
     _quiltLoaded = true;
   } catch(e) {
@@ -4028,8 +3359,8 @@ async function loadQuiltChart() {
   }
 }
 
-function renderQuiltChart(data) {
-  const wrap = document.getElementById('quilt-table-wrap');
+function renderQuiltChart(data, wrapId, noteId) {
+  const wrap = document.getElementById(wrapId || 'quilt-table-wrap');
   const years = data.years;
   const assets = data.assets;
   const ref = data.reference;
@@ -4117,7 +3448,7 @@ function renderQuiltChart(data) {
   h += '</tbody></table>';
   wrap.innerHTML = h;
 
-  const noteEl = document.getElementById('quilt-note');
+  const noteEl = document.getElementById(noteId || 'quilt-note');
   if (noteEl && data.note) {
     noteEl.textContent = '* ' + data.note + (data.updated ? ' Actualizado: ' + data.updated + '.' : '');
   }
@@ -4125,12 +3456,14 @@ function renderQuiltChart(data) {
 
 // ── QUILT FONDOS VALMEX ──
 let _quiltFondosLoaded = false;
+let _quiltFondosData = null;
 async function loadQuiltFondos() {
   if (_quiltFondosLoaded) return;
   try {
     const resp = await fetch('/api/quilt_fondos');
     const data = await resp.json();
     if (!data.ok) { document.getElementById('quilt-fondos-wrap').innerHTML = '<p style="color:#DC2626;text-align:center;padding:20px;">Error: ' + (data.error||'') + '</p>'; return; }
+    _quiltFondosData = data;
     renderQuiltFondos(data);
     _quiltFondosLoaded = true;
   } catch(e) {
@@ -4139,8 +3472,8 @@ async function loadQuiltFondos() {
   }
 }
 
-function renderQuiltFondos(data) {
-  const wrap = document.getElementById('quilt-fondos-wrap');
+function renderQuiltFondos(data, wrapId, noteId) {
+  const wrap = document.getElementById(wrapId || 'quilt-fondos-wrap');
   const years = data.years;
   const assets = data.assets;
   const ref = data.reference || [];
@@ -4225,7 +3558,7 @@ function renderQuiltFondos(data) {
   h += '</tbody></table>';
   wrap.innerHTML = h;
 
-  const noteEl = document.getElementById('quilt-fondos-note');
+  const noteEl = document.getElementById(noteId || 'quilt-fondos-note');
   if (noteEl && data.note) {
     noteEl.textContent = '* ' + data.note + (data.updated ? ' Actualizado: ' + data.updated + '.' : '');
   }
@@ -4234,25 +3567,29 @@ function renderQuiltFondos(data) {
 // ── PERFILES PIE CHARTS ──
 let _perfilesLoaded = false;
 const _perfilCharts = {};
+let _perfilesData = null;
 async function loadPerfiles() {
   if (_perfilesLoaded) return;
   try {
     const resp = await fetch('/api/perfiles');
     const data = await resp.json();
     if (!data.ok) return;
+    _perfilesData = data;
     renderPerfiles(data);
     _perfilesLoaded = true;
   } catch(e) { console.error('Perfiles error:', e); }
 }
 
-function renderPerfiles(data) {
+function renderPerfiles(data, prefix, chartStore) {
+  prefix = prefix || '';
+  chartStore = chartStore || _perfilCharts;
   const perfiles = data.perfiles;
   const colors = data.colors || {};
   const allFunds = new Set();
   perfiles.forEach(p => Object.keys(p.funds).forEach(f => allFunds.add(f)));
 
   const PIE_PAL = ['#00205C','#3DA5E0','#41BBC9','#7CC677','#5B6670','#FECB46'];
-  const ids = ['pie-p0','pie-p1','pie-p2','pie-p3','pie-p4'];
+  const ids = [prefix+'pie-p0',prefix+'pie-p1',prefix+'pie-p2',prefix+'pie-p3',prefix+'pie-p4'];
   perfiles.forEach((p, idx) => {
     const canvas = document.getElementById(ids[idx]);
     if (!canvas) return;
@@ -4261,7 +3598,7 @@ function renderPerfiles(data) {
     const values = funds.map(f => f[1]);
     const bgColors = funds.map((f, i) => PIE_PAL[i] || '#EC626E');
 
-    _perfilCharts[idx] = new Chart(canvas, {
+    chartStore[idx] = new Chart(canvas, {
       type: 'pie',
       data: {
         labels: labels,
@@ -4311,7 +3648,7 @@ function renderPerfiles(data) {
   });
 
   // Legend — use all unique funds sorted by total weight across all profiles
-  const legendWrap = document.getElementById('perfiles-legend');
+  const legendWrap = document.getElementById(prefix + 'perfiles-legend');
   if (legendWrap) {
     const sortedFunds = ['VXGUBCP','VXUDIMP','VXDEUDA','VXGUBLP','VXTBILL','VALMX28','VALMX20'];
     let lh = '';
@@ -4324,6 +3661,26 @@ function renderPerfiles(data) {
     });
     legendWrap.innerHTML = lh;
   }
+}
+
+// ── CMP2: Quilt + Perfiles (reuse same data) ──
+let _cmp2QuiltsLoaded = false;
+const _cmp2PerfilCharts = {};
+async function loadCmp2Quilts() {
+  if (_cmp2QuiltsLoaded) return;
+  if (!_quiltData) {
+    try { const r = await fetch('/api/quilt'); const d = await r.json(); if (d.ok) _quiltData = d; } catch(e) {}
+  }
+  if (_quiltData) renderQuiltChart(_quiltData, 'cmp2-quilt-table-wrap', 'cmp2-quilt-note');
+  if (!_quiltFondosData) {
+    try { const r = await fetch('/api/quilt_fondos'); const d = await r.json(); if (d.ok) _quiltFondosData = d; } catch(e) {}
+  }
+  if (_quiltFondosData) renderQuiltFondos(_quiltFondosData, 'cmp2-quilt-fondos-wrap', 'cmp2-quilt-fondos-note');
+  if (!_perfilesData) {
+    try { const r = await fetch('/api/perfiles'); const d = await r.json(); if (d.ok) _perfilesData = d; } catch(e) {}
+  }
+  if (_perfilesData) renderPerfiles(_perfilesData, 'cmp2-', _cmp2PerfilCharts);
+  _cmp2QuiltsLoaded = true;
 }
 
 // PDF Export
@@ -4403,214 +3760,8 @@ document.getElementById('btn-pdf').addEventListener('click', async () => {
   const y = Math.min(mt, ph - imgH - mb);
   pdf.addImage(cv.toDataURL('image/jpeg', 0.92), 'JPEG', mx, Math.max(mt, y), usableW, imgH);
   const contrato = document.getElementById('cfg-contrato')?.value?.trim() || '';
-  const propName = contrato ? `Propuesta de Inversión ${contrato} - VALMEX.pdf` : 'Propuesta de Inversión - VALMEX.pdf';
+  const propName = contrato ? `Comparativa ${contrato} - VALMEX.pdf` : 'Comparativa - VALMEX.pdf';
   pdf.save(propName);
-});
-
-// PDF Comparativa — portrait, multi-page
-// ── PDF Comparativa 1 — Menu toggle ──
-document.getElementById('btn-pdf-cmp-toggle').addEventListener('click', (e) => {
-  e.stopPropagation();
-  const menu = document.getElementById('pdf-cmp-menu');
-  menu.style.display = menu.style.display === 'none' ? '' : 'none';
-});
-document.addEventListener('click', (e) => {
-  const menu = document.getElementById('pdf-cmp-menu');
-  if (menu && !menu.contains(e.target) && e.target.id !== 'btn-pdf-cmp-toggle') menu.style.display = 'none';
-});
-
-document.getElementById('btn-pdf-cmp').addEventListener('click', async () => {
-  document.getElementById('pdf-cmp-menu').style.display = 'none';
-  const inclQuilt = document.getElementById('pdf-cmp-quilt').checked;
-  const inclFondos = document.getElementById('pdf-cmp-fondos').checked;
-  const inclPerfiles = document.getElementById('pdf-cmp-perfiles').checked;
-  const inclComp = document.getElementById('pdf-cmp-comp').checked;
-  if (!inclQuilt && !inclFondos && !inclPerfiles && !inclComp) { vxToast('Selecciona al menos una hoja.'); return; }
-  const {jsPDF} = window.jspdf;
-  const el = document.getElementById('cmp-dash');
-  const quiltEl = document.getElementById('quilt-activos-scaler');
-  const W = 1600;
-
-  const tmpStyle = document.createElement('style'); tmpStyle.id='pdf-cmp-override';
-  tmpStyle.textContent = `
-    .prop-dash-scaler{overflow:visible!important;padding:0!important;}
-    #cmp-dash{width:${W}px!important;min-width:${W}px!important;}
-    #cmp-dash .cmp-row-2col{grid-template-columns:1fr 1fr!important;}
-    #cmp-dash .cmp-header-bar{padding:14px 24px 12px!important;height:105px!important;box-sizing:border-box!important;}
-    #cmp-dash .cmp-header-bar img{height:75px!important;}
-    #cmp-dash .cmp-main-title{font-size:32px!important;color:#00205C!important;}
-    #cmp-dash .cmp-sub-title{font-size:18px!important;}
-    #cmp-dash .cmp-chart-wrap{height:280px!important;}
-    #cmp-dash .cmp-risk-card{height:240px!important;}
-    #cmp-dash .cmp-scatter-wrap{height:260px!important;}
-    #cmp-dash .prop-note{font-size:12px!important;color:#00205C!important;}
-  `;
-  document.head.appendChild(tmpStyle);
-  void el.offsetWidth;
-  Object.values(cmpCharts).forEach(c => {
-    if(c?.canvas?.parentElement){const p=c.canvas.parentElement;c.resize(p.clientWidth,p.clientHeight);}
-  });
-  await new Promise(r => setTimeout(r, 600));
-
-  // ── Quilt pages: fill landscape letter exactly (same approach as Propuesta) ──
-  const QW = 1600;
-  const targetQH = Math.round(QW * (215.9 / 279.4)); // landscape letter ratio ≈ 1236px
-
-  // Both quilts use same cell height for visual consistency
-  const qOverhead = 260;
-  const tableAvail = targetQH - qOverhead;
-  const cellH1 = Math.floor((tableAvail - 72) / 12);
-  const cellH2 = cellH1; // same cell size as page 1
-
-  const fondosEl = document.getElementById('quilt-fondos-scaler');
-
-  // CSS for both quilts
-  function quiltPdfCss(selector, cellH) {
-    return `
-    ${selector}{
-      width:${QW}px!important;min-width:${QW}px!important;
-      height:${targetQH}px!important;padding:0!important;margin:0!important;overflow:hidden!important;
-    }
-    ${selector} > div{
-      height:100%!important;display:flex!important;flex-direction:column!important;
-    }
-    ${selector} .cmp-header-bar{padding:14px 20px 12px!important;flex-shrink:0!important;height:105px!important;box-sizing:border-box!important;}
-    ${selector} .cmp-header-bar img{height:75px!important;}
-    ${selector} .cmp-main-title{font-size:32px!important;color:#00205C!important;}
-    ${selector} .cmp-sub-title{font-size:18px!important;}
-    ${selector} .cmp-sec{flex:1!important;padding:12px 20px!important;display:flex!important;flex-direction:column!important;}
-    ${selector} .quilt-table-wrap{flex:1!important;overflow:hidden!important;}
-    ${selector} .quilt-tbl{height:100%!important;}
-    ${selector} .quilt-cell{min-height:${cellH}px!important;padding:5px 2px!important;}
-    ${selector} .quilt-cell .q-name{font-size:13px!important;}
-    ${selector} .quilt-cell .q-val{font-size:16px!important;}
-    ${selector} .quilt-tbl th{padding:8px 3px!important;font-size:15px!important;color:#fff!important;}
-    ${selector} .quilt-ref td{padding:8px 3px!important;font-size:15px!important;color:#00205C!important;}
-    ${selector} .quilt-desc{font-size:17px!important;margin-bottom:14px!important;flex-shrink:0!important;color:#00205C!important;}
-    ${selector} .quilt-note{font-size:12px!important;margin-top:18px!important;flex-shrink:0!important;color:#00205C!important;}
-    `;
-  }
-
-  const quiltStyle = document.createElement('style'); quiltStyle.id='pdf-quilt-override';
-  quiltStyle.textContent =
-    quiltPdfCss('#quilt-activos-scaler', cellH1) +
-    quiltPdfCss('#quilt-fondos-scaler', cellH2);
-  document.head.appendChild(quiltStyle);
-  void quiltEl.offsetWidth;
-  if (fondosEl) void fondosEl.offsetWidth;
-  await new Promise(r => setTimeout(r, 300));
-
-  // Perfiles slide setup
-  const perfilesEl = document.getElementById('slide-perfiles');
-  const perfilesStyle = document.createElement('style'); perfilesStyle.id='pdf-perfiles-override';
-  const chartAreaH = targetQH - 260; // header+sep+desc+labels+legend overhead
-  perfilesStyle.textContent = `
-    #slide-perfiles{width:${QW}px!important;min-width:${QW}px!important;height:${targetQH}px!important;padding:0!important;margin:0!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;}
-    #slide-perfiles .cmp-header-bar{padding:14px 20px 12px!important;flex-shrink:0!important;height:105px!important;box-sizing:border-box!important;}
-    #slide-perfiles .cmp-header-bar img{height:75px!important;}
-    #slide-perfiles .cmp-main-title{font-size:32px!important;color:#00205C!important;}
-    #slide-perfiles .cmp-sub-title{font-size:18px!important;}
-    #slide-perfiles .cmp-sec{flex:1!important;padding:10px 20px!important;display:flex!important;flex-direction:column!important;overflow:visible!important;}
-    #slide-perfiles .quilt-desc{font-size:17px!important;flex-shrink:0!important;margin-bottom:8px!important;color:#00205C!important;}
-    #slide-perfiles #perfiles-labels{flex-shrink:0!important;}
-    #slide-perfiles #perfiles-labels > div{font-size:16px!important;padding:10px 4px!important;}
-    #slide-perfiles .cmp-sec > div[style*="position:relative"]{flex:1!important;min-height:${chartAreaH}px!important;height:${chartAreaH}px!important;}
-    #slide-perfiles #perfiles-pies{position:absolute!important;left:50px!important;right:10px!important;top:5px!important;bottom:42px!important;}
-    #slide-perfiles .perfil-pie-wrap{width:100%!important;aspect-ratio:1!important;position:relative!important;}
-    #slide-perfiles .perfil-pie-wrap canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;}
-    #slide-perfiles .perfil-pie-title{font-size:18px!important;}
-    #slide-perfiles #perfiles-legend{font-size:15px!important;flex-shrink:0!important;}
-    #slide-perfiles #perfiles-legend span{font-size:15px!important;}
-    #slide-perfiles .quilt-note{font-size:12px!important;margin-top:14px!important;flex-shrink:0!important;color:#00205C!important;}
-  `;
-  document.head.appendChild(perfilesStyle);
-  if (perfilesEl) void perfilesEl.offsetWidth;
-  // Resize pie charts for PDF
-  Object.values(_perfilCharts).forEach(c => {
-    if(c?.canvas?.parentElement){const p=c.canvas.parentElement;c.resize(p.clientWidth,p.clientHeight);}
-  });
-  await new Promise(r => setTimeout(r, 300));
-
-  // Use named captures to avoid index confusion with variable-length array
-  const captureMap = {};
-  captureMap.quilt = html2canvas(quiltEl, {scale:2, useCORS:true, backgroundColor:'#fff', logging:false, scrollX:0, scrollY:0, width:QW, height:targetQH});
-  captureMap.cmp = html2canvas(el, {scale:2, useCORS:true, backgroundColor:'#fff', logging:false, scrollX:0, scrollY:0, width:W});
-  if (fondosEl && _quiltFondosLoaded) {
-    captureMap.fondos = html2canvas(fondosEl, {scale:2, useCORS:true, backgroundColor:'#fff', logging:false, scrollX:0, scrollY:0, width:QW, height:targetQH});
-  }
-  if (perfilesEl && _perfilesLoaded) {
-    captureMap.perfiles = html2canvas(perfilesEl, {scale:2, useCORS:true, backgroundColor:'#fff', logging:false, scrollX:0, scrollY:0, width:QW, height:targetQH});
-  }
-  const keys = Object.keys(captureMap);
-  const results = await Promise.all(keys.map(k => captureMap[k]));
-  const cvs = {};
-  keys.forEach((k, i) => { cvs[k] = results[i]; });
-  const quiltCv = cvs.quilt, cmpCv = cvs.cmp, fondosCv = cvs.fondos, perfilesCv = cvs.perfiles;
-
-  quiltStyle.remove();
-  perfilesStyle.remove();
-  tmpStyle.remove();
-  void el.offsetWidth;
-  Object.values(cmpCharts).forEach(c => {
-    if(c?.canvas?.parentElement){const p=c.canvas.parentElement;c.resize(p.clientWidth,p.clientHeight);}
-  });
-  Object.values(_perfilCharts).forEach(c => {
-    if(c?.canvas?.parentElement){const p=c.canvas.parentElement;c.resize(p.clientWidth,p.clientHeight);}
-  });
-
-  const pdf = new jsPDF({orientation:'landscape', unit:'mm', format:'letter'});
-  const pw = pdf.internal.pageSize.getWidth();
-  const ph = pdf.internal.pageSize.getHeight();
-  const mx = 4, mt = 4, mb = 4;
-  const usableW = pw - mx * 2;
-  const usableH = ph - mt - mb;
-
-  let firstPg = true;
-  function addPg() { if (!firstPg) pdf.addPage('letter', 'landscape'); firstPg = false; }
-
-  // Page: Asset class quilt
-  if (inclQuilt) {
-    addPg();
-    pdf.addImage(quiltCv.toDataURL('image/jpeg', 0.95), 'JPEG', mx, mt, usableW, usableH);
-  }
-
-  // Page: Fondos quilt
-  if (inclFondos && fondosCv) {
-    addPg();
-    pdf.addImage(fondosCv.toDataURL('image/jpeg', 0.95), 'JPEG', mx, mt, usableW, usableH);
-  }
-
-  // Page: Perfiles
-  if (inclPerfiles && perfilesCv) {
-    addPg();
-    pdf.addImage(perfilesCv.toDataURL('image/jpeg', 0.95), 'JPEG', mx, mt, usableW, usableH);
-  }
-
-  // Pages: Comparativa
-  if (inclComp) {
-    addPg();
-    const imgW = usableW;
-    const imgH = imgW * (cmpCv.height / cmpCv.width);
-    if (imgH <= usableH) {
-      pdf.addImage(cmpCv.toDataURL('image/jpeg', 0.92), 'JPEG', mx, mt, imgW, imgH);
-    } else {
-      const srcPageH = cmpCv.height * (usableH / imgH);
-      let srcY = 0, pn = 0;
-      while (srcY < cmpCv.height - 2) {
-        if (pn > 0) pdf.addPage('letter', 'landscape');
-        const cropH = Math.min(srcPageH, cmpCv.height - srcY);
-        const tmpCanvas = document.createElement('canvas');
-        tmpCanvas.width = cmpCv.width; tmpCanvas.height = Math.ceil(cropH);
-        tmpCanvas.getContext('2d').drawImage(cmpCv, 0, srcY, cmpCv.width, cropH, 0, 0, cmpCv.width, cropH);
-        pdf.addImage(tmpCanvas.toDataURL('image/jpeg', 0.92), 'JPEG', mx, mt, imgW, imgW * (cropH / cmpCv.width));
-        srcY += srcPageH; pn++;
-      }
-    }
-  }
-
-  const contrato = document.getElementById('cfg-contrato')?.value?.trim() || '';
-  const name = contrato ? `Comparativa ${contrato} - VALMEX.pdf` : 'Comparativa - VALMEX.pdf';
-  pdf.save(name);
 });
 
 // ── PDF Comparativa 2 (3-Way) — Menu toggle ──
@@ -4626,11 +3777,14 @@ document.addEventListener('click', (e) => {
 
 document.getElementById('btn-pdf-cmp2').addEventListener('click', async () => {
   document.getElementById('pdf-cmp2-menu').style.display = 'none';
+  const inclQuilt = document.getElementById('pdf-cmp2-quilt').checked;
+  const inclFondos = document.getElementById('pdf-cmp2-fondos').checked;
+  const inclPerfiles = document.getElementById('pdf-cmp2-perfiles').checked;
   const inclP1 = document.getElementById('pdf-cmp2-p1').checked;
   const inclP2 = document.getElementById('pdf-cmp2-p2').checked;
   const inclP3r = document.getElementById('pdf-cmp2-p3r').checked;
   const inclP3 = document.getElementById('pdf-cmp2-p3').checked;
-  if (!inclP1 && !inclP2 && !inclP3r && !inclP3) { vxToast('Selecciona al menos una hoja.'); return; }
+  if (!inclQuilt && !inclFondos && !inclPerfiles && !inclP1 && !inclP2 && !inclP3r && !inclP3) { vxToast('Selecciona al menos una hoja.'); return; }
   const {jsPDF} = window.jspdf;
   const dash = document.getElementById('cmp2-dash');
   const page1 = document.getElementById('cmp2-page1');
@@ -4693,14 +3847,119 @@ document.getElementById('btn-pdf-cmp2').addEventListener('click', async () => {
 
   const hdrH = 107; // header bar + separator height in px
   // Helper: clone header + separator into a page element, return cleanup fn
-  function injectHeader(pageEl) {
+  function injectHeader(pageEl, title, subtitle) {
     const hdr = document.getElementById('cmp2-header-bar');
     const sep = hdr?.nextElementSibling; // the 2px navy separator
     const hdrClone = hdr.cloneNode(true); hdrClone.removeAttribute('id'); hdrClone.classList.add('pdf-hdr-clone');
+    if (title) { const t = hdrClone.querySelector('.cmp-main-title'); if (t) t.textContent = title; }
+    if (subtitle) { const s = hdrClone.querySelector('.cmp-sub-title'); if (s) s.textContent = subtitle; }
     const sepClone = sep.cloneNode(true); sepClone.classList.add('pdf-hdr-clone');
     pageEl.insertBefore(sepClone, pageEl.firstChild);
     pageEl.insertBefore(hdrClone, pageEl.firstChild);
     return () => { hdrClone.remove(); sepClone.remove(); };
+  }
+
+  // ════════════════════════════════════════════════════════════════════
+  // PDF: Quilt Clases de Activo, Quilt Fondos, Perfiles
+  // (Fixed to landscape letter size, matching old Comparativa export)
+  // ════════════════════════════════════════════════════════════════════
+  const QW = W; // 1600
+  const targetQH = Math.round(QW * (215.9 / 279.4)); // landscape letter ratio
+
+  // Quilt cell sizing: fill available space
+  const qOverhead = 260; // header + sep + desc + note + padding
+  const tableAvail = targetQH - qOverhead;
+  const cellH = Math.floor((tableAvail - 72) / 12); // 12 rows, ~72px for th+ref rows
+
+  function quiltPdfCss(selector, ch) {
+    return `
+    ${selector}{width:${QW}px!important;min-width:${QW}px!important;height:${targetQH}px!important;padding:0!important;margin:0!important;overflow:hidden!important;}
+    ${selector} > div{height:100%!important;display:flex!important;flex-direction:column!important;}
+    ${selector} .cmp-header-bar{padding:14px 20px 12px!important;flex-shrink:0!important;height:105px!important;box-sizing:border-box!important;}
+    ${selector} .cmp-header-bar img{height:75px!important;}
+    ${selector} .cmp-main-title{font-size:32px!important;color:#00205C!important;}
+    ${selector} .cmp-sub-title{font-size:18px!important;}
+    ${selector} .cmp-sec{flex:1!important;padding:12px 20px!important;display:flex!important;flex-direction:column!important;}
+    ${selector} .quilt-table-wrap{flex:1!important;overflow:hidden!important;}
+    ${selector} .quilt-tbl{height:100%!important;}
+    ${selector} .quilt-cell{min-height:${ch}px!important;padding:5px 2px!important;}
+    ${selector} .quilt-cell .q-name{font-size:13px!important;}
+    ${selector} .quilt-cell .q-val{font-size:16px!important;}
+    ${selector} .quilt-tbl th{padding:8px 3px!important;font-size:15px!important;color:#fff!important;}
+    ${selector} .quilt-ref td{padding:8px 3px!important;font-size:15px!important;color:#00205C!important;}
+    ${selector} .quilt-desc{font-size:17px!important;margin-bottom:14px!important;flex-shrink:0!important;color:#00205C!important;}
+    ${selector} .quilt-note{font-size:12px!important;margin-top:18px!important;flex-shrink:0!important;color:#00205C!important;}
+    `;
+  }
+
+  if (inclQuilt || inclFondos) {
+    const quiltStyle = document.createElement('style'); quiltStyle.id='pdf-quilt-override';
+    quiltStyle.textContent =
+      quiltPdfCss('#cmp2-quilt-activos-scaler', cellH) +
+      quiltPdfCss('#cmp2-quilt-fondos-scaler', cellH);
+    document.head.appendChild(quiltStyle);
+
+    const quiltEl = document.getElementById('cmp2-quilt-activos-scaler');
+    const fondosEl = document.getElementById('cmp2-quilt-fondos-scaler');
+    if (quiltEl) void quiltEl.offsetWidth;
+    if (fondosEl) void fondosEl.offsetWidth;
+    await new Promise(r => setTimeout(r, 300));
+
+    if (inclQuilt && quiltEl) {
+      const cv = await html2canvas(quiltEl, {scale:2, useCORS:true, backgroundColor:'#fff', logging:false, scrollX:0, scrollY:0, width:QW, height:targetQH});
+      if (!firstPage) pdf.addPage('letter', 'landscape');
+      firstPage = false;
+      pdf.addImage(cv.toDataURL('image/jpeg', 0.95), 'JPEG', mx, mt, usableW, usableH);
+    }
+    if (inclFondos && fondosEl) {
+      const cv = await html2canvas(fondosEl, {scale:2, useCORS:true, backgroundColor:'#fff', logging:false, scrollX:0, scrollY:0, width:QW, height:targetQH});
+      if (!firstPage) pdf.addPage('letter', 'landscape');
+      firstPage = false;
+      pdf.addImage(cv.toDataURL('image/jpeg', 0.95), 'JPEG', mx, mt, usableW, usableH);
+    }
+    quiltStyle.remove();
+  }
+
+  // Perfiles slide: fill landscape letter
+  if (inclPerfiles) {
+    const perfilesEl = document.getElementById('cmp2-slide-perfiles');
+    if (perfilesEl) {
+      const chartAreaH = targetQH - 260;
+      const perfilesStyle = document.createElement('style'); perfilesStyle.id='pdf-perfiles-override';
+      perfilesStyle.textContent = `
+        #cmp2-slide-perfiles{width:${QW}px!important;min-width:${QW}px!important;height:${targetQH}px!important;padding:0!important;margin:0!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;}
+        #cmp2-slide-perfiles .cmp-header-bar{padding:14px 20px 12px!important;flex-shrink:0!important;height:105px!important;box-sizing:border-box!important;}
+        #cmp2-slide-perfiles .cmp-header-bar img{height:75px!important;}
+        #cmp2-slide-perfiles .cmp-main-title{font-size:32px!important;color:#00205C!important;}
+        #cmp2-slide-perfiles .cmp-sub-title{font-size:18px!important;}
+        #cmp2-slide-perfiles .cmp-sec{flex:1!important;padding:10px 20px!important;display:flex!important;flex-direction:column!important;overflow:visible!important;}
+        #cmp2-slide-perfiles .quilt-desc{font-size:17px!important;flex-shrink:0!important;margin-bottom:8px!important;color:#00205C!important;}
+        #cmp2-slide-perfiles #cmp2-perfiles-labels{flex-shrink:0!important;}
+        #cmp2-slide-perfiles #cmp2-perfiles-labels > div{font-size:16px!important;padding:10px 4px!important;}
+        #cmp2-slide-perfiles .cmp-sec > div[style*="position:relative"]{flex:1!important;min-height:${chartAreaH}px!important;height:${chartAreaH}px!important;}
+        #cmp2-slide-perfiles #cmp2-perfiles-pies{position:absolute!important;left:50px!important;right:10px!important;top:5px!important;bottom:42px!important;}
+        #cmp2-slide-perfiles .perfil-pie-wrap{width:100%!important;aspect-ratio:1!important;position:relative!important;}
+        #cmp2-slide-perfiles .perfil-pie-wrap canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;}
+        #cmp2-slide-perfiles .perfil-pie-title{font-size:18px!important;}
+        #cmp2-slide-perfiles #cmp2-perfiles-legend{font-size:15px!important;flex-shrink:0!important;}
+        #cmp2-slide-perfiles #cmp2-perfiles-legend span{font-size:15px!important;}
+        #cmp2-slide-perfiles .quilt-note{font-size:12px!important;margin-top:14px!important;flex-shrink:0!important;color:#00205C!important;}
+      `;
+      document.head.appendChild(perfilesStyle);
+      void perfilesEl.offsetWidth;
+      Object.values(_cmp2PerfilCharts).forEach(c => {
+        if(c?.canvas?.parentElement){const p=c.canvas.parentElement;c.resize(p.clientWidth,p.clientHeight);}
+      });
+      await new Promise(r => setTimeout(r, 300));
+      const cv = await html2canvas(perfilesEl, {scale:2, useCORS:true, backgroundColor:'#fff', logging:false, scrollX:0, scrollY:0, width:QW, height:targetQH});
+      perfilesStyle.remove();
+      Object.values(_cmp2PerfilCharts).forEach(c => {
+        if(c?.canvas?.parentElement){const p=c.canvas.parentElement;c.resize(p.clientWidth,p.clientHeight);}
+      });
+      if (!firstPage) pdf.addPage('letter', 'landscape');
+      firstPage = false;
+      pdf.addImage(cv.toDataURL('image/jpeg', 0.95), 'JPEG', mx, mt, usableW, usableH);
+    }
   }
 
   // ════════════════════════════════════════════════════════════════════
@@ -4743,6 +4002,11 @@ document.getElementById('btn-pdf-cmp2').addEventListener('click', async () => {
     compactStyle.textContent = css;
     document.head.appendChild(compactStyle);
 
+    // Temporarily change header subtitle for this page
+    const subEl = document.getElementById('cmp2-title-sub');
+    const origSub = subEl?.textContent;
+    if (subEl) subEl.textContent = 'Asignación Estratégica de los Portafolios'; // already the default
+
     dash.style.height = targetH + 'px'; dash.style.overflow = 'hidden';
     void dash.offsetWidth;
     await new Promise(r => setTimeout(r, 300));
@@ -4750,6 +4014,7 @@ document.getElementById('btn-pdf-cmp2').addEventListener('click', async () => {
     page2.style.display = origP2; page3.style.display = origP3;
     dash.style.height = ''; dash.style.overflow = '';
     compactStyle.remove();
+    if (subEl) subEl.textContent = origSub;
 
     if (!firstPage) pdf.addPage('letter', 'landscape');
     firstPage = false;
@@ -4775,7 +4040,7 @@ document.getElementById('btn-pdf-cmp2').addEventListener('click', async () => {
       if (secRiskContrib) secRiskContrib.style.display = 'none';
       if (secSensitivity) secSensitivity.style.display = 'none';
       if (secFooterP2) secFooterP2.style.display = 'none';
-      const removeHdr2 = injectHeader(page2);
+      const removeHdr2 = injectHeader(page2, 'Estadísticas Clave y Escenarios Históricos', 'Métricas de Riesgo-Rendimiento de los Portafolios');
       const contentH = targetH - hdrH - 2 - 12; // usable height after header + sep + gaps
       const statsH = Math.floor(contentH * 0.45); // stats+scatter: 45%
       const scenH = contentH - statsH; // scenarios: 55%
@@ -4817,7 +4082,7 @@ document.getElementById('btn-pdf-cmp2').addEventListener('click', async () => {
       if (secFooterP2) secFooterP2.style.display = '';
       if (secStatsRow) secStatsRow.style.display = 'none';
       if (secScenarios) secScenarios.style.display = 'none';
-      const removeHdr3 = injectHeader(page2);
+      const removeHdr3 = injectHeader(page2, 'Sensibilidad y Contribución al Riesgo por Instrumento', 'Diagnóstico de Exposición a Factores de los Portafolios');
       const p3rStyle = document.createElement('style'); p3rStyle.id = 'pdf-p3r-fit';
       const cH = targetH - hdrH - 2 - 18;
       const sensH2 = Math.floor(cH * 0.55);
@@ -4872,7 +4137,7 @@ document.getElementById('btn-pdf-cmp2').addEventListener('click', async () => {
     || document.getElementById('cmp2-chars-panel')?.style.display !== 'none';
   if (inclP3 && hasP3Data) {
     const tH4 = Math.round(W * (215.9 / 279.4));
-    const removeHdr4 = injectHeader(page3);
+    const removeHdr4 = injectHeader(page3, 'Características y Exposición', 'Desglose de los Portafolios por Clase de Activo');
     const p3Style = document.createElement('style'); p3Style.id = 'pdf-p3-fit';
     p3Style.textContent = `
       #cmp2-page3{width:${W}px!important;height:${tH4}px!important;overflow:hidden!important;box-sizing:border-box!important;display:flex!important;flex-direction:column!important;justify-content:space-between!important;}
@@ -4900,7 +4165,7 @@ document.getElementById('btn-pdf-cmp2').addEventListener('click', async () => {
 
   // ── Full restore: return dashboard to EXACT pre-export state ──
   // 1. Remove ALL temporary PDF style tags
-  ['pdf-cmp2-override','pdf-p2-fit','pdf-p3r-fit','pdf-risk-enlarge','pdf-p3-fit','pdf-cmp2-compact','pdf-override'].forEach(id => {
+  ['pdf-cmp2-override','pdf-p2-fit','pdf-p3r-fit','pdf-risk-enlarge','pdf-p3-fit','pdf-cmp2-compact','pdf-override','pdf-quilt-override','pdf-perfiles-override'].forEach(id => {
     const s = document.getElementById(id); if (s) s.remove();
   });
   try { tmpStyle.remove(); } catch(e) {}
@@ -5505,14 +4770,14 @@ function guardarPropuesta() {
     return;
   }
   vxToast('Portafolio Propuesta guardado.', 'ok');
-  _cmpLoaded = false; _cmp2Loaded = false;
+  _cmp2Loaded = false;
   // Recargar inmediatamente cualquier pestaña activa
   if (document.getElementById('page-propuesta').classList.contains('active')) {
     const sel = document.getElementById('prop-selector');
     if (sel) sel.value = 'propuesta';
     cargarPortafolio();
   }
-  if (document.getElementById('page-comparativa').classList.contains('active')) { _cmpLoaded = true; cargarComparativa(); }
+
   if (document.getElementById('page-comparativa2').classList.contains('active')) { _cmp2Loaded = true; cargarComparativa2(); }
 }
 
