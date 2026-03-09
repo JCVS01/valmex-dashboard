@@ -1,9 +1,9 @@
 import os
 import re
 import time
-import random
 import secrets
 import requests
+import numpy as np
 import pandas as pd
 import yfinance as yf
 import xml.etree.ElementTree as ET
@@ -11,14 +11,42 @@ from datetime import date, timedelta, datetime
 from flask import Flask, send_file, request, jsonify, redirect, url_for, session, send_from_directory
 import json
 from werkzeug.security import generate_password_hash, check_password_hash
+from scipy.stats import skew, kurtosis
+from sklearn.linear_model import ElasticNetCV
+from sklearn.covariance import LedoitWolf
 
 BASE = os.path.dirname(os.path.abspath(__file__))
+
+
+def _cache_expired(ts: float) -> bool:
+    """Return True if cache fetched at `ts` (epoch) is stale.
+    Caches expire daily after NYSE close (4:00 PM New York).
+    If fetched before today's 4pm NY and it's now past 4pm NY → stale.
+    If fetched after today's 4pm NY → valid until tomorrow's 4pm NY."""
+    if not ts:
+        return True
+    from zoneinfo import ZoneInfo
+    ny = ZoneInfo("America/New_York")
+    now = datetime.now(tz=ny)
+    cutoff = now.replace(hour=16, minute=0, second=0, microsecond=0)
+    if now < cutoff:
+        # Before today's close: stale if fetched before yesterday's close
+        cutoff -= timedelta(days=1)
+    fetched = datetime.fromtimestamp(ts, tz=ny)
+    return fetched < cutoff
+
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=12)
+
+@app.before_request
+def _auto_login_localhost():
+    if request.remote_addr in ("127.0.0.1", "::1") and "usuario" not in session:
+        session["usuario"] = "jvilla"
+        session.permanent = True
 
 USERS = {
     "jvilla":  {"password": "scrypt:32768:8:1$8NSI0TYUylmMRgpu$f8f46e0116cc6d0de4af97d4f47b96fb8bd4ad2d71ceec46fe6ab4add66a07d8b1d6dec548919199351e06b880862b1a556eb90d5c186b15605f5b372e90cdd3", "nombre": "José Carlos Villa", "iniciales": "JV", "rol": "admin"},
@@ -476,33 +504,39 @@ SERIE_MAP = {
 }
 
 _ms_cache = {}
+_ms_cache_ts = 0.0          # epoch timestamp of last fetch
 MS_URL    = "https://api.morningstar.com/v2/service/mf/hlk0d0zmiy1b898b/universeid/txcm88fa8x3vxapp"
 MS_ACCESS = "hwg0cty5re7araij32k035091f43wxd0"
 MS_NAV_URL = "https://api.morningstar.com/service/mf/UnadjustedNAV/ISIN"
 
 
-def load_ms_universe():
-    if _ms_cache:
+def load_ms_universe(force=False):
+    global _ms_cache, _ms_cache_ts
+    if _ms_cache and not force and not _cache_expired(_ms_cache_ts):
         return _ms_cache
     try:
         resp = requests.get(MS_URL, params={"accesscode": MS_ACCESS, "format": "JSON"}, timeout=25)
         resp.raise_for_status()
+        new_cache = {}
         for fund in resp.json().get("data", []):
             api    = fund.get("api", {})
             ticker = api.get("FSCBI-Ticker", "").strip()
             if ticker:
-                _ms_cache[ticker] = api
-        print(f"[MS] Universo cargado: {len(_ms_cache)} fondos")
+                new_cache[ticker] = api
+        _ms_cache = new_cache
+        _ms_cache_ts = time.time()
+        print(f"[MS] Universo cargado: {len(_ms_cache)} fondos (refresh={'forced' if force else 'auto'})")
     except Exception as e:
         print(f"[MS ERROR] {e}")
+        if not _ms_cache:
+            _ms_cache_ts = 0.0
     return _ms_cache
 
 
 # ── Morningstar NAV Histórico — precios diarios por ISIN ──
 _ms_nav_cache: dict = {}   # "isin|start" → {"ts": float, "data": list}
-_MS_NAV_TTL = 14400         # 4 horas
 
-def get_ms_nav(isin: str, start: str = "2010-01-01", end: str = None,
+def get_ms_nav(isin: str, start: str = "2000-01-01", end: str = None,
                expect_fund: str = None, expect_serie: str = None) -> list:
     """Obtiene precios históricos NAV de Morningstar por ISIN.
     Si expect_fund/expect_serie se proporcionan, valida que fundName coincida.
@@ -512,7 +546,7 @@ def get_ms_nav(isin: str, start: str = "2010-01-01", end: str = None,
     cache_key = f"{isin}|{start}"
     now = time.time()
     cached = _ms_nav_cache.get(cache_key)
-    if cached and (now - cached["ts"]) < _MS_NAV_TTL:
+    if cached and not _cache_expired(cached["ts"]):
         return cached["data"]
     try:
         r = requests.get(
@@ -576,15 +610,70 @@ def get_fondo_backtesting(fondo: str, serie: str) -> list:
                   f"(ultimo precio {last_price_date.strftime('%Y-%m-%d')})")
             return []
 
-        monthly = df["nav"].resample("MS").first().dropna()
-        if len(monthly) < 2:
+        series = df["nav"].dropna()
+        if len(series) < 2:
             return []
-        base = float(monthly.iloc[0])
+        base = float(series.iloc[0])
         return [{"fecha": dt.strftime("%Y-%m-%d"), "valor": round(float(px) / base * 100, 4)}
-                for dt, px in monthly.items()]
+                for dt, px in series.items()]
     except Exception as e:
         print(f"[BT FONDO ERROR] {fondo} {serie}: {e}")
         return []
+
+
+def calc_rend_from_nav(fondo: str, serie: str) -> dict:
+    """Calcula rendimientos (MTD, 3M, 6M, YTD, 1Y, 2Y, 3Y) desde el NAV histórico.
+    Retorna dict con claves r1m, r3m, r6m, ytd, r1y, r2y, r3y (ya en porcentaje)."""
+    isin = ISIN_MAP.get(fondo, {}).get(serie)
+    if not isin:
+        return {}
+    navs = get_ms_nav(isin, expect_fund=fondo, expect_serie=serie)
+    if len(navs) < 2:
+        return {}
+    try:
+        df = pd.DataFrame(navs)
+        df["fecha"] = pd.to_datetime(df["fecha"])
+        df = df.set_index("fecha").sort_index()
+        prices = df["nav"].dropna()
+        if len(prices) < 2:
+            return {}
+
+        last_date = prices.index[-1]
+        last_val = float(prices.iloc[-1])
+
+        def find_price(target):
+            mask = prices.index <= target
+            if mask.any():
+                return float(prices[mask].iloc[-1])
+            return None
+
+        today = last_date
+        targets = {
+            "r1m":  pd.Timestamp(today.year, today.month, 1),
+            "r3m":  today - pd.DateOffset(months=3),
+            "r6m":  today - pd.DateOffset(months=6),
+            "ytd":  pd.Timestamp(today.year, 1, 1),
+            "r1y":  today - pd.DateOffset(years=1),
+            "r2y":  today - pd.DateOffset(years=2),
+            "r3y":  today - pd.DateOffset(years=3),
+        }
+        result = {}
+        for key, target_dt in targets.items():
+            base = find_price(target_dt)
+            if base and base > 0:
+                base_date = prices[prices.index <= target_dt].index[-1]
+                raw = last_val / base - 1
+                # All returns are effective (cumulative) — annualization done in frontend
+                result[key] = round(raw * 100, 6)
+                # Send actual calendar days for annualization
+                actual_days = (last_date - base_date).days
+                if actual_days > 0:
+                    result[f"days_{key}"] = actual_days
+        return result
+    except Exception as e:
+        print(f"[REND NAV ERR] {fondo} {serie}: {e}")
+        return {}
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # ACCIONES MX — DataBursatil (fuente principal para BMV/BIVA)
@@ -604,13 +693,11 @@ def _db_to_yf(ticker_db: str) -> str:
 
 _db_cache: dict    = {}
 _db_cache_ts: dict = {}
-DB_CACHE_TTL = 3600
 
 # Catálogo completo de emisoras (BMV local + SIC/global + BIVA)
 # Cargado una vez al inicio; estructura: {ticker: {nombre, bolsa, tipo, mercado}}
 _catalogo_emisoras: dict = {}
 _catalogo_ts: float      = 0
-_CATALOGO_TTL = 86400    # refrescar cada 24 horas
 
 
 def cargar_catalogo_emisoras(forzar: bool = False) -> dict:
@@ -621,7 +708,7 @@ def cargar_catalogo_emisoras(forzar: bool = False) -> dict:
     """
     global _catalogo_emisoras, _catalogo_ts
     now = time.time()
-    if not forzar and _catalogo_emisoras and (now - _catalogo_ts) < _CATALOGO_TTL:
+    if not forzar and _catalogo_emisoras and not _cache_expired(_catalogo_ts):
         return _catalogo_emisoras
     if not DB_TOKEN:
         return {}
@@ -687,7 +774,7 @@ def get_accion_db(emisora_serie: str) -> dict | None:
 
     now = time.time()
     key = emisora_serie.upper().strip()
-    if key in _db_cache and (now - _db_cache_ts.get(key, 0)) < DB_CACHE_TTL:
+    if key in _db_cache and not _cache_expired(_db_cache_ts.get(key, 0)):
         return _db_cache[key]
 
     hoy = date.today()
@@ -742,6 +829,7 @@ def get_accion_db(emisora_serie: str) -> dict | None:
     precio_cierre = round(precios[-1][1], 2)
     p_mtd = precio_en(date(hoy.year, hoy.month, 1))
     p_3m  = precio_en(hoy - timedelta(days=91))
+    p_6m  = precio_en(hoy - timedelta(days=182))
     p_ytd = precio_en(date(hoy.year, 1, 1))
     p_1y  = precio_en(hoy - timedelta(days=365))
     p_2y  = precio_en(hoy - timedelta(days=730))
@@ -749,12 +837,12 @@ def get_accion_db(emisora_serie: str) -> dict | None:
 
     def rend_efectivo(p_ini):
         if p_ini and p_ini > 0:
-            return round((p_hoy / p_ini - 1) * 100, 2)
+            return round((p_hoy / p_ini - 1) * 100, 6)
         return None
 
     def rend_anual(p_ini, years):
         if p_ini and p_ini > 0:
-            return round(((p_hoy / p_ini) ** (1 / years) - 1) * 100, 2)
+            return round(((p_hoy / p_ini) ** (1 / years) - 1) * 100, 6)
         return None
 
     # 2. Info de la emisora (nombre, tipo) — desde catálogo en memoria
@@ -803,6 +891,7 @@ def get_accion_db(emisora_serie: str) -> dict | None:
         "moneda_precio": "MXN",
         "r1m":           rend_efectivo(p_mtd),
         "r3m":           rend_efectivo(p_3m),
+        "r6m":           rend_efectivo(p_6m),
         "ytd":           rend_efectivo(p_ytd),
         "r1y":           rend_anual(p_1y, 1),
         "r2y":           rend_anual(p_2y, 2),
@@ -945,20 +1034,6 @@ _TICKER_INFO_STATIC = {
     "SAP": {"country": "Germany", "sector": "Technology"},
     "TM": {"country": "Japan", "sector": "Consumer Cyclical"},
     "SONY": {"country": "Japan", "sector": "Technology"},
-}
-
-GEO_TRANSLATE_YF = {
-    "united states": "Estados Unidos", "mexico": "México", "canada": "Canadá",
-    "united kingdom": "Reino Unido", "germany": "Alemania", "france": "Francia",
-    "japan": "Japón", "china": "China", "brazil": "Brasil", "india": "India",
-    "south korea": "Corea del Sur", "taiwan": "Taiwán", "australia": "Australia",
-    "netherlands": "Países Bajos", "switzerland": "Suiza", "spain": "España",
-    "italy": "Italia", "hong kong": "Hong Kong", "singapore": "Singapur",
-    "ireland": "Irlanda", "denmark": "Dinamarca", "sweden": "Suecia",
-    "norway": "Noruega", "finland": "Finlandia", "belgium": "Bélgica",
-    "austria": "Austria", "portugal": "Portugal", "new zealand": "Nueva Zelanda",
-    "brazil": "Brasil", "argentina": "Argentina", "chile": "Chile",
-    "colombia": "Colombia", "peru": "Perú",
 }
 
 SEC_TRANSLATE_YF = {
@@ -1142,62 +1217,6 @@ def _yf_quote_summary(ticker: str) -> dict:
         return {}
 
 
-# ── Cookie cache para Yahoo Finance ──
-_yf_cookie_cache: dict = {}   # {"cookie": str, "crumb": str, "ts": float}
-_YF_COOKIE_TTL = 3600  # renovar cookie cada hora
-
-def _ensure_yf_cookie(session: requests.Session) -> bool:
-    """
-    Obtiene y cachea cookie + crumb de Yahoo Finance.
-    Sin esto, Yahoo bloquea requests desde servidores cloud.
-    Retorna True si tuvo éxito.
-    """
-    global _yf_cookie_cache
-    now = time.time()
-
-    # Si tenemos cookie válida, aplicarla a la sesión y listo
-    if _yf_cookie_cache.get("cookie") and (now - _yf_cookie_cache.get("ts", 0)) < _YF_COOKIE_TTL:
-        session.cookies.set("B", _yf_cookie_cache["cookie"], domain=".yahoo.com")
-        return True
-
-    ua = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-
-    # Intento A: fc.yahoo.com (URL de consentimiento)
-    for consent_url in ["https://fc.yahoo.com", "https://finance.yahoo.com"]:
-        try:
-            r1 = requests.get(
-                consent_url,
-                headers={"User-Agent": ua, "Accept": "text/html,application/xhtml+xml"},
-                timeout=10, allow_redirects=True
-            )
-            cookie_val = r1.cookies.get("B") or ""
-            if not cookie_val:
-                # Buscar cualquier cookie útil
-                for c in r1.cookies:
-                    if c.name in ("B", "A1", "A1S"):
-                        cookie_val = c.value
-                        break
-            if not cookie_val:
-                continue
-
-            # Paso 2: obtener crumb
-            r2 = requests.get(
-                "https://query2.finance.yahoo.com/v1/test/getcrumb",
-                headers={"User-Agent": ua, "Cookie": f"B={cookie_val}"},
-                timeout=10
-            )
-            crumb = r2.text.strip()
-
-            if crumb and crumb != "" and "<" not in crumb:
-                _yf_cookie_cache = {"cookie": cookie_val, "crumb": crumb, "ts": now}
-                session.cookies.set("B", cookie_val, domain=".yahoo.com")
-                print(f"[YF COOKIE] OK ({consent_url}) — crumb={crumb[:8]}...")
-                return True
-        except Exception as e:
-            print(f"[YF COOKIE] {consent_url} falló: {e}")
-
-    print("[YF COOKIE] No se pudo obtener cookie/crumb — se usará yfinance sin autenticación")
-    return False
 
 
 def get_accion_yf(ticker: str) -> dict | None:
@@ -1332,6 +1351,7 @@ def get_accion_yf(ticker: str) -> dict | None:
 
         p_mtd = precio_en(date(today.year, today.month, 1))
         p_3m  = precio_en(today - timedelta(days=91))
+        p_6m  = precio_en(today - timedelta(days=182))
         p_ytd = precio_en(date(today.year, 1, 1))
         p_1y  = precio_en(today - timedelta(days=365))
         p_2y  = precio_en(today - timedelta(days=730))
@@ -1339,16 +1359,17 @@ def get_accion_yf(ticker: str) -> dict | None:
 
         def rend_efectivo(p_ini):
             if p_ini and p_ini > 0:
-                return round((p_hoy / p_ini - 1) * 100, 2)
+                return round((p_hoy / p_ini - 1) * 100, 6)
             return None
 
         def rend_anual(p_ini, years):
             if p_ini and p_ini > 0:
-                return round(((p_hoy / p_ini) ** (1 / years) - 1) * 100, 2)
+                return round(((p_hoy / p_ini) ** (1 / years) - 1) * 100, 6)
             return None
 
         quote_type = info.get("quoteType", "").upper()
-        tipo       = "ETF" if quote_type == "ETF" else "Acción"
+        is_index   = quote_type == "INDEX" or ticker.startswith("^")
+        tipo       = "Índice" if is_index else ("ETF" if quote_type == "ETF" else "Acción")
         sector_en  = (info.get("sector") or "").strip().lower()
         sector     = SEC_TRANSLATE_YF.get(sector_en, info.get("sector") or "")
         pais_en    = (info.get("country") or "").strip().lower()
@@ -1356,13 +1377,23 @@ def get_accion_yf(ticker: str) -> dict | None:
         moneda     = "MXN" if ticker.endswith(".MX") else "USD"
         nombre     = info.get("shortName") or info.get("longName") or ticker
 
+        # Índices: moneda y geo según el índice
+        if is_index:
+            idx_cfg = INDEX_META.get(ticker, {})
+            moneda  = idx_cfg.get("moneda", moneda)
+
         if quote_type == "ETF":
             nombre = simplificar_nombre_etf(ticker, nombre)
 
         sectores_etf = {}
         geo_etf      = {}
 
-        if quote_type == "ETF":
+        # Índices: geo y sectores estáticos de INDEX_META
+        if is_index:
+            idx_cfg = INDEX_META.get(ticker, {})
+            geo_etf = dict(idx_cfg.get("geo", {}))
+            sectores_etf = dict(idx_cfg.get("sec", {}))
+        elif quote_type == "ETF":
             # Geo + Sectores: cascada proveedor (iShares/Vanguard) → estático → Yahoo
             etf_data = get_etf_data(ticker)
             geo_etf = etf_data.get("geo", {})
@@ -1370,7 +1401,8 @@ def get_accion_yf(ticker: str) -> dict | None:
             # Sectores fallback: Yahoo Finance sector_weightings
             if not sectores_etf:
                 try:
-                    holdings = t.funds_data if t else None
+                    _t = t if t else yf.Ticker(ticker)
+                    holdings = _t.funds_data
                     if holdings and hasattr(holdings, "sector_weightings"):
                         for s, v in (holdings.sector_weightings or {}).items():
                             lbl = SEC_TRANSLATE_YF.get(s.lower(), s)
@@ -1390,18 +1422,62 @@ def get_accion_yf(ticker: str) -> dict | None:
                 geo_etf[region] = 100.0
 
         # ── Backtesting: serie diaria base 100 ──
+        # For USD assets: convert to MXN using Banxico FIX daily rate
+        # This ensures consistent currency when mixing with MXN-denominated funds
         historico_bt = []
         try:
             daily = prices.dropna()
             if len(daily) > 1:
+                needs_fx = moneda == "USD"
+                fx_rates = _get_fx_daily() if needs_fx else {}
                 base = float(daily.iloc[0])
+                # Get FX at base date for proper rebasing
+                base_fx = 1.0
+                if needs_fx:
+                    base_date = daily.index[0].strftime("%Y-%m-%d")
+                    base_fx = fx_rates.get(base_date, 0)
+                    if base_fx == 0:
+                        # Find nearest FX rate
+                        for offset in range(1, 10):
+                            for delta in [timedelta(days=-offset), timedelta(days=offset)]:
+                                d = (daily.index[0] + delta).strftime("%Y-%m-%d")
+                                if d in fx_rates:
+                                    base_fx = fx_rates[d]
+                                    break
+                            if base_fx > 0:
+                                break
+                    if base_fx == 0:
+                        base_fx = 1.0  # fallback: no conversion
+                        needs_fx = False
+
+                last_fx = base_fx
                 for dt, px in daily.items():
-                    historico_bt.append({
-                        "fecha": dt.strftime("%Y-%m-%d"),
-                        "valor": round(float(px) / base * 100, 4)
-                    })
-        except Exception:
-            pass
+                    fecha_str = dt.strftime("%Y-%m-%d")
+                    if needs_fx:
+                        fx = fx_rates.get(fecha_str)
+                        if fx:
+                            last_fx = fx
+                        # Price in MXN = USD price * FX, rebased to 100
+                        valor = round((float(px) * last_fx) / (base * base_fx) * 100, 4)
+                    else:
+                        valor = round(float(px) / base * 100, 4)
+                    historico_bt.append({"fecha": fecha_str, "valor": valor})
+                if needs_fx:
+                    print(f"[BT] {ticker}: USD→MXN conversion applied ({len(historico_bt)} pts, base_fx={base_fx:.4f})")
+        except Exception as e:
+            print(f"[BT] {ticker} historico error: {e}")
+
+        # Keep USD-denominated series for beta calculations (avoids FX-driven spurious correlations)
+        historico_usd = []
+        if moneda == "USD":
+            try:
+                d_clean = prices.dropna()
+                if len(d_clean) > 1:
+                    b = float(d_clean.iloc[0])
+                    for dt, px in d_clean.items():
+                        historico_usd.append({"fecha": dt.strftime("%Y-%m-%d"), "valor": round(float(px) / b * 100, 4)})
+            except Exception:
+                pass
 
         result = {
             "ticker":        ticker,
@@ -1414,6 +1490,7 @@ def get_accion_yf(ticker: str) -> dict | None:
             "moneda_precio": moneda,
             "r1m":           rend_efectivo(p_mtd),
             "r3m":           rend_efectivo(p_3m),
+            "r6m":           rend_efectivo(p_6m),
             "ytd":           rend_efectivo(p_ytd),
             "r1y":           rend_anual(p_1y, 1),
             "r2y":           rend_anual(p_2y, 2),
@@ -1421,6 +1498,7 @@ def get_accion_yf(ticker: str) -> dict | None:
             "sectores":      sectores_etf,
             "geo":           geo_etf,
             "historico":     historico_bt,
+            "historico_usd": historico_usd,
         }
 
         _accion_cache[ticker]    = result
@@ -1449,15 +1527,14 @@ def get_accion(ticker: str) -> dict | None:
     mx_ticker = db_key + ".MX"
     data = get_accion_yf(mx_ticker)
     if data:
-        # Cross-validar backtesting de SIC recientes
         hist = data.get("historico", [])
+
+        # Cross-validar backtesting de SIC recientes (caídas sospechosas)
         if hist and len(hist) < 500:
             last_bt = hist[-1]["valor"]
             first_bt = hist[0]["valor"]
             bt_return = (last_bt / first_bt - 1) if first_bt > 0 else 0
             if bt_return < -0.35:
-                # Backtesting sospechoso: >35% caída desde inception en listing reciente
-                # Probar ticker global para comparar
                 global_data = get_accion_yf(db_key) if db_key != mx_ticker else None
                 if global_data:
                     g_hist = global_data.get("historico", [])
@@ -1466,6 +1543,27 @@ def get_accion(ticker: str) -> dict | None:
                         if g_return > bt_return + 0.30:
                             print(f"[SIC FIX] {mx_ticker} bt={bt_return*100:.1f}% vs {db_key} bt={g_return*100:.1f}% → usando global")
                             return global_data
+
+        # Enriquecer backtesting: si el .MX no tiene historia antes de 2005,
+        # usar el ticker global (USD→MXN) para tener el historial completo
+        # necesario para escenarios históricos (GFC 2008, etc.)
+        if hist:
+            first_date = hist[0]["fecha"]
+            if first_date > "2005-01-01" and db_key != mx_ticker:
+                try:
+                    global_data = get_accion_yf(db_key)
+                    if global_data:
+                        g_hist = global_data.get("historico", [])
+                        if g_hist and g_hist[0]["fecha"] < first_date:
+                            print(f"[BT-ENRICH] {mx_ticker} starts {first_date}, {db_key} starts {g_hist[0]['fecha']} → using global BT ({len(g_hist)} pts)")
+                            data["historico"] = g_hist
+                            # Also copy USD historico for factor beta calculations
+                            g_usd = global_data.get("historico_usd", [])
+                            if g_usd:
+                                data["historico_usd"] = g_usd
+                except Exception as e:
+                    print(f"[BT-ENRICH] {db_key} global fetch failed: {e}")
+
         return data
 
     # 2. DataBursatil — fallback para emisoras que YF no tenga
@@ -1498,6 +1596,757 @@ def resolve_serie(fondo, tipo_cliente):
     return list(disponibles.keys())[0] if disponibles else "A"
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# FACTOR BETAS — regression of portfolio returns vs factor returns
+# ─────────────────────────────────────────────────────────────────────────────
+_fx_daily_cache = {}
+_fx_daily_cache_ts = 0
+
+def _get_fx_daily():
+    """Get daily USD/MXN FIX from Banxico SF43718. Cached 6h. Returns dict {date_str: fx_rate}."""
+    global _fx_daily_cache, _fx_daily_cache_ts
+    now = time.time()
+    if _fx_daily_cache and not _cache_expired(_fx_daily_cache_ts):
+        return _fx_daily_cache
+    try:
+        start, end = "1990-01-01", date.today().isoformat()
+        url = f"https://www.banxico.org.mx/SieAPIRest/service/v1/series/SF43718/datos/{start}/{end}"
+        r = requests.get(url, headers={"Bmx-Token": BANXICO_TOKEN, "Accept": "application/json"}, timeout=30)
+        r.raise_for_status()
+        datos = r.json()["bmx"]["series"][0]["datos"]
+        fx = {}
+        for d in datos:
+            try:
+                f = datetime.strptime(d["fecha"], "%d/%m/%Y").date()
+                fx[f.isoformat()] = float(d["dato"].replace(",", ""))
+            except:
+                pass
+        _fx_daily_cache = fx
+        _fx_daily_cache_ts = now
+        print(f"[FX] Loaded {len(fx)} daily USD/MXN rates for BT conversion")
+        return fx
+    except Exception as e:
+        print(f"[FX] Failed to load USD/MXN: {e}")
+        return {}
+
+
+_factor_cache = {}
+_factor_cache_ts = 0
+
+def _fetch_factor_series():
+    """Fetch daily price series for all sensitivity factors. Cached 6h."""
+    global _factor_cache, _factor_cache_ts
+    now = time.time()
+    if _factor_cache and not _cache_expired(_factor_cache_ts):
+        return _factor_cache
+
+    today = date.today()
+    start = "1990-01-01"  # Max history for longer-lived funds + full FX coverage
+    end = today.isoformat()
+    factors = {}
+
+    # 1. USD/MXN (Banxico SF43718)
+    try:
+        url = f"https://www.banxico.org.mx/SieAPIRest/service/v1/series/SF43718/datos/{start}/{end}"
+        r = requests.get(url, headers={"Bmx-Token": BANXICO_TOKEN, "Accept": "application/json"}, timeout=30)
+        r.raise_for_status()
+        datos = r.json()["bmx"]["series"][0]["datos"]
+        fx = {}
+        for d in datos:
+            try:
+                f = datetime.strptime(d["fecha"], "%d/%m/%Y")
+                fx[f] = float(d["dato"].replace(",", ""))
+            except: pass
+        factors["fx"] = pd.Series(fx).sort_index()
+        print(f"[BETAS] FX: {len(factors['fx'])} prices")
+    except Exception as e:
+        print(f"[BETAS] FX error: {e}")
+        factors["fx"] = pd.Series(dtype=float)
+
+    # 2. Bono M10 MX yield — Banxico SF44071 (weekly auction) with FRED monthly fallback
+    try:
+        url_b10 = f"https://www.banxico.org.mx/SieAPIRest/service/v1/series/SF44071/datos/{start}/{end}"
+        r = requests.get(url_b10, headers={"Bmx-Token": BANXICO_TOKEN, "Accept": "application/json"}, timeout=30)
+        r.raise_for_status()
+        datos = r.json()["bmx"]["series"][0]["datos"]
+        b10 = {}
+        for d in datos:
+            try:
+                f = datetime.strptime(d["fecha"], "%d/%m/%Y")
+                b10[f] = float(d["dato"].replace(",", ""))
+            except: pass
+        if len(b10) >= 12:
+            factors["bono_m10"] = pd.Series(b10).sort_index()
+            print(f"[BETAS] Bono M10 MX (Banxico SF44071 weekly): {len(factors['bono_m10'])} obs")
+        else:
+            raise ValueError(f"Only {len(b10)} obs from Banxico, falling back to FRED")
+    except Exception as e:
+        print(f"[BETAS] Banxico Bono M10 failed ({e}), falling back to FRED monthly")
+        try:
+            params = {"series_id": "IRLTLT01MXM156N", "api_key": FRED_API_KEY, "file_type": "json",
+                      "observation_start": start, "observation_end": end}
+            r = requests.get(FRED_BASE, params=params, timeout=15)
+            obs = r.json().get("observations", [])
+            b10 = {}
+            for o in obs:
+                try: b10[datetime.strptime(o["date"], "%Y-%m-%d")] = float(o["value"])
+                except: pass
+            factors["bono_m10"] = pd.Series(b10).sort_index()
+            print(f"[BETAS] Bono M10 MX (FRED fallback): {len(factors['bono_m10'])} monthly obs")
+        except Exception as e2:
+            print(f"[BETAS] Bono M10 MX error: {e2}")
+            factors["bono_m10"] = pd.Series(dtype=float)
+
+    # 3. US Treasury 10Y yield (FRED DGS10 — daily)
+    try:
+        params = {"series_id": "DGS10", "api_key": FRED_API_KEY, "file_type": "json",
+                  "observation_start": start, "observation_end": end}
+        r = requests.get(FRED_BASE, params=params, timeout=15)
+        obs = r.json().get("observations", [])
+        ust = {}
+        for o in obs:
+            try: ust[datetime.strptime(o["date"], "%Y-%m-%d")] = float(o["value"])
+            except: pass
+        factors["ust_10y"] = pd.Series(ust).sort_index()
+        print(f"[BETAS] UST 10Y: {len(factors['ust_10y'])} daily obs")
+    except Exception as e:
+        print(f"[BETAS] UST 10Y error: {e}")
+        factors["ust_10y"] = pd.Series(dtype=float)
+
+    # 3b. TIIE 28d (Banxico SF43783 — daily, key MX monetary policy rate)
+    try:
+        url_tiie = f"https://www.banxico.org.mx/SieAPIRest/service/v1/series/SF43783/datos/{start}/{end}"
+        r = requests.get(url_tiie, headers={"Bmx-Token": BANXICO_TOKEN, "Accept": "application/json"}, timeout=30)
+        r.raise_for_status()
+        datos = r.json()["bmx"]["series"][0]["datos"]
+        tiie = {}
+        for d in datos:
+            try:
+                f = datetime.strptime(d["fecha"], "%d/%m/%Y")
+                tiie[f] = float(d["dato"].replace(",", ""))
+            except: pass
+        if len(tiie) >= 60:
+            factors["tiie_28d"] = pd.Series(tiie).sort_index()
+            print(f"[BETAS] TIIE 28d (Banxico SF43783): {len(factors['tiie_28d'])} daily obs")
+        else:
+            print(f"[BETAS] TIIE 28d: only {len(tiie)} obs, skipped")
+    except Exception as e:
+        print(f"[BETAS] TIIE 28d error: {e}")
+
+    # 3c. Udibonos 10Y real yield (Banxico SF43924) — for MX breakeven inflation
+    try:
+        url_udi = f"https://www.banxico.org.mx/SieAPIRest/service/v1/series/SF43924/datos/{start}/{end}"
+        r = requests.get(url_udi, headers={"Bmx-Token": BANXICO_TOKEN, "Accept": "application/json"}, timeout=30)
+        r.raise_for_status()
+        datos = r.json()["bmx"]["series"][0]["datos"]
+        udi10 = {}
+        for d in datos:
+            try:
+                f = datetime.strptime(d["fecha"], "%d/%m/%Y")
+                udi10[f] = float(d["dato"].replace(",", ""))
+            except: pass
+        if len(udi10) >= 60:
+            factors["udibono_10y"] = pd.Series(udi10).sort_index()
+            print(f"[BETAS] Udibono 10Y (Banxico SF43924): {len(factors['udibono_10y'])} obs")
+            # Derive MX breakeven inflation = Bono M10 nominal - Udibono 10Y real
+            if "bono_m10" in factors and len(factors["bono_m10"]) >= 60:
+                # Align and compute spread
+                b10 = factors["bono_m10"].reindex(factors["udibono_10y"].index, method="ffill")
+                mx_be = b10 - factors["udibono_10y"]
+                mx_be = mx_be.dropna()
+                if len(mx_be) >= 60:
+                    factors["mx_breakeven"] = mx_be
+                    print(f"[BETAS] MX Breakeven Inflation (derived): {len(mx_be)} obs")
+        else:
+            print(f"[BETAS] Udibono 10Y: only {len(udi10)} obs, skipped")
+    except Exception as e:
+        print(f"[BETAS] Udibono 10Y error: {e}")
+
+    # 3d. Bono M 30Y yield (Banxico SF60696) — for MX yield curve slope
+    try:
+        url_b30 = f"https://www.banxico.org.mx/SieAPIRest/service/v1/series/SF60696/datos/{start}/{end}"
+        r = requests.get(url_b30, headers={"Bmx-Token": BANXICO_TOKEN, "Accept": "application/json"}, timeout=30)
+        r.raise_for_status()
+        datos = r.json()["bmx"]["series"][0]["datos"]
+        b30 = {}
+        for d in datos:
+            try:
+                f = datetime.strptime(d["fecha"], "%d/%m/%Y")
+                b30[f] = float(d["dato"].replace(",", ""))
+            except: pass
+        if len(b30) >= 60:
+            factors["bono_m30"] = pd.Series(b30).sort_index()
+            print(f"[BETAS] Bono M30 (Banxico SF60696): {len(factors['bono_m30'])} obs")
+            # Derive MX curve slope = Bono M30 - Bono M10
+            if "bono_m10" in factors and len(factors["bono_m10"]) >= 60:
+                b10_aligned = factors["bono_m10"].reindex(factors["bono_m30"].index, method="ffill")
+                mx_slope = factors["bono_m30"] - b10_aligned
+                mx_slope = mx_slope.dropna()
+                if len(mx_slope) >= 60:
+                    factors["mx_slope"] = mx_slope
+                    print(f"[BETAS] MX Curve Slope 30-10 (derived): {len(mx_slope)} obs")
+        else:
+            print(f"[BETAS] Bono M30: only {len(b30)} obs, skipped")
+    except Exception as e:
+        print(f"[BETAS] Bono M30 error: {e}")
+
+    # 4-10. Yahoo Finance: IPC, SP500, Gold, Oil, VIX, Copper, DXY, EWW
+    yf_tickers = {
+        "ipc":    ["^MXX", "NAFTRACISHRS.MX"],  # IPC with NAFTRAC fallback
+        "sp500":  ["^GSPC"],
+        "gold":   ["GC=F"],
+        "oil":    ["CL=F"],
+        "vix":    ["^VIX"],      # CBOE Volatility Index — regime/fear
+        "copper": ["HG=F"],      # Dr. Copper — global growth proxy
+        "dxy":    ["DX-Y.NYB"],  # US Dollar Index — broad USD strength
+        "eww":    ["EWW"],       # iShares MSCI Mexico — MX equity in USD (6500+ obs from 2000)
+    }
+    for name, tickers in yf_tickers.items():
+        downloaded = False
+        for ticker in tickers:
+            try:
+                df = yf.download(ticker, start=start, end=end, auto_adjust=True, progress=False)
+                if isinstance(df.columns, pd.MultiIndex):
+                    df.columns = df.columns.get_level_values(0)
+                s = df["Close"].dropna()
+                if len(s) >= 60:
+                    factors[name] = s
+                    print(f"[BETAS] {name} ({ticker}): {len(s)} prices")
+                    downloaded = True
+                    break
+            except Exception as e:
+                print(f"[BETAS] {name} ({ticker}) failed: {e}")
+        if not downloaded:
+            print(f"[BETAS] {name}: ALL tickers failed")
+            factors[name] = pd.Series(dtype=float)
+
+    # 11-15. FRED spread, inflation, and term premium series
+    fred_series = {
+        "em_spread":     ("BAMLEMCBPIOAS",  "EM Corp OAS"),         # EM corporate credit spread (global)
+        "latam_oas":     ("BAMLEMRLCRPILAOAS", "LatAm EM Corp OAS"), # LatAm credit — better MX proxy
+        "hy_spread":     ("BAMLH0A0HYM2",  "US HY OAS"),           # US High Yield spread — #1 stress indicator
+        "breakeven":     ("T10YIE",         "US 10Y Breakeven"),    # Inflation expectations
+        "term_premium":  ("THREEFYTP10",    "US 10Y Term Premium"), # Adrian-Crump-Moench (NY Fed) — Aladdin uses this
+    }
+    for name, (sid, label) in fred_series.items():
+        try:
+            params = {"series_id": sid, "api_key": FRED_API_KEY, "file_type": "json",
+                      "observation_start": start, "observation_end": end}
+            r = requests.get(FRED_BASE, params=params, timeout=15)
+            obs = r.json().get("observations", [])
+            vals = {}
+            for o in obs:
+                try: vals[datetime.strptime(o["date"], "%Y-%m-%d")] = float(o["value"])
+                except: pass
+            if len(vals) >= 60:
+                factors[name] = pd.Series(vals).sort_index()
+                print(f"[BETAS] {label} ({sid}): {len(factors[name])} daily obs")
+            else:
+                factors[name] = pd.Series(dtype=float)
+                print(f"[BETAS] {label} ({sid}): only {len(vals)} obs, skipped")
+        except Exception as e:
+            print(f"[BETAS] {label} error: {e}")
+            factors[name] = pd.Series(dtype=float)
+
+    _factor_cache = factors
+    _factor_cache_ts = now
+    return factors
+
+
+def compute_factor_betas(bt_portafolio_dict):
+    """Aladdin-style factor risk engine with:
+    - Elastic Net (L1+L2) with cross-validation for automatic factor selection
+    - EWMA weighting (recent regime weighted more heavily)
+    - Ledoit-Wolf shrinkage on EWMA covariance (PCA-shrinkage, Bloomberg MAC3 style)
+    - Cornish-Fisher VaR (adjusts for skewness/kurtosis, not just normal)
+    - Factor risk contribution decomposition (Euler decomposition)
+    - Full covariance cascade for scenario impacts
+    - 19 factors: MX rates, US rates, equities, FX, commodities, credit, vol, term premium, MX breakeven, MX slope, LatAm OAS
+    """
+    if not bt_portafolio_dict or len(bt_portafolio_dict) < 60:
+        return {}
+
+    try:
+        factors = _fetch_factor_series()
+    except Exception as e:
+        print(f"[BETAS] fetch error: {e}")
+        return {}
+
+    # Build portfolio daily series, then resample to month-end
+    port_series = pd.Series(
+        {pd.Timestamp(f): v for f, v in bt_portafolio_dict.items()}
+    ).sort_index()
+    port_monthly = port_series.resample('ME').last().dropna()
+    port_mret = port_monthly.pct_change().dropna()
+
+    if len(port_mret) < 12:
+        print(f"[BETAS] Only {len(port_mret)} monthly returns, need >= 12")
+        return {}
+
+    # ── Build factor monthly returns/changes ──
+    factor_mrets = {}
+
+    # Price-based factors → monthly returns
+    price_factors = ["fx", "ipc", "sp500", "gold", "oil", "vix", "copper", "dxy", "eww"]
+    for name in price_factors:
+        s = factors.get(name)
+        if s is None or len(s) < 60:
+            continue
+        f_monthly = s.resample('ME').last().dropna()
+        f_mret = f_monthly.pct_change().dropna()
+        if len(f_mret) >= 12:
+            factor_mrets[name] = f_mret
+
+    # Yield/rate-based factors → monthly yield change (decimal: 0.01 = 1pp)
+    for yld_name in ["bono_m10", "ust_10y", "tiie_28d"]:
+        yld_s = factors.get(yld_name)
+        if yld_s is None or len(yld_s) < 6:
+            continue
+        yld_monthly = yld_s.resample('ME').last().dropna()
+        yld_chg = yld_monthly.diff().dropna() / 100
+        if len(yld_chg) >= 6:
+            factor_mrets[yld_name] = yld_chg
+
+    # Derived spread factors → monthly change (decimal: breakeven, slope)
+    for derived_name in ["mx_breakeven", "mx_slope"]:
+        d_s = factors.get(derived_name)
+        if d_s is None or len(d_s) < 60:
+            continue
+        d_monthly = d_s.resample('ME').last().dropna()
+        d_chg = d_monthly.diff().dropna() / 100  # percentage point change
+        if len(d_chg) >= 12:
+            factor_mrets[derived_name] = d_chg
+
+    # Spread/premium-based factors → monthly change (decimal)
+    for spd_name in ["em_spread", "latam_oas", "hy_spread", "breakeven", "term_premium"]:
+        spd_s = factors.get(spd_name)
+        if spd_s is None or len(spd_s) < 60:
+            continue
+        spd_monthly = spd_s.resample('ME').last().dropna()
+        spd_chg = spd_monthly.diff().dropna() / 100
+        if len(spd_chg) >= 12:
+            factor_mrets[spd_name] = spd_chg
+
+    # ── Align factors to portfolio date range (Aladdin-style: max history) ──
+    # Instead of intersecting ALL factors (which truncates to shortest),
+    # use the portfolio's full range and fill missing factor months with 0.
+    # EWMA naturally downweights older months, so early zeros don't distort.
+    # Only keep factors that cover at least 50% of portfolio months.
+    factor_names = []
+    port_idx = port_mret.index
+    for name, s in factor_mrets.items():
+        overlap = port_idx.intersection(s.index)
+        coverage = len(overlap) / len(port_idx) if len(port_idx) > 0 else 0
+        if coverage >= 0.5 and len(overlap) >= 12:
+            factor_names.append(name)
+        else:
+            print(f"[BETAS] {name}: coverage {coverage:.0%} ({len(overlap)}/{len(port_idx)}), dropped")
+
+    n = len(port_idx)
+    k = len(factor_names)
+
+    if n < 12 or k == 0:
+        print(f"[BETAS] Insufficient data: n={n}, k={k}")
+        return {}
+
+    y = port_mret.values
+    X = np.column_stack([
+        factor_mrets[name].reindex(port_idx, fill_value=0.0).values
+        for name in factor_names
+    ])
+
+    # Clean NaN/Inf
+    mask = np.isfinite(y)
+    for col in range(k):
+        mask &= np.isfinite(X[:, col])
+    y, X = y[mask], X[mask]
+    n = len(y)
+
+    if n < 12:
+        return {}
+
+    try:
+        # ══════════════════════════════════════════════════════════════
+        # STEP 1: EWMA WEIGHTS (Aladdin-style: recent data matters more)
+        # ══════════════════════════════════════════════════════════════
+        hl = min(36, max(n // 3, 12))
+        decay = 1 - np.log(2) / hl
+        ewma_w = np.array([decay ** (n - 1 - t) for t in range(n)])
+        ewma_w /= ewma_w.sum()
+
+        # ══════════════════════════════════════════════════════════════
+        # STEP 2: ELASTIC NET with CV (replaces Ridge — automatic factor selection)
+        # L1 penalty zeros out irrelevant factors, L2 handles multicollinearity
+        # ══════════════════════════════════════════════════════════════
+        # Standardize X for Elastic Net (sklearn requires it)
+        X_mean = np.average(X, axis=0, weights=ewma_w)
+        X_wm = X - X_mean
+        X_std = np.sqrt(np.average(X_wm ** 2, axis=0, weights=ewma_w))
+        X_std[X_std < 1e-12] = 1.0
+        X_scaled = X_wm / X_std
+
+        y_mean = np.average(y, weights=ewma_w)
+        y_centered = y - y_mean
+
+        # Apply EWMA as sample_weight in Elastic Net CV
+        sample_weights = ewma_w * n  # sklearn expects unnormalized weights
+
+        # ElasticNetCV: 5-fold CV, l1_ratio from 0.1 (mostly Ridge) to 0.9 (mostly Lasso)
+        n_cv = min(5, max(3, n // 10))
+        enet = ElasticNetCV(
+            l1_ratio=[0.1, 0.3, 0.5, 0.7, 0.9],
+            alphas=50,
+            cv=n_cv,
+            max_iter=10000,
+            fit_intercept=False,  # we centered manually
+        )
+        enet.fit(X_scaled, y_centered, sample_weight=sample_weights)
+
+        # Unscale coefficients back to original factor space
+        beta_scaled = enet.coef_
+        beta_original = beta_scaled / X_std
+        intercept = y_mean - np.dot(X_mean, beta_original)
+
+        coeffs_full = np.concatenate([[intercept], beta_original])
+        l1_ratio_best = enet.l1_ratio_
+        alpha_best = enet.alpha_
+        n_nonzero = int(np.sum(np.abs(beta_scaled) > 1e-8))
+
+        # R² (unweighted)
+        y_pred = X @ beta_original + intercept
+        ss_res = np.sum((y - y_pred) ** 2)
+        ss_tot = np.sum((y - y.mean()) ** 2)
+        r_squared = 1 - ss_res / ss_tot if ss_tot > 0 else 0
+
+        # Adjusted R² (penalizes for number of active factors)
+        k_active = max(n_nonzero, 1)
+        adj_r_squared = 1 - (1 - r_squared) * (n - 1) / (n - k_active - 1) if n > k_active + 1 else r_squared
+
+        # Standard errors via OLS on the selected factors (for t-stats)
+        X_aug = np.column_stack([np.ones(n), X])
+        dof = n - k - 1
+        sigma2 = ss_res / dof if dof > 0 else ss_res / max(n - 1, 1)
+        try:
+            XtX = X_aug.T @ X_aug
+            se = np.sqrt(np.maximum(np.diag(sigma2 * np.linalg.inv(XtX + 1e-8 * np.eye(k + 1))), 0))
+        except Exception:
+            se = np.zeros(k + 1)
+        n_significant = int(sum(1 for i in range(k) if se[i+1] > 1e-12 and abs(coeffs_full[i+1] / se[i+1]) > 1.96))
+
+        betas = {}
+        for i, name in enumerate(factor_names):
+            betas[name] = round(float(beta_original[i]), 6)
+
+        betas["alpha"] = round(float(intercept) * 12, 6)  # annualized
+        betas["r_squared"] = round(float(r_squared), 4)
+        betas["adj_r_squared"] = round(float(adj_r_squared), 4)
+        betas["n_months"] = int(n)
+        betas["n_factors"] = int(k)
+        betas["n_active"] = n_nonzero
+        betas["n_significant"] = n_significant
+        betas["l1_ratio"] = round(float(l1_ratio_best), 2)
+        betas["enet_alpha"] = round(float(alpha_best), 6)
+        betas["ewma_halflife"] = int(hl)
+
+        # ══════════════════════════════════════════════════════════════
+        # STEP 3: DUAL-DECAY EWMA + LEDOIT-WOLF (Bloomberg MAC3 style)
+        #
+        # Bloomberg MAC3 uses SEPARATE half-lives:
+        #   - SHORT half-life for VOLATILITIES (captures recent vol regime quickly)
+        #   - LONG half-life for CORRELATIONS (more stable, less estimation noise)
+        # Then applies PCA/LW shrinkage to the correlation matrix.
+        # Final covariance: Σ = D_vol × R_shrunk × D_vol
+        # ══════════════════════════════════════════════════════════════
+        hl_vol = max(6, min(hl, n // 6))       # short: ~6m for monthly data
+        hl_corr = max(12, min(36, n // 2))      # long: ~12-36m for correlations
+
+        # EWMA weights for volatilities (short decay — reacts fast to vol regime)
+        decay_vol = 1 - np.log(2) / hl_vol
+        w_vol = np.array([decay_vol ** (n - 1 - t) for t in range(n)])
+        w_vol /= w_vol.sum()
+
+        # EWMA weights for correlations (long decay — stable structure)
+        decay_corr = 1 - np.log(2) / hl_corr
+        w_corr = np.array([decay_corr ** (n - 1 - t) for t in range(n)])
+        w_corr /= w_corr.sum()
+
+        # EWMA volatilities (short half-life)
+        X_dm_vol = X - np.average(X, axis=0, weights=w_vol)
+        ewma_var = np.average(X_dm_vol ** 2, axis=0, weights=w_vol)
+        ewma_std = np.sqrt(np.maximum(ewma_var, 1e-20))
+
+        # EWMA correlation matrix (long half-life)
+        X_dm_corr = X - np.average(X, axis=0, weights=w_corr)
+        corr_std = np.sqrt(np.maximum(np.average(X_dm_corr ** 2, axis=0, weights=w_corr), 1e-20))
+        X_standardized = X_dm_corr / corr_std
+        ewma_corr_raw = (X_standardized * w_corr[:, None]).T @ X_standardized * (n / (n - 1))
+        np.fill_diagonal(ewma_corr_raw, 1.0)  # ensure diagonal = 1
+
+        # Apply Ledoit-Wolf shrinkage to the CORRELATION matrix (more principled)
+        # LW identity target makes more sense for correlations (shrink toward uncorrelated)
+        try:
+            lw = LedoitWolf()
+            X_for_lw = X_standardized * np.sqrt(w_corr * n)[:, None]
+            lw.fit(X_for_lw)
+            corr_shrunk = lw.covariance_
+            # Re-normalize to valid correlation (diag=1)
+            d_inv = 1.0 / np.sqrt(np.maximum(np.diag(corr_shrunk), 1e-20))
+            corr_shrunk = corr_shrunk * np.outer(d_inv, d_inv)
+            np.fill_diagonal(corr_shrunk, 1.0)
+            shrinkage_coef = round(float(lw.shrinkage_), 4)
+        except Exception:
+            corr_shrunk = ewma_corr_raw
+            shrinkage_coef = 0.0
+
+        # Reconstruct covariance: Σ = D_vol × R_shrunk × D_vol (Bloomberg MAC3 formula)
+        D = np.diag(ewma_std)
+        cov_matrix = D @ corr_shrunk @ D
+
+        betas["shrinkage"] = shrinkage_coef
+        betas["hl_vol"] = int(hl_vol)
+        betas["hl_corr"] = int(hl_corr)
+
+        beta_vec = np.array([betas.get(name, 0) for name in factor_names])
+
+        # ══════════════════════════════════════════════════════════════
+        # STEP 4: FACTOR RISK CONTRIBUTION (Euler decomposition)
+        # RC_i = β_i × (Σ × β)_i / σ_portfolio — "which factor drives your risk?"
+        # ══════════════════════════════════════════════════════════════
+        try:
+            port_factor_vol = np.sqrt(float(beta_vec @ cov_matrix @ beta_vec))
+            if port_factor_vol > 1e-10:
+                marginal_risk = cov_matrix @ beta_vec / port_factor_vol
+                risk_contrib = beta_vec * marginal_risk
+                total_rc = risk_contrib.sum()
+                risk_pct = {}
+                for i, name in enumerate(factor_names):
+                    pct = risk_contrib[i] / total_rc if abs(total_rc) > 1e-10 else 0
+                    if abs(pct) > 0.005:  # only report factors contributing >0.5%
+                        risk_pct[name] = round(float(pct), 4)
+                betas["risk_contrib"] = risk_pct
+                betas["factor_vol"] = round(float(port_factor_vol) * np.sqrt(12), 4)  # annualized
+        except Exception as rc_err:
+            print(f"[RISK-CONTRIB] Error: {rc_err}")
+
+        # ══════════════════════════════════════════════════════════════
+        # STEP 5: SCENARIO IMPACTS (Aladdin-style covariance cascade)
+        # ══════════════════════════════════════════════════════════════
+        scenario_defs = [
+            ("bonoMxUp",     "bono_m10",      0.01),     # +100bp MX yield rise
+            ("ustUp",        "ust_10y",       0.01),      # +100bp UST yield rise
+            ("mxnUp",       "fx",            -0.10),      # MXN appreciates 10%
+            ("mxnDown",     "fx",             0.10),      # MXN depreciates 10%
+            ("ipcDown",     "ipc",           -0.10),      # IPC -10%
+            ("sp500Down",   "sp500",         -0.10),      # SP500 -10%
+            ("oilDown",     "oil",           -0.10),      # Oil -10%
+            ("goldDown",    "gold",          -0.10),      # Gold -10%
+            ("vixSpike",    "vix",            0.50),      # VIX +50%
+            ("emSpreadUp",  "em_spread",      0.02),      # EM spread +200bp
+            ("hySpreadUp",  "hy_spread",      0.03),      # US HY spread +300bp
+            ("copperDown",  "copper",        -0.15),      # Copper -15%
+            ("tiieUp",      "tiie_28d",       0.01),      # TIIE +100bp (Banxico hike)
+            ("termPremUp",  "term_premium",   0.01),      # US term premium +100bp
+            ("mxBeUp",      "mx_breakeven",   0.01),      # MX breakeven inflation +100bp
+            ("mxSlopeUp",   "mx_slope",       0.01),      # MX curve steepens +100bp (30Y-10Y)
+            ("latamOasUp",  "latam_oas",      0.02),      # LatAm credit spread +200bp
+        ]
+
+        scenarios = {}
+        for skey, sfactor, shock in scenario_defs:
+            if sfactor not in factor_names:
+                continue
+            idx = factor_names.index(sfactor)
+            var_i = cov_matrix[idx, idx]
+            if var_i <= 1e-20:
+                continue
+            # Conditional expected moves for ALL factors
+            cond_moves = np.zeros(k)
+            for j in range(k):
+                if j == idx:
+                    cond_moves[j] = shock
+                else:
+                    cond_moves[j] = (cov_matrix[j, idx] / var_i) * shock
+            impact = float(np.dot(beta_vec, cond_moves))
+            scenarios[skey] = round(impact, 6)
+
+        # Combined crisis scenario (GFC/COVID calibrated)
+        combined_shocks = {
+            "sp500": -0.20, "ipc": -0.20, "fx": 0.20, "eww": -0.25,
+            "em_spread": 0.04, "hy_spread": 0.05,
+            "vix": 1.00, "oil": -0.25, "copper": -0.20,
+            "bono_m10": 0.02, "ust_10y": -0.01, "tiie_28d": 0.02,
+            "gold": 0.08, "dxy": 0.05,
+            "breakeven": -0.01, "term_premium": 0.005,
+            "mx_breakeven": -0.005, "mx_slope": 0.01, "latam_oas": 0.04,
+        }
+        combined_impact = sum(beta_vec[j] * combined_shocks.get(fname, 0)
+                              for j, fname in enumerate(factor_names))
+        scenarios["combinedCrisis"] = round(float(combined_impact), 6)
+
+        # ══════════════════════════════════════════════════════════════
+        # STEP 6: MONTE CARLO VaR + CORNISH-FISHER ADJUSTMENT
+        # MC from Ledoit-Wolf shrunk covariance, then CF for fat tails
+        # ══════════════════════════════════════════════════════════════
+        try:
+            n_sims = 10000
+            np.random.seed(42)
+            mc_factors = np.random.multivariate_normal(np.zeros(k), cov_matrix, size=n_sims)
+            mc_port = mc_factors @ beta_vec + float(intercept)
+            mc_sorted = np.sort(mc_port)
+
+            # Standard MC VaR
+            var_95_mc = round(float(np.percentile(mc_port, 5)), 6)
+            var_99_mc = round(float(np.percentile(mc_port, 1)), 6)
+            es_95 = round(float(np.mean(mc_sorted[:max(int(0.05 * n_sims), 1)])), 6)
+
+            # Cornish-Fisher adjustment on portfolio residuals
+            # Winsorize residuals at 1st/99th percentile to prevent outlier-driven divergence
+            resid = y - y_pred
+            p01, p99 = np.percentile(resid, [1, 99])
+            resid_w = np.clip(resid, p01, p99)
+            S = float(skew(resid_w))
+            K = float(kurtosis(resid_w, fisher=True))  # excess kurtosis
+            mu_port = float(np.mean(mc_port))
+            sig_port = float(np.std(mc_port))
+
+            # CF expansion is valid for mild non-normality (|S|<3, |K|<10)
+            # Beyond that, the polynomial diverges — fall back to MC VaR
+            cf_valid = sig_port > 1e-10 and abs(S) < 3.0 and abs(K) < 10.0
+            if cf_valid:
+                # CF expansion: z_cf = z + (z²-1)/6 × S + (z³-3z)/24 × K - (2z³-5z)/36 × S²
+                z95 = -1.6449
+                z99 = -2.3263
+                z95_cf = z95 + (z95**2 - 1)/6 * S + (z95**3 - 3*z95)/24 * K - (2*z95**3 - 5*z95)/36 * S**2
+                z99_cf = z99 + (z99**2 - 1)/6 * S + (z99**3 - 3*z99)/24 * K - (2*z99**3 - 5*z99)/36 * S**2
+                var_95_cf = round(float(mu_port + sig_port * z95_cf), 6)
+                var_99_cf = round(float(mu_port + sig_port * z99_cf), 6)
+            else:
+                # Fallback: MC VaR (already incorporates covariance structure)
+                var_95_cf = var_95_mc
+                var_99_cf = var_99_mc
+                if abs(S) >= 3.0 or abs(K) >= 10.0:
+                    print(f"[VaR] CF divergence guard: |S|={abs(S):.1f}, |K|={abs(K):.1f} → MC fallback")
+
+            betas["mc_var95"] = var_95_mc
+            betas["mc_var99"] = var_99_mc
+            betas["mc_es95"] = es_95
+            betas["cf_var95"] = var_95_cf  # Cornish-Fisher adjusted
+            betas["cf_var99"] = var_99_cf
+            betas["skewness"] = round(S, 4)
+            betas["kurtosis"] = round(K, 4)
+            print(f"[VaR] MC95={var_95_mc*100:+.2f}%, CF95={var_95_cf*100:+.2f}%, MC99={var_99_mc*100:+.2f}%, CF99={var_99_cf*100:+.2f}%, ES95={es_95*100:+.2f}%")
+            print(f"[VaR] Skew={S:.3f}, ExKurt={K:.3f}")
+        except Exception as mc_err:
+            print(f"[VaR] Error: {mc_err}")
+
+        betas["scenarios"] = scenarios
+
+        # ── Logging ──
+        betas["method"] = "ElasticNet+DualEWMA+LW+CF"
+        print(f"[BETAS] EN+DualEWMA+LW (n={n}, k={k}, active={n_nonzero}, "
+              f"hl_reg={hl}, hl_vol={hl_vol}, hl_corr={hl_corr}, "
+              f"l1={l1_ratio_best:.1f}, α={alpha_best:.5f}, shrink={shrinkage_coef:.3f}, "
+              f"R²={r_squared:.3f}, AdjR²={adj_r_squared:.3f}, sig={n_significant}/{k}):")
+        for i, name in enumerate(factor_names):
+            b = beta_original[i]
+            t_stat = coeffs_full[i + 1] / se[i + 1] if se[i + 1] > 1e-12 else 0
+            active = "●" if abs(b) > 1e-8 else "○"
+            sig = "***" if abs(t_stat) > 2.58 else "**" if abs(t_stat) > 1.96 else "*" if abs(t_stat) > 1.65 else ""
+            print(f"  {active} {name:>14s}: {b:+.6f}  (t={t_stat:+.2f}{sig})")
+        print(f"  {'alpha':>16s}: {betas['alpha']:+.6f} (annualized)")
+        print(f"[SCENARIOS] Aladdin cascade (LW-shrunk cov):")
+        for skey, impact in scenarios.items():
+            print(f"  {skey:>20s}: {impact*100:+.4f}%")
+
+        return betas
+
+    except Exception as e:
+        import traceback
+        print(f"[BETAS] Factor model error: {e}")
+        traceback.print_exc()
+        return {}
+
+
+_factor_beta_cache = {}   # (fondo, serie, factor_key) -> beta, cached per request cycle
+_factor_beta_cache_ts = 0
+
+def _factor_beta_for_fund(fondo: str, serie: str, factor_key: str,
+                          fallback: float = 0.0) -> float:
+    """Calculate beta of a Morningstar fund vs a factor using last 2yr monthly returns.
+    Controls for FX (USD/MXN) to avoid spurious correlations with USD-priced factors.
+    Cached 6h to ensure consistent results across portfolio comparisons.
+    For gold/oil: uses max(beta, 0) — negative beta = hedge, not real exposure.
+    For vix: uses abs(beta) since VIX is inverse by nature.
+    Other factors: abs(beta). All capped at 2.0."""
+    global _factor_beta_cache, _factor_beta_cache_ts
+    now = time.time()
+    if now - _factor_beta_cache_ts > 21600:   # 6h
+        _factor_beta_cache = {}
+        _factor_beta_cache_ts = now
+    cache_key = (fondo, serie, factor_key)
+    if cache_key in _factor_beta_cache:
+        return _factor_beta_cache[cache_key]
+    try:
+        factors = _fetch_factor_series()
+        fac_s = factors.get(factor_key)
+        if fac_s is None or len(fac_s) < 60:
+            return fallback
+        isin = ISIN_MAP.get(fondo, {}).get(serie)
+        if not isin:
+            return fallback
+        navs = get_ms_nav(isin)
+        if not navs or len(navs) < 60:
+            return fallback
+        fund_s = pd.Series({pd.Timestamp(n["fecha"]): n["nav"] for n in navs}).sort_index()
+        fund_m = fund_s.resample("ME").last().pct_change().dropna()
+        fac_m = fac_s.resample("ME").last().pct_change().dropna()
+
+        # Control for FX to isolate factor effect from currency moves
+        fx_s = factors.get("fx")
+        fx_m = fx_s.resample("ME").last().pct_change().dropna() if fx_s is not None and len(fx_s) >= 60 else None
+
+        common = sorted(fund_m.index.intersection(fac_m.index))[-24:]
+        if len(common) < 12:
+            return fallback
+        fr = fund_m.loc[common].values
+        fac_r = fac_m.loc[common].values
+
+        if fx_m is not None and factor_key not in ("fx", "bono_m10", "tiie_28d"):
+            # Bivariate: regress fund on [factor, fx] → use factor coefficient
+            fx_common = fx_m.reindex(pd.DatetimeIndex(common), method=None).fillna(0).values
+            X = np.column_stack([fac_r, fx_common])
+            XtX = X.T @ X
+            try:
+                beta_vec = np.linalg.solve(XtX + 1e-8 * np.eye(2), X.T @ fr)
+                beta = beta_vec[0]  # factor coefficient, controlling for FX
+            except np.linalg.LinAlgError:
+                cov = float(np.cov(fr, fac_r)[0, 1])
+                var_fac = float(np.var(fac_r, ddof=1))
+                beta = cov / var_fac if var_fac > 1e-10 else 0
+        else:
+            cov = float(np.cov(fr, fac_r)[0, 1])
+            var_fac = float(np.var(fac_r, ddof=1))
+            if var_fac < 1e-10:
+                return fallback
+            beta = cov / var_fac
+
+        # Gold/Oil: only positive beta = real exposure; negative = hedge → 0
+        # VIX: abs() because it's inversely correlated with equities by nature
+        # Others: abs()
+        if factor_key in ("gold", "oil"):
+            result = round(min(max(beta, 0), 2.0), 4)
+        elif factor_key == "vix":
+            result = round(min(abs(beta), 2.0), 4)
+        else:
+            result = round(min(abs(beta), 2.0), 4)
+        _factor_beta_cache[cache_key] = result
+        return result
+    except Exception as e:
+        print(f"[FACTOR-BETA] {fondo} {serie} vs {factor_key}: {e}")
+        _factor_beta_cache[cache_key] = fallback
+        return fallback
+
+
 def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
                         repo_mxn: dict = None, repo_usd: dict = None,
                         acciones: list = None,
@@ -1506,9 +2355,10 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
 
     r1m = r3m = r6m = ytd = r1y = r2y = r3y = 0.0
     stock_t = bond_t = cash_t = 0.0
-    accion_t = etf_t = 0.0
+    accion_t = etf_t = ciclo_t = indice_t = 0.0
     geo_acc = {}; sec_acc = {}; supersec_acc = {}
     lista = []
+    fund_lookthrough = {}  # per-fund risk driver look-through
 
     dur_mxn_num = ytm_mxn_num = bond_mxn_denom = 0.0
     dur_usd_num = ytm_usd_num = bond_usd_denom = 0.0
@@ -1530,13 +2380,15 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
 
         w = pct / 100.0
 
-        r1m += safe_float(d.get("TTR-Return1Mth")) * w
-        r3m += safe_float(d.get("TTR-Return3Mth")) * w
-        r6m += safe_float(d.get("TTR-Return6Mth")) * w
-        ytd += safe_float(d.get("TTR-ReturnYTD"))  * w
-        r1y += safe_float(d.get("TTR-Return1Yr"))  * w
-        r2y += safe_float(d.get("TTR-Return2Yr"))  * w
-        r3y += safe_float(d.get("TTR-Return3Yr"))  * w
+        # Rendimientos calculados desde NAV histórico (no desde TTR-Return* de API)
+        nav_rend = calc_rend_from_nav(fondo, serie)
+        r1m += (nav_rend.get("r1m", 0)) * w
+        r3m += (nav_rend.get("r3m", 0)) * w
+        r6m += (nav_rend.get("r6m", 0)) * w
+        ytd += (nav_rend.get("ytd", 0)) * w
+        r1y += (nav_rend.get("r1y", 0)) * w
+        r2y += (nav_rend.get("r2y", 0)) * w
+        r3y += (nav_rend.get("r3y", 0)) * w
 
         stock = safe_float(d.get("AAB-StockNet"))
         bond  = safe_float(d.get("AAB-BondNet"))
@@ -1548,10 +2400,15 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
         is_rv        = fondo in FONDOS_RV
         is_ciclo     = fondo in FONDOS_CICLO
 
-        if is_rv or is_ciclo:
-            stock_t += stock * w
-        bond_t  += bond  * w
-        cash_t  += cash  * w
+        # Clase de activo: clasificar fondo entero por tipo (no split Morningstar)
+        if fondo == "VXREPO1":
+            cash_t += 100.0 * w          # VXREPO1 = 100% Reporto
+        elif is_deuda:
+            bond_t += 100.0 * w          # Deuda = 100% Deuda
+        elif is_rv:
+            stock_t += 100.0 * w         # RV = 100% Renta Variable
+        elif is_ciclo:
+            ciclo_t += 100.0 * w         # Ciclo = 100% Ciclo de Vida
 
         if (is_deuda or is_ciclo) and bond > 0:
             bond_w = (bond / 100.0) * w
@@ -1617,24 +2474,124 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
 
         lista.append({
             "fondo": fondo, "serie": serie, "pct": round(pct, 2),
-            "r1m": round(safe_float(d.get("TTR-Return1Mth")), 2),
-            "r3m": round(safe_float(d.get("TTR-Return3Mth")), 2),
-            "ytd": round(safe_float(d.get("TTR-ReturnYTD")),  2),
-            "r1y": round(safe_float(d.get("TTR-Return1Yr")),  2),
-            "r2y": round(safe_float(d.get("TTR-Return2Yr")),  2),
-            "r3y": round(safe_float(d.get("TTR-Return3Yr")),  2),
+            "tipo_fondo": "deuda" if (fondo in FONDOS_DEUDA) else ("rv" if fondo in FONDOS_RV else "ciclo"),
+            "r1m": nav_rend.get("r1m", 0),
+            "r3m": nav_rend.get("r3m", 0),
+            "r6m": nav_rend.get("r6m", 0),
+            "ytd": nav_rend.get("ytd", 0),
+            "r1y": nav_rend.get("r1y", 0),
+            "r2y": nav_rend.get("r2y", 0),
+            "r3y": nav_rend.get("r3y", 0),
+            "days_r1m": nav_rend.get("days_r1m"),
+            "days_r6m": nav_rend.get("days_r6m"),
+            "days_ytd": nav_rend.get("days_ytd"),
+            "days_r1y": nav_rend.get("days_r1y"),
         })
+
+        # ── Look-through: per-fund risk driver mapping ──
+        _dur = safe_float(d.get("PS-EffectiveDuration"))
+        _ytm = safe_float(d.get("PS-YieldToMaturity"))
+        _fund_geo = {}
+        _geo_raw = d.get("RE-RegionalExposure", [])
+        _GEO_MX = {"latin america", "latinoamérica", "méxico", "mexico"}
+        _geo_mx_pct = 0.0
+        if isinstance(_geo_raw, list):
+            for item in _geo_raw:
+                region = item.get("Region", "")
+                val = safe_float(item.get("Value", 0))
+                if region and val > 0:
+                    _fund_geo[region] = round(val, 2)
+                    if region.lower() in _GEO_MX:
+                        _geo_mx_pct += val
+        _geo_us_pct = _fund_geo.get("United States", 0)
+        _geo_nonmx_pct = max(0, 100 - _geo_mx_pct)  # % fuera de MX/LatAm = FX exposure
+
+        _fund_sectors = {}
+        _sector_map_lt = {
+            "GR-TechnologyNet": "Tecnologia", "GR-FinancialServicesNet": "Financiero",
+            "GR-HealthcareNet": "Salud", "GR-CommunicationServicesNet": "Comunicaciones",
+            "GR-IndustrialsNet": "Industriales", "GR-ConsumerCyclicalNet": "Consumo Disc.",
+            "GR-ConsumerDefensiveNet": "Consumo Bas.", "GR-BasicMaterialsNet": "Materiales",
+            "GR-EnergyNet": "Energia", "GR-RealEstateNet": "Bienes Raices",
+            "GR-UtilitiesNet": "Utilidades",
+        }
+        for key, nombre in _sector_map_lt.items():
+            v = safe_float(d.get(key))
+            if v > 0:
+                _fund_sectors[nombre] = round(v, 2)
+
+        _drivers = {}
+        if is_deuda_mxn or fondo == "VXREPO1":
+            # Rate drivers must sum to fund weight: bono_m10 (long-end) + tiie (short-end) = w
+            _dur_scale = min(_dur / 5.0, 1.0) if _dur > 0 else 0.0
+            if fondo == "VXUDIMP":
+                # UDIBONO: split long-end between nominal rates + inflation breakeven
+                _drivers["bono_m10"] = round(w * _dur_scale * 0.5, 4)
+                _drivers["mx_breakeven"] = round(w * _dur_scale * 0.5, 4)
+            else:
+                _drivers["bono_m10"] = round(w * _dur_scale, 4)
+            _tiie_r = w * (1.0 - _dur_scale)
+            if _tiie_r > 0.0001:
+                _drivers["tiie_28d"] = round(_tiie_r, 4)
+        elif is_usd:
+            # Rate drivers must sum to fund weight: ust_10y (long) + remainder = w
+            # FX is a separate overlay dimension (always = w for full USD exposure)
+            _dur_scale = min(_dur / 5.0, 1.0) if _dur > 0 else 0.0
+            _drivers["ust_10y"] = round(w * _dur_scale, 4)
+            _ust_short = w * (1.0 - _dur_scale)
+            if _ust_short > 0.0001:
+                _drivers["ust_10y_short"] = round(_ust_short, 4)
+            _drivers["fx"] = round(w, 4)
+            if fondo in ("VLMXDME", "VXCOBER"):
+                _em_b = _factor_beta_for_fund(fondo, serie, "em_spread")
+                if _em_b > 0.001:
+                    _drivers["em_spread"] = round(w * _em_b, 4)
+        if is_rv or is_ciclo:
+            _stk = stock / 100.0 if stock > 0 else 0
+            _drivers["sp500"] = round(w * _stk * _geo_us_pct / 100, 4) if _geo_us_pct > 0 else 0
+            _drivers["ipc"] = round(w * _stk * _geo_mx_pct / 100, 4) if _geo_mx_pct > 0 else 0
+            _drivers["fx"] = round(w * _stk * _geo_nonmx_pct / 100, 4)
+            _vix_b = _factor_beta_for_fund(fondo, serie, "vix")
+            _drivers["vix"] = round(w * _stk * _vix_b, 4)
+            # Gold/Oil: only show if fund has real sector exposure (Morningstar)
+            # Energy >10% → oil driver; Materials >15% → gold driver
+            # Broad equity funds (VALMX28, ACWI, etc.) don't have meaningful commodity exposure
+            _energy_pct = safe_float(d.get("GR-EnergyNet"))
+            _materials_pct = safe_float(d.get("GR-BasicMaterialsNet"))
+            if _energy_pct > 10:
+                _oil_b = _factor_beta_for_fund(fondo, serie, "oil")
+                if _oil_b > 0.001:
+                    _drivers["oil"] = round(w * _stk * _oil_b, 4)
+            if _materials_pct > 15:
+                _gold_b = _factor_beta_for_fund(fondo, serie, "gold")
+                if _gold_b > 0.001:
+                    _drivers["gold"] = round(w * _stk * _gold_b, 4)
+
+        # Remove zero drivers
+        _drivers = {k: v for k, v in _drivers.items() if abs(v) > 0.0001}
+
+        fund_lookthrough[fondo] = {
+            "weight": round(pct, 2),
+            "tipo": "deuda_mxn" if (is_deuda_mxn or fondo == "VXREPO1") else ("deuda_usd" if is_usd else ("rv" if is_rv else "ciclo")),
+            "asset_alloc": {"stock": round(stock, 1), "bond": round(bond, 1), "cash": round(cash, 1)},
+            "ccy": "USD" if is_usd else "MXN",
+            "duration": round(_dur, 2),
+            "ytm": round(_ytm, 2),
+            "geo": _fund_geo,
+            "sectors": _fund_sectors,
+            "drivers": _drivers,
+        }
 
         # Backtesting: serie histórica NAV de Morningstar
         fondo_bt = get_fondo_backtesting(fondo, serie)
         if fondo_bt:
             fondo_bt_series = {pt["fecha"]: pt["valor"] for pt in fondo_bt}
-            bt_components.append({"weight": w, "series": fondo_bt_series, "is_repo": False})
+            bt_components.append({"weight": w, "series": fondo_bt_series, "is_repo": False, "name": fondo})
 
     # ── Reporto directo ──
     for repo_cfg, es_usd, label_corto in [
-        (repo_mxn, False, "MD MXP"),
-        (repo_usd, True,  "MD USD"),
+        (repo_mxn, False, "Reporto MXN"),
+        (repo_usd, True,  "Reporto USD"),
     ]:
         if not repo_cfg:
             continue
@@ -1649,7 +2606,7 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
         r1y += rend["r1y"] * w; r2y += rend["r2y"] * w; r3y += rend["r3y"] * w
         repo_bt_series = {pt["fecha"]: pt["valor"] for pt in rend.get("backtesting", [])}
         if repo_bt_series:
-            bt_components.append({"weight": w, "series": repo_bt_series, "is_repo": True})
+            bt_components.append({"weight": w, "series": repo_bt_series, "is_repo": True, "name": label_corto})
         cash_t += 100.0 * w
         if es_usd:
             dur_usd_num += 0.0 * w; ytm_usd_num += tasa * w; bond_usd_denom += w
@@ -1658,11 +2615,29 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
             dur_mxn_num += 0.0 * w; ytm_mxn_num += tasa * w; bond_mxn_denom += w
             cred_mxn[SP_RATING_MXN] = cred_mxn.get(SP_RATING_MXN, 0) + 100 * w
         supersec_acc["Reporto"] = supersec_acc.get("Reporto", 0) + 100 * w
+        _today = date.today()
+        _days_ytd = (_today - date(_today.year, 1, 1)).days or 1
         lista.append({"fondo": label_corto, "serie": "—", "pct": round(pct, 2),
-                      "r1m": round(rend["r1m"], 2), "r3m": round(rend["r3m"], 2),
-                      "ytd": round(rend["ytd"], 2),
-                      "r1y": round(rend["r1y"], 2), "r2y": round(rend["r2y"], 2),
-                      "r3y": round(rend["r3y"], 2)})
+                      "r1m": round(rend["r1m"], 6), "r3m": round(rend["r3m"], 6),
+                      "r6m": round(rend["r6m"], 6), "ytd": round(rend["ytd"], 6),
+                      "r1y": round(rend["r1y"], 6), "r2y": round(rend["r2y"], 6),
+                      "r3y": round(rend["r3y"], 6),
+                      "days_r1m": 30, "days_r6m": 182, "days_ytd": _days_ytd})
+        # Look-through for Reporto — rate driver = full weight
+        _repo_drivers = {}
+        if es_usd:
+            _repo_drivers["fx"] = round(w, 4)
+            _repo_drivers["ust_10y_short"] = round(w, 4)
+        else:
+            _repo_drivers["tiie_28d"] = round(w, 4)
+        fund_lookthrough[label_corto] = {
+            "weight": round(pct, 2), "tipo": "reporto",
+            "asset_alloc": {"stock": 0, "bond": 0, "cash": 100},
+            "ccy": "USD" if es_usd else "MXN",
+            "duration": 0, "ytm": round(tasa, 2),
+            "geo": {}, "sectors": {},
+            "drivers": {k: v for k, v in _repo_drivers.items() if abs(v) > 0.0001},
+        }
 
     # ── Acciones & ETFs (Yahoo Finance) ──
     for acc in (acciones or []):
@@ -1677,22 +2652,25 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
 
         r1m += (yfd.get("r1m") or 0) * w
         r3m += (yfd.get("r3m") or 0) * w
+        r6m += (yfd.get("r6m") or 0) * w
         ytd += (yfd.get("ytd") or 0) * w
         r1y += (yfd.get("r1y") or 0) * w
         r2y += (yfd.get("r2y") or 0) * w
         r3y += (yfd.get("r3y") or 0) * w
         if yfd.get("tipo") == "ETF":
             etf_t += 100 * w
+        elif yfd.get("tipo") == "Índice":
+            indice_t += 100 * w
         else:
             accion_t += 100 * w
 
-        display_tk = yfd.get("ticker", ticker).replace(".MX", "")
+        display_tk = yfd.get("ticker", ticker).replace(".MX", "").lstrip("^")
         lista.append({
             "fondo": display_tk, "serie": yfd.get("tipo", "Acción"), "pct": round(pct, 2),
-            "r1m": round(yfd.get("r1m") or 0, 2), "r3m": round(yfd.get("r3m") or 0, 2),
-            "ytd": round(yfd.get("ytd") or 0, 2),
-            "r1y": round(yfd.get("r1y") or 0, 2), "r2y": round(yfd.get("r2y") or 0, 2),
-            "r3y": round(yfd.get("r3y") or 0, 2),
+            "r1m": round(yfd.get("r1m") or 0, 6), "r3m": round(yfd.get("r3m") or 0, 6),
+            "r6m": round(yfd.get("r6m") or 0, 6), "ytd": round(yfd.get("ytd") or 0, 6),
+            "r1y": round(yfd.get("r1y") or 0, 6), "r2y": round(yfd.get("r2y") or 0, 6),
+            "r3y": round(yfd.get("r3y") or 0, 6),
         })
 
         # Sectores
@@ -1709,10 +2687,100 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
         elif yfd.get("pais"):
             geo_acc[yfd["pais"]] = geo_acc.get(yfd["pais"], 0) + 100 * w
 
+        # Look-through for Acciones/ETFs
+        _acc_is_usd = not ticker.endswith(".MX")
+        _acc_geo = yfd.get("geo", {})
+        _acc_mx = sum(v for k, v in _acc_geo.items() if k.lower() in ("méxico", "mexico", "latin america")) if _acc_geo else (100 if ticker.endswith(".MX") else 0)
+        _acc_us = _acc_geo.get("United States", _acc_geo.get("united states", 0)) if _acc_geo else (100 if not ticker.endswith(".MX") else 0)
+        # Factor betas via multivariate regression: [gold, oil, (fx)]
+        # Gold and oil compete with each other (avoiding cross-attribution),
+        # but sp500 is NOT included — it would absorb all variance for equity ETFs
+        # and hide real commodity exposure embedded in the index constituents.
+        # VIX computed univariate (abs beta) since it's inversely correlated with equities.
+        _acc_vix_beta = 0.0
+        _acc_oil_beta = 0.0
+        _acc_gold_beta = 0.0
+        try:
+            _use_usd = bool(yfd.get("historico_usd"))
+            _acc_hist = yfd.get("historico_usd") if _use_usd else yfd.get("historico", [])
+            if not _acc_hist or len(_acc_hist) < 60:
+                _acc_hist = yfd.get("historico", [])
+                _use_usd = False
+            if _acc_hist and len(_acc_hist) >= 60:
+                _facs = _fetch_factor_series()
+                _ps = pd.Series({pd.Timestamp(p["fecha"]): p["valor"] for p in _acc_hist}).sort_index()
+                _mr = _ps.resample("ME").last().pct_change().dropna()
+                # Multivariate for gold/oil: [gold, oil, (fx for MXN assets)]
+                _fkeys = ["gold", "oil"]
+                if not _use_usd:
+                    _fkeys.append("fx")
+                _fm_dict = {}
+                for fk in _fkeys + ["vix"]:
+                    fs = _facs.get(fk)
+                    if fs is not None and len(fs) >= 60:
+                        _fm_dict[fk] = fs.resample("ME").last().pct_change().dropna()
+                if "gold" in _fm_dict and "oil" in _fm_dict:
+                    _common = _mr.index
+                    for fk in _fkeys:
+                        if fk in _fm_dict:
+                            _common = _common.intersection(_fm_dict[fk].index)
+                    _common = sorted(_common)[-24:]
+                    if len(_common) >= 12:
+                        _y = _mr.loc[_common].values
+                        _X = np.column_stack([_fm_dict[fk].loc[_common].values for fk in _fkeys])
+                        try:
+                            _betas = np.linalg.solve(_X.T @ _X + 1e-8 * np.eye(len(_fkeys)), _X.T @ _y)
+                            # gold=0, oil=1 in _fkeys
+                            _acc_gold_beta = round(min(max(_betas[0], 0), 2.0), 4)
+                            _acc_oil_beta = round(min(max(_betas[1], 0), 2.0), 4)
+                        except np.linalg.LinAlgError:
+                            pass
+                        # VIX: univariate
+                        if "vix" in _fm_dict:
+                            _vix_common = sorted(_mr.index.intersection(_fm_dict["vix"].index))[-24:]
+                            if len(_vix_common) >= 12:
+                                _vy = _mr.loc[_vix_common].values
+                                _vx = _fm_dict["vix"].loc[_vix_common].values
+                                _vcov = float(np.cov(_vy, _vx)[0, 1])
+                                _vvar = float(np.var(_vx, ddof=1))
+                                if _vvar > 1e-10:
+                                    _acc_vix_beta = round(min(abs(_vcov / _vvar), 2.0), 4)
+        except Exception as _e:
+            print(f"[ACC-BETA-MV] {ticker}: {_e}")
+        # sp500/ipc use geographic allocation (ETF provider data, domicile-based)
+        # Beta regression is distorted by FX conversion (MXN) creating spurious correlations
+        # Gold/Oil: only show if real sector exposure (Energy >10% for oil, Materials >15% for gold)
+        # Broad equity ETFs (ACWI, SPY, QQQ) don't have meaningful commodity exposure
+        _acc_sectors = yfd.get("sectores") or {}
+        _acc_energy = sum(v for s, v in _acc_sectors.items() if "energ" in s.lower()) if _acc_sectors else 0
+        _acc_materials = sum(v for s, v in _acc_sectors.items() if "material" in s.lower() or "miner" in s.lower()) if _acc_sectors else 0
+        # For single stocks, check sector directly
+        _acc_sector_single = (yfd.get("sector") or "").lower()
+        _show_oil = _acc_energy > 10 or "energ" in _acc_sector_single
+        _show_gold = _acc_materials > 15 or "miner" in _acc_sector_single or "metal" in _acc_sector_single
+        _acc_drivers = {
+            "sp500": round(w * _acc_us / 100, 4) if _acc_us > 0 else 0,
+            "ipc": round(w * _acc_mx / 100, 4) if _acc_mx > 0 else 0,
+            "fx": round(w * (100 - _acc_mx) / 100, 4) if _acc_is_usd or _acc_mx < 100 else 0,
+            "vix": round(w * _acc_vix_beta, 4),
+            "oil": round(w * _acc_oil_beta, 4) if _show_oil else 0,
+            "gold": round(w * _acc_gold_beta, 4) if _show_gold else 0,
+        }
+        fund_lookthrough[display_tk] = {
+            "weight": round(pct, 2),
+            "tipo": yfd.get("tipo", "Accion").lower(),
+            "asset_alloc": {"stock": 100, "bond": 0, "cash": 0},
+            "ccy": "USD" if _acc_is_usd else "MXN",
+            "duration": 0, "ytm": 0,
+            "geo": {k: round(v, 1) for k, v in (_acc_geo or {}).items() if v > 0},
+            "sectors": {k: round(v, 1) for k, v in (yfd.get("sectores") or {}).items() if v > 0},
+            "drivers": {k: v for k, v in _acc_drivers.items() if abs(v) > 0.0001},
+        }
+
         # Backtesting: serie individual del componente
         acc_bt_series = {pt["fecha"]: pt["valor"] for pt in yfd.get("historico", [])}
         if acc_bt_series:
-            bt_components.append({"weight": w, "series": acc_bt_series, "is_repo": False})
+            bt_components.append({"weight": w, "series": acc_bt_series, "is_repo": False, "name": display_tk})
 
     def filter_pct(d, min_pct=1.0, translate=None):
         t = sum(d.values()) or 1
@@ -1746,98 +2814,228 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
     # entre componentes activos. Todo arranca base 100.
     bt_portafolio = {}
     bt_repo_filtered = {}
+    historical_scenarios = {}
 
     if bt_components:
+        # Interpolar series mensuales a diarias para suavizar backtesting
+        for comp in bt_components:
+            dates_sorted = sorted(comp["series"].keys())
+            if len(dates_sorted) >= 2:
+                # Keys pueden ser str "yyyy-mm-dd" o date objects
+                def _to_date(d):
+                    return date.fromisoformat(d) if isinstance(d, str) else d
+                d_objs = [_to_date(d) for d in dates_sorted]
+                gaps = [(d_objs[i+1] - d_objs[i]).days for i in range(min(5, len(d_objs)-1))]
+                avg_gap = sum(gaps) / len(gaps) if gaps else 1
+                if avg_gap > 20:
+                    new_series = {}
+                    for k in range(len(dates_sorted) - 1):
+                        key0, key1 = dates_sorted[k], dates_sorted[k+1]
+                        d0, d1 = d_objs[k], d_objs[k+1]
+                        v0, v1 = comp["series"][key0], comp["series"][key1]
+                        delta_days = (d1 - d0).days
+                        for day_offset in range(delta_days):
+                            d = d0 + timedelta(days=day_offset)
+                            # Usar mismo tipo de key que el original
+                            dk = d.isoformat() if isinstance(key0, str) else d
+                            new_series[dk] = round(v0 + (v1 - v0) * day_offset / delta_days, 6)
+                    new_series[dates_sorted[-1]] = comp["series"][dates_sorted[-1]]
+                    comp["series"] = new_series
+
         # Todas las fechas únicas de todos los componentes
         all_dates = sorted(set(d for c in bt_components for d in c["series"]))
+        has_any_repo = any(c["is_repo"] for c in bt_components)
 
-        # Aplicar rango: inicio = max(fecha_config, primer dato disponible)
-        f_ini = bt_fecha_ini or all_dates[0]
-        f_fin = bt_fecha_fin or all_dates[-1]
-        all_dates = [d for d in all_dates if d <= f_fin]
-        # Si fecha_ini es anterior al primer dato, ajustar al inception
-        if f_ini < all_dates[0]:
-            f_ini = all_dates[0]
-        all_dates = [d for d in all_dates if d >= f_ini]
-
+        # ── PASO 1: Compute FULL bt (all dates, no filter) ──
+        # Needed for historical scenarios that must always be available
+        bt_full = {}
+        repo_full = {}
         if all_dates:
-            port_value = 100.0
-            repo_value = 100.0
-            comp_prev = {}   # j → valor base-100 en el período anterior
-            has_any_repo = any(c["is_repo"] for c in bt_components)
+            pv_full = 100.0
+            rv_full = 100.0
+            cp_full = {}
 
             for i, fecha in enumerate(all_dates):
-                # Actualizar valores conocidos (forward-fill implícito: comp_prev retiene último)
-                comp_now = {}
+                cn = {}
                 for j, comp in enumerate(bt_components):
                     if fecha in comp["series"]:
-                        comp_now[j] = comp["series"][fecha]
-                    elif j in comp_prev:
-                        comp_now[j] = comp_prev[j]  # forward-fill
+                        cn[j] = comp["series"][fecha]
+                    elif j in cp_full:
+                        cn[j] = cp_full[j]
 
                 if i == 0:
-                    bt_portafolio[fecha] = 100.0
+                    bt_full[fecha] = 100.0
                     if has_any_repo:
-                        bt_repo_filtered[fecha] = 100.0
-                    comp_prev = comp_now
+                        repo_full[fecha] = 100.0
+                    cp_full = cn
                     continue
 
-                # Retornos: solo de componentes activos en AMBOS períodos
-                returns_all  = []
-                returns_repo = []
-                for j in comp_now:
-                    if j in comp_prev and comp_prev[j] > 0:
-                        ret = (comp_now[j] / comp_prev[j]) - 1
-                        returns_all.append((j, ret))
+                ra = []
+                rr = []
+                for j in cn:
+                    if j in cp_full and cp_full[j] > 0:
+                        ret = (cn[j] / cp_full[j]) - 1
+                        ra.append((j, ret))
                         if bt_components[j]["is_repo"]:
-                            returns_repo.append((j, ret))
+                            rr.append((j, ret))
 
-                # Portafolio holístico: pesos re-normalizados entre activos
-                if returns_all:
-                    total_w = sum(bt_components[j]["weight"] for j, _ in returns_all)
-                    if total_w > 0:
-                        w_ret = sum((bt_components[j]["weight"] / total_w) * r for j, r in returns_all)
-                        port_value *= (1 + w_ret)
-                bt_portafolio[fecha] = round(port_value, 4)
+                if ra:
+                    tw = sum(bt_components[j]["weight"] for j, _ in ra)
+                    if tw > 0:
+                        wr = sum((bt_components[j]["weight"] / tw) * r for j, r in ra)
+                        pv_full *= (1 + wr)
+                bt_full[fecha] = round(pv_full, 4)
 
-                # Línea de solo repos (referencia)
-                if returns_repo and has_any_repo:
-                    total_rw = sum(bt_components[j]["weight"] for j, _ in returns_repo)
-                    if total_rw > 0:
-                        rw_ret = sum((bt_components[j]["weight"] / total_rw) * r for j, r in returns_repo)
-                        repo_value *= (1 + rw_ret)
-                    bt_repo_filtered[fecha] = round(repo_value, 4)
+                if rr and has_any_repo:
+                    trw = sum(bt_components[j]["weight"] for j, _ in rr)
+                    if trw > 0:
+                        rwr = sum((bt_components[j]["weight"] / trw) * r for j, r in rr)
+                        rv_full *= (1 + rwr)
+                    repo_full[fecha] = round(rv_full, 4)
 
-                comp_prev = comp_now
+                cp_full = cn
 
-    return {
+        # ── PASO 2: Historical scenarios from FULL bt (always available) ──
+        def _full_period_ret(start, end):
+            fdates = sorted(bt_full.keys())
+            sp = next(((f, bt_full[f]) for f in fdates if f >= start), None)
+            ep = next(((f, bt_full[f]) for f in reversed(fdates) if f <= end), None)
+            if not sp or not ep or sp[1] <= 0:
+                return None
+            return round(ep[1] / sp[1] - 1, 6)
+
+        historical_scenarios = {
+            "gfc2008":      _full_period_ret('2008-09-01', '2009-03-09'),
+            "mxDowngrade":  _full_period_ret('2019-12-01', '2020-04-30'),
+            "covid":        _full_period_ret('2020-02-19', '2020-03-23'),
+            "bankCrisis":   _full_period_ret('2023-03-06', '2023-03-15'),
+            "bankRecovery": _full_period_ret('2023-03-15', '2023-06-30'),
+            "tariffCrisis": _full_period_ret('2025-02-01', '2025-04-30'),
+        }
+
+        # ── PASO 2b: Fund-level risk contribution (Euler decomposition) ──
+        fund_risk_contrib = {}
+        try:
+            # Build monthly returns per component
+            comp_monthly = {}  # {comp_idx: {yyyy-mm: monthly_ret}}
+            for ci, comp in enumerate(bt_components):
+                sd = sorted(comp["series"].keys())
+                if len(sd) < 2:
+                    continue
+                monthly_vals = {}
+                for d in sd:
+                    ym = d[:7]
+                    monthly_vals[ym] = comp["series"][d]
+                months_sorted = sorted(monthly_vals.keys())
+                rets = {}
+                for mi in range(1, len(months_sorted)):
+                    prev_v = monthly_vals[months_sorted[mi - 1]]
+                    curr_v = monthly_vals[months_sorted[mi]]
+                    if prev_v > 0:
+                        rets[months_sorted[mi]] = curr_v / prev_v - 1
+                if rets:
+                    comp_monthly[ci] = rets
+
+            # Use only components with return data; find common months
+            valid_idx = sorted(comp_monthly.keys())
+            if len(valid_idx) >= 2:
+                common_months = sorted(set.intersection(*[set(comp_monthly[ci].keys()) for ci in valid_idx]))
+                if len(common_months) >= 6:
+                    n = len(valid_idx)
+                    weights = np.array([bt_components[ci]["weight"] for ci in valid_idx])
+                    weights = weights / weights.sum()
+                    ret_matrix = np.array([[comp_monthly[ci][m] for m in common_months] for ci in valid_idx])
+                    cov = np.cov(ret_matrix) * 12
+                    port_vol = np.sqrt(float(weights @ cov @ weights))
+                    if port_vol > 1e-10:
+                        marginal = cov @ weights / port_vol
+                        rc = weights * marginal
+                        total_rc = rc.sum()
+                        for i, ci in enumerate(valid_idx):
+                            pct_rc = rc[i] / total_rc if abs(total_rc) > 1e-10 else 0
+                            name = bt_components[ci].get("name", f"Comp {ci}")
+                            fund_risk_contrib[name] = round(float(pct_rc), 4)
+            elif len(valid_idx) == 1:
+                # Single component = 100% risk
+                ci = valid_idx[0]
+                name = bt_components[ci].get("name", f"Comp {ci}")
+                fund_risk_contrib[name] = 1.0
+        except Exception as frc_err:
+            print(f"[FUND-RISK-CONTRIB] Error: {frc_err}")
+            import traceback; traceback.print_exc()
+
+        # ── PASO 3: Apply date filter + rebase for main bt_portafolio ──
+        f_ini = bt_fecha_ini or all_dates[0]
+        f_fin = bt_fecha_fin or all_dates[-1]
+        filtered_dates = [d for d in all_dates if d <= f_fin]
+        if filtered_dates and f_ini < filtered_dates[0]:
+            f_ini = filtered_dates[0]
+        filtered_dates = [d for d in filtered_dates if d >= f_ini]
+
+        if filtered_dates:
+            base_port = bt_full.get(filtered_dates[0], 100)
+            base_repo = None
+            for d in filtered_dates:
+                if base_port > 0:
+                    bt_portafolio[d] = round(bt_full[d] / base_port * 100, 4)
+                if has_any_repo and d in repo_full:
+                    if base_repo is None:
+                        base_repo = repo_full[d]
+                    if base_repo and base_repo > 0:
+                        bt_repo_filtered[d] = round(repo_full[d] / base_repo * 100, 4)
+
+    # ── Build risk driver matrix from fund_lookthrough ──
+    _driver_labels = {
+        "fx": "FX (MXN/USD)", "sp500": "S&P 500", "ipc": "IPC",
+        "bono_m10": "Bono M10", "ust_10y": "UST 10Y", "ust_10y_short": "UST CP",
+        "tiie_28d": "TIIE", "vix": "VIX", "oil": "Petroleo", "gold": "Oro",
+        "em_spread": "EM Spread", "mx_breakeven": "Breakeven MX",
+    }
+    _all_drivers = set()
+    for fl in fund_lookthrough.values():
+        _all_drivers.update(fl.get("drivers", {}).keys())
+    _driver_order = [d for d in ["fx","sp500","ipc","bono_m10","ust_10y","ust_10y_short","tiie_28d","vix","oil","gold","em_spread","mx_breakeven"] if d in _all_drivers]
+    _fund_order = sorted(fund_lookthrough.keys(), key=lambda f: -fund_lookthrough[f]["weight"])
+    risk_driver_matrix = {
+        "funds": _fund_order,
+        "drivers": [_driver_labels.get(d, d) for d in _driver_order],
+        "driver_keys": _driver_order,
+        "values": [[fund_lookthrough[f]["drivers"].get(d, 0) for d in _driver_order] for f in _fund_order],
+    }
+
+    result = {
         "ok": True,
         "rendimientos": {
-            "mtd":round(r1m,2),"r3m":round(r3m,2),
-            "ytd":round(ytd,2),"r1y":round(r1y,2),
-            "r2y":round(r2y,2),"r3y":round(r3y,2),
+            "mtd":round(r1m,6),"r3m":round(r3m,6),
+            "r6m":round(r6m,6),
+            "ytd":round(ytd,6),"r1y":round(r1y,6),
+            "r2y":round(r2y,6),"r3y":round(r3y,6),
         },
         "clase_activos": (lambda: {
             "labels": [l for l, v in [
+                ("Reporto", round(cash_t, 2)),
                 ("Deuda", round(bond_t, 2)),
                 ("Renta Variable", round(stock_t, 2)),
+                ("Ciclo de Vida", round(ciclo_t, 2)),
                 ("Acciones", round(accion_t, 2)),
                 ("ETF", round(etf_t, 2)),
-                ("Reporto", round(cash_t, 2)),
+                ("Índice", round(indice_t, 2)),
             ] if v > 0],
             "values": [v for _, v in [
+                ("Reporto", round(cash_t, 2)),
                 ("Deuda", round(bond_t, 2)),
                 ("Renta Variable", round(stock_t, 2)),
+                ("Ciclo de Vida", round(ciclo_t, 2)),
                 ("Acciones", round(accion_t, 2)),
                 ("ETF", round(etf_t, 2)),
-                ("Reporto", round(cash_t, 2)),
+                ("Índice", round(indice_t, 2)),
             ] if v > 0],
         })(),
         "composicion": sorted(lista, key=lambda x: -x["pct"]),
         "geo":           filter_pct(geo_acc, translate=GEO_TRANSLATE),
         "sectores":      filter_pct(sec_acc),
         "supersectores": filter_pct(supersec_acc),
-        "has_rv":        stock_t + accion_t + etf_t > 0,
+        "has_rv":        stock_t + accion_t + etf_t + indice_t > 0,
         "has_deuda":     has_mxn or has_usd,
         "bt_repo":       sorted(
             [{"fecha": f, "valor": round(v, 4)} for f, v in bt_repo_filtered.items()],
@@ -1852,12 +3050,50 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
             "dur_mxn":  round(dur_mxn_num / bond_mxn_denom, 2) if has_mxn else 0,
             "ytm_mxn":  round(ytm_mxn_num / bond_mxn_denom, 2) if has_mxn else 0,
             "cred_mxn": weighted_credit_rating(cred_mxn) if cred_mxn else "—",
+            "pct_mxn":  round(bond_mxn_denom * 100, 2) if has_mxn else 0,
             "has_usd":  has_usd,
             "dur_usd":  round(dur_usd_num / bond_usd_denom, 2) if has_usd else 0,
             "ytm_usd":  round(ytm_usd_num / bond_usd_denom, 2) if has_usd else 0,
             "cred_usd": weighted_credit_rating(cred_usd) if cred_usd else "—",
+            "pct_usd":  round(bond_usd_denom * 100, 2) if has_usd else 0,
         },
+        "historical_scenarios": historical_scenarios,
+        "fund_risk_contrib": fund_risk_contrib,
+        "fund_lookthrough": fund_lookthrough,
+        "risk_driver_matrix": risk_driver_matrix,
     }
+
+    # Compute real factor betas from regression
+    # Use bt_full (full history) for maximum data → most stable betas and covariance
+    try:
+        _bt_src = bt_full if bt_full else bt_portafolio
+        print(f"[BETAS] bt_src type={type(_bt_src).__name__} len={len(_bt_src)}")
+        result["betas"] = compute_factor_betas(_bt_src)
+        print(f"[BETAS] result keys={list(result['betas'].keys())[:5]}... len={len(result['betas'])}")
+    except Exception as e:
+        import traceback
+        print(f"[BETAS] Error in calcular_portafolio: {e}")
+        traceback.print_exc()
+        result["betas"] = {}
+
+    # Compute average CETES 28d rate over BT period as Rf
+    try:
+        bt_dates = sorted(bt_portafolio.keys()) if bt_portafolio else []
+        if bt_dates:
+            cetes_raw = _banxico_serie_rango(SERIE_CETES28, bt_dates[0], bt_dates[-1])
+            cetes_vals = [d["valor"] for d in cetes_raw if d.get("valor") is not None]
+            if cetes_vals:
+                result["rf_annual"] = round(sum(cetes_vals) / len(cetes_vals) / 100, 6)
+                print(f"[RF] CETES avg {result['rf_annual']*100:.2f}% over {bt_dates[0]} to {bt_dates[-1]} ({len(cetes_vals)} obs)")
+            else:
+                result["rf_annual"] = 0.10
+        else:
+            result["rf_annual"] = 0.10
+    except Exception as e:
+        print(f"[RF] Error computing CETES avg: {e}")
+        result["rf_annual"] = 0.10
+
+    return result
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1893,7 +3129,53 @@ def _check_login_rate_limit(ip):
     _login_attempts[ip] = (1, now)
     return True
 
-_TICKER_RE = re.compile(r'^[A-Za-z0-9.&]{1,20}$')
+_TICKER_RE = re.compile(r'^[A-Za-z0-9.&Ññ^]{1,20}$')
+
+# Aliases para índices — el usuario escribe sin ^ y el sistema lo resuelve
+INDEX_ALIASES = {
+    "MXX":   "^MXX",    # S&P/BMV IPC
+    "GSPC":  "^GSPC",   # S&P 500
+    "SPX":   "^GSPC",   # S&P 500 (alias Bloomberg)
+    "DJI":   "^DJI",    # Dow Jones
+    "IXIC":  "^IXIC",   # NASDAQ Composite
+    "RUT":   "^RUT",    # Russell 2000
+    "VIX":   "^VIX",    # CBOE Volatility
+    "FTSE":  "^FTSE",   # FTSE 100
+    "N225":  "^N225",   # Nikkei 225
+    "HSI":   "^HSI",    # Hang Seng
+}
+
+# Metadata de índices — moneda, geo y sectores aproximados
+INDEX_META = {
+    "^MXX": {
+        "moneda": "MXN",
+        "geo": {"Latin America": 100.0},
+        "sec": {
+            "Financiero": 25.0, "Consumo Básico": 20.0, "Materiales": 15.0,
+            "Comunicaciones": 12.0, "Industriales": 10.0, "Consumo Discrecional": 8.0,
+            "Energía": 5.0, "Salud": 3.0, "Bienes Raíces": 2.0,
+        },
+    },
+    "^GSPC": {
+        "moneda": "USD",
+        "geo": {"United States": 100.0},
+        "sec": {
+            "Tecnología": 33.0, "Financiero": 13.0, "Salud": 12.0,
+            "Consumo Discrecional": 10.0, "Comunicaciones": 9.0, "Industriales": 9.0,
+            "Consumo Básico": 6.0, "Energía": 3.5, "Utilidades": 2.5, "Bienes Raíces": 2.0,
+        },
+    },
+    "^DJI": {
+        "moneda": "USD",
+        "geo": {"United States": 100.0},
+        "sec": {"Financiero": 22.0, "Tecnología": 20.0, "Salud": 18.0, "Industriales": 15.0, "Consumo Discrecional": 13.0, "Energía": 5.0, "Otros": 7.0},
+    },
+    "^IXIC": {
+        "moneda": "USD",
+        "geo": {"United States": 100.0},
+        "sec": {"Tecnología": 55.0, "Comunicaciones": 15.0, "Consumo Discrecional": 13.0, "Salud": 8.0, "Financiero": 4.0, "Otros": 5.0},
+    },
+}
 
 def _valid_ticker(t: str) -> bool:
     return bool(_TICKER_RE.match(t))
@@ -1998,6 +3280,19 @@ def api_accion_validate():
     db_key    = ticker.replace(".MX", "")
     # Normalizar caracteres especiales BMV (ñ/Ñ → & para Yahoo Finance)
     db_key    = db_key.replace("Ñ", "&").replace("ñ", "&")
+
+    # Índices: resolver alias (MXX → ^MXX, SPX → ^GSPC, etc.)
+    if db_key in INDEX_ALIASES:
+        idx_ticker = INDEX_ALIASES[db_key]
+        data = get_accion_yf(idx_ticker)
+        if data:
+            return jsonify({"ok": True, "data": data, "fuente": "yahoo_index"})
+    # Índices con ^ explícito (^MXX, ^GSPC, etc.)
+    if ticker.startswith("^"):
+        data = get_accion_yf(ticker)
+        if data:
+            return jsonify({"ok": True, "data": data, "fuente": "yahoo_index"})
+
     mx_ticker = db_key + ".MX"
 
     # 1. Yahoo Finance SIC — ticker con .MX (MXN), precio más preciso
@@ -2059,9 +3354,9 @@ def api_propuesta():
 # ─────────────────────────────────────────────────────────────────────────────
 # MACRO
 # ─────────────────────────────────────────────────────────────────────────────
-BANXICO_TOKEN = os.environ.get("BANXICO_TOKEN", "")
+BANXICO_TOKEN = os.environ.get("BANXICO_TOKEN", "") or "592b06934a31710cba9e9a6efebec12c1fe432f5459fc87e7f473380fa0a1d3a"
 BANXICO_BASE  = "https://www.banxico.org.mx/SieAPIRest/service/v1/series"
-FRED_API_KEY  = os.environ.get("FRED_API_KEY", "")
+FRED_API_KEY  = os.environ.get("FRED_API_KEY", "") or "1a6dadbec2267dd21b3ad5d6447ed711"
 FRED_BASE     = "https://api.stlouisfed.org/fred/series/observations"
 
 SERIE_TIIE28  = "SF43783"
@@ -2070,7 +3365,6 @@ SERIE_CETES28 = "SF60633"
 SERIE_FONDEO  = "SF43936"
 SERIE_USD_REPO = "SOFR"
 
-_macro_cache = {}; _macro_ts = 0
 _hist_cache = {}; _hist_cache_ts = 0
 
 
@@ -2107,7 +3401,7 @@ def _get_datos_hist(es_usd):
     global _hist_cache, _hist_cache_ts
     cache_key = "usd" if es_usd else "mxn"
     now = time.time()
-    if cache_key in _hist_cache and (now - _hist_cache_ts) < 14400:
+    if cache_key in _hist_cache and not _cache_expired(_hist_cache_ts):
         return _hist_cache[cache_key]
     hoy = date.today(); ini = "2000-01-01"; fin = hoy.isoformat()
     if es_usd:
@@ -2153,8 +3447,12 @@ def get_repo_rendimientos(tasa_neta, es_usd):
     datos = _get_datos_hist(es_usd)
     if not datos:
         anual = tasa_neta
-        return {"r1m":round(anual/12,2),"r3m":round(anual/4,2),"r6m":round(anual/2,2),
-                "ytd":round(anual/12,2),"r1y":round(anual,2),"r2y":round(anual,2),"r3y":round(anual,2),"backtesting":[]}
+        # Effective cumulative approximation from annual rate
+        r1y_eff = round(anual, 6)
+        r2y_eff = round(((1 + anual/100)**2 - 1) * 100, 6)
+        r3y_eff = round(((1 + anual/100)**3 - 1) * 100, 6)
+        return {"r1m":round(anual/12,6),"r3m":round(anual/4,6),"r6m":round(anual/2,6),
+                "ytd":round(anual/12,6),"r1y":r1y_eff,"r2y":r2y_eff,"r3y":r3y_eff,"backtesting":[]}
     hoy = date.today(); tasa_ref_hoy = datos[-1]["valor"]; spread = tasa_ref_hoy - tasa_neta
     def componer_acum(desde):
         acum = 1.0; ultimo = None; rango = [d for d in datos if d["fecha"] >= desde]
@@ -2170,8 +3468,8 @@ def get_repo_rendimientos(tasa_neta, es_usd):
         return acum - 1
     def anualizar(acum_dec, años):
         if acum_dec <= -1: return -100.0
-        return round(((1 + acum_dec) ** (1 / años) - 1) * 100, 2)
-    def efectivo(acum_dec): return round(acum_dec * 100, 2)
+        return round(((1 + acum_dec) ** (1 / años) - 1) * 100, 6)
+    def efectivo(acum_dec): return round(acum_dec * 100, 6)
     inicio_ytd = date(hoy.year, 1, 1)
     ini_back = date(2000, 1, 1)
     if datos and datos[0]["fecha"] > ini_back: ini_back = datos[0]["fecha"]
@@ -2189,8 +3487,8 @@ def get_repo_rendimientos(tasa_neta, es_usd):
         d_cur += timedelta(days=1)
     return {"r1m":efectivo(componer_acum(hoy-timedelta(days=30))),"r3m":efectivo(componer_acum(hoy-timedelta(days=91))),
             "r6m":efectivo(componer_acum(hoy-timedelta(days=182))),"ytd":efectivo(componer_acum(inicio_ytd)),
-            "r1y":anualizar(componer_acum(hoy-timedelta(days=365)),1.0),"r2y":anualizar(componer_acum(hoy-timedelta(days=730)),2.0),
-            "r3y":anualizar(componer_acum(hoy-timedelta(days=1095)),3.0),"backtesting":bt_puntos}
+            "r1y":efectivo(componer_acum(hoy-timedelta(days=365))),"r2y":efectivo(componer_acum(hoy-timedelta(days=730))),
+            "r3y":efectivo(componer_acum(hoy-timedelta(days=1095))),"backtesting":bt_puntos}
 
 
 def get_banxico_dato(serie_id):
@@ -2204,6 +3502,616 @@ def get_banxico_dato(serie_id):
     except Exception as e:
         print(f"[BANXICO ERROR] {serie_id}: {e}")
         return None
+
+
+# ── QUILT CHART (Rendimientos por Clase de Activo) ──────────────────────
+_quilt_cache = {"data": None, "ts": 0}
+
+def _compute_quilt():
+    today = date.today()
+    current_year = today.year
+    years = list(range(2017, current_year + 1))
+
+    def bx_series(serie):
+        try:
+            url = f"https://www.banxico.org.mx/SieAPIRest/service/v1/series/{serie}/datos/2015-12-01/{today.isoformat()}"
+            r = requests.get(url, headers={"Bmx-Token": BANXICO_TOKEN, "Accept": "application/json"}, timeout=30)
+            r.raise_for_status()
+            datos = r.json()["bmx"]["series"][0]["datos"]
+            out = {}
+            for d in datos:
+                try:
+                    f = datetime.strptime(d["fecha"], "%d/%m/%Y")
+                    out[f] = float(d["dato"].replace(",", ""))
+                except: pass
+            return pd.Series(out).sort_index()
+        except Exception as e:
+            print(f"[QUILT] Banxico {serie} error: {e}")
+            return pd.Series(dtype=float)
+
+    def fred_series(series_id):
+        try:
+            params = {"series_id": series_id, "api_key": FRED_API_KEY, "file_type": "json",
+                      "observation_start": "2015-12-01", "observation_end": today.isoformat()}
+            r = requests.get(FRED_BASE, params=params, timeout=15)
+            obs = r.json().get("observations", [])
+            out = {}
+            for o in obs:
+                try: out[datetime.strptime(o["date"], "%Y-%m-%d")] = float(o["value"])
+                except: pass
+            return pd.Series(out).sort_index()
+        except Exception as e:
+            print(f"[QUILT] FRED {series_id} error: {e}")
+            return pd.Series(dtype=float)
+
+    MS_NAV_TICKER_URL = "https://api.morningstar.com/service/mf/UnadjustedNAV/TICKER"
+
+    def ms_series(ticker):
+        """Fetch daily NAV/price from Morningstar by TICKER symbol."""
+        try:
+            r = requests.get(
+                f"{MS_NAV_TICKER_URL}/{ticker}",
+                params={"startdate": "2015-12-01", "enddate": today.isoformat(),
+                        "accesscode": MS_ACCESS},
+                timeout=30,
+            )
+            r.raise_for_status()
+            root = ET.fromstring(r.text)
+            out = {}
+            for elem in root.iter("r"):
+                try:
+                    out[datetime.strptime(elem.get("d"), "%Y-%m-%d")] = float(elem.get("v"))
+                except: pass
+            print(f"[QUILT MS] {ticker}: {len(out)} prices")
+            return pd.Series(out).sort_index()
+        except Exception as e:
+            print(f"[QUILT MS ERROR] {ticker}: {e}")
+            return pd.Series(dtype=float)
+
+    def ye(s, y):
+        sub = s[s.index.year == y]
+        return float(sub.iloc[-1]) if len(sub) > 0 else None
+
+    def ev(s, y):
+        return ye(s, y)
+
+    def ar(s, y):
+        e = ev(s, y); st = ye(s, y - 1)
+        if e is not None and st is not None and st != 0:
+            return round((e / st - 1) * 100, 2)
+        return None
+
+    def ar_mxn(usd_s, fx_s, y):
+        eu, su = ev(usd_s, y), ye(usd_s, y - 1)
+        ef, sf = ev(fx_s, y), ye(fx_s, y - 1)
+        if all(v is not None for v in [eu, su, ef, sf]) and su != 0 and sf != 0:
+            return round((eu * ef / (su * sf) - 1) * 100, 2)
+        return None
+
+    # Fetch all data
+    fx = bx_series("SF43718")
+    cetes = bx_series("SF43936")
+    inpc = bx_series("SP1")
+    tasa = bx_series("SF61745")
+    bond10y = fred_series("IRLTLT01MXM156N")
+    # Morningstar NAV: NAFTRAC (MXN), EEM/URTH/BWX (USD)
+    naftrac = ms_series("NAFTRAC")
+    eem = ms_series("EEM")
+    urth = ms_series("URTH")
+    bwx = ms_series("BWX")
+    # Oro: Gold futures USD/oz (Yahoo Finance)
+    try:
+        gold_df = yf.download("GC=F", start="2015-12-01", end=today.isoformat(),
+                              auto_adjust=True, progress=False)
+        if isinstance(gold_df.columns, pd.MultiIndex):
+            gold_df.columns = gold_df.columns.get_level_values(0)
+        gold = gold_df["Close"]
+        print(f"[QUILT] Gold: {len(gold)} prices")
+    except Exception as e:
+        print(f"[QUILT] Gold error: {e}")
+        gold = pd.Series(dtype=float)
+    # Petróleo: WTI Crude futures USD/bbl (Yahoo Finance)
+    try:
+        oil_df = yf.download("CL=F", start="2015-12-01", end=today.isoformat(),
+                             auto_adjust=True, progress=False)
+        if isinstance(oil_df.columns, pd.MultiIndex):
+            oil_df.columns = oil_df.columns.get_level_values(0)
+        oil = oil_df["Close"]
+        print(f"[QUILT] Oil: {len(oil)} prices")
+    except Exception as e:
+        print(f"[QUILT] Oil error: {e}")
+        oil = pd.Series(dtype=float)
+
+    rets = {}
+
+    # 1. Dólar
+    rets["Dólar"] = {str(y): ar(fx, y) for y in years}
+
+    # 2. Bolsa Local (NAFTRAC — IPC tracker, ya en MXN, incluye dividendos)
+    rets["Bolsa Local"] = {str(y): v for y in years if (v := ar(naftrac, y)) is not None}
+
+    # 3-5. USD assets converted to MXN
+    rets["Bolsa Emergentes"] = {str(y): v for y in years if (v := ar_mxn(eem, fx, y)) is not None}
+    rets["Mercados Desarrollados"] = {str(y): v for y in years if (v := ar_mxn(urth, fx, y)) is not None}
+    rets["Deuda Gubernamental Global"] = {str(y): v for y in years if (v := ar_mxn(bwx, fx, y)) is not None}
+
+    # 6. Deuda Corto Plazo (avg CETES 28d yield)
+    dcp = {}
+    for y in years:
+        sub = cetes[cetes.index.year == y]
+        if len(sub) > 0:
+            avg_rate = float(sub.mean())
+            if y == current_year:
+                months_el = sub.index[-1].month
+                dcp[str(y)] = round(avg_rate * months_el / 12, 2)
+            else:
+                dcp[str(y)] = round(avg_rate, 2)
+    rets["Deuda Corto Plazo"] = dcp
+
+    # 7. Deuda Largo Plazo (duration model from 10Y yield)
+    dlp = {}
+    DUR_LP = 7.0
+    for y in years:
+        y0, y1 = ye(bond10y, y - 1), ev(bond10y, y)
+        if y0 is not None and y1 is not None:
+            carry = y0 / 100
+            delta = (y1 - y0) / 100
+            if y == current_year:
+                sub_b = bond10y[bond10y.index.year == y]
+                months_el = sub_b.index[-1].month if len(sub_b) > 0 else 1
+                dlp[str(y)] = round((carry * months_el / 12 - DUR_LP * delta) * 100, 2)
+            else:
+                dlp[str(y)] = round((carry - DUR_LP * delta) * 100, 2)
+    rets["Deuda Largo Plazo"] = dlp
+
+    # 8. Tecnología (QQQ — Invesco QQQ Trust, USD → MXN)
+    qqq = ms_series("QQQ")
+    rets["Tecnolog\u00eda"] = {str(y): v for y in years if (v := ar_mxn(qqq, fx, y)) is not None}
+
+    # 9. Oro (Gold futures USD/oz → MXN)
+    rets["Oro"] = {str(y): v for y in years if (v := ar_mxn(gold, fx, y)) is not None}
+
+    # 10. Diversificado (equal-weight)
+    ac_names = ["D\u00f3lar", "Bolsa Local", "Bolsa Emergentes", "Mercados Desarrollados",
+                "Deuda Gubernamental Global", "Deuda Corto Plazo", "Deuda Largo Plazo", "Tecnolog\u00eda", "Oro"]
+    div = {}
+    for y in years:
+        vals = [rets[n].get(str(y)) for n in ac_names]
+        valid = [v for v in vals if v is not None]
+        if len(valid) >= 5: div[str(y)] = round(sum(valid) / len(valid), 2)
+    rets["Diversificado"] = div
+
+    # Cumulative & annualized
+    cumulative, annualized = {}, {}
+    for name, r in rets.items():
+        cum, cnt = 1.0, 0
+        for y in years:
+            v = r.get(str(y))
+            if v is not None: cum *= (1 + v / 100); cnt += 1
+        if cnt > 0:
+            cumulative[name] = round((cum - 1) * 100, 1)
+            annualized[name] = round((cum ** (1 / cnt) - 1) * 100, 1)
+
+    # Reference rows
+    ref_tasa, ref_infl = {}, {}
+    for y in years:
+        # Tasa de referencia: promedio anual (prorated for current year)
+        sub_tasa = tasa[tasa.index.year == y]
+        if len(sub_tasa) > 0:
+            avg_tasa = float(sub_tasa.mean())
+            if y == current_year:
+                months_el = sub_tasa.index[-1].month
+                ref_tasa[str(y)] = round(avg_tasa * months_el / 12, 2)
+            else:
+                ref_tasa[str(y)] = round(avg_tasa, 2)
+        ie, is_ = ev(inpc, y), ye(inpc, y - 1)
+        if ie and is_ and is_ != 0:
+            raw = ie / is_ - 1
+            ref_infl[str(y)] = round(raw * 100, 2)
+
+    colors = {
+        "Bolsa Emergentes": "#00205C",          # Navy (brand)
+        "Mercados Desarrollados": "#41BBC9",     # Sky (brand)
+        "Bolsa Local": "#3DA5E0",               # Blue (brand)
+        "Tecnolog\u00eda": "#7CC677",            # Verde (complementario)
+        "Deuda Largo Plazo": "#0D3A7A",         # Navy dark shade
+        "Deuda Corto Plazo": "#8FAFC4",         # Silver-Navy blend
+        "Deuda Gubernamental Global": "#058B97", # Teal oscuro (paleta extendida)
+        "D\u00f3lar": "#EC626E",                # Rojo (complementario)
+        "Oro": "#E8A838",                       # Naranja/dorado pastel
+        "Diversificado": "#A25EB5",             # P\u00farpura (paleta extendida)
+    }
+
+    asset_order = ["Bolsa Emergentes", "Deuda Corto Plazo", "Mercados Desarrollados",
+                   "Tecnolog\u00eda", "Bolsa Local", "Deuda Largo Plazo",
+                   "Oro", "Diversificado", "Deuda Gubernamental Global", "Dólar"]
+
+    assets = [{"name": n, "color": colors.get(n, "#999"),
+               "returns": {k: v for k, v in rets.get(n, {}).items() if v is not None}}
+              for n in asset_order]
+
+    # Cumulative & annualized for reference rows
+    def _ref_cum_ann(vals):
+        cum, cnt = 1.0, 0
+        for y in years:
+            v = vals.get(str(y))
+            if v is not None: cum *= (1 + v / 100); cnt += 1
+        if cnt > 0:
+            return round((cum - 1) * 100, 1), round((cum ** (1 / cnt) - 1) * 100, 1)
+        return None, None
+
+    tasa_cum, tasa_ann = _ref_cum_ann(ref_tasa)
+    infl_cum, infl_ann = _ref_cum_ann(ref_infl)
+
+    return {
+        "ok": True, "years": years, "assets": assets,
+        "reference": [
+            {"name": "Tasa de Referencia", "values": ref_tasa, "cumulative": tasa_cum, "annualized": tasa_ann},
+            {"name": "Inflaci\u00f3n", "values": ref_infl, "cumulative": infl_cum, "annualized": infl_ann},
+        ],
+        "cumulative": cumulative, "annualized": annualized,
+        "note": "Rendimientos brutos efectivos en moneda nacional. Fuentes: Morningstar (NAFTRAC, EEM, URTH, BWX, QQQ), Yahoo Finance (Oro GC=F, Petr\u00f3leo CL=F), Banxico (FX FIX, CETES, INPC, Tasa Objetivo), FRED (Bono M10 yield). Deuda LP: modelo de duraci\u00f3n (carry + delta yield \u00d7 dur). Activos en USD convertidos a MXN con tipo de cambio FIX Banxico.",
+        "updated": datetime.now().strftime("%d/%m/%Y"),
+    }
+
+@app.route("/api/quilt")
+def api_quilt():
+    if "usuario" not in session:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    now = time.time()
+    if _quilt_cache["data"] and not _cache_expired(_quilt_cache["ts"]):
+        return jsonify(_quilt_cache["data"])
+    try:
+        data = _compute_quilt()
+        _quilt_cache["data"] = data
+        _quilt_cache["ts"] = now
+        return jsonify(data)
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+# ── QUILT FONDOS VALMEX (Top 10 por año) ──────────────────────────────
+_quilt_fondos_cache = {"data": None, "ts": 0}
+
+# Exact same 10 colors from the asset class quilt, assigned to funds
+# ── Institutional color palette — grouped by fund family ──
+# Deuda MXN: azules claros / grises
+# Deuda USD: azules acero / slate
+# RV: teals / verdes oscuros
+# Ciclo de vida: navy-to-slate gradient
+_FUND_PALETTE = {
+    # ── Deuda MXN ──
+    "VXREPO1": "#8FAFC4",   # Silver-Navy (brand)
+    "VXGUBCP": "#34698A",   # Azul petróleo
+    "VXDEUDA": "#A49E8B",   # Beige (manual)
+    "VXUDIMP": "#7CC677",   # Verde (brand)
+    "VXGUBLP": "#00205C",   # Navy (brand)
+    "VLMXETF": "#CBC8C5",   # Gris plata (manual)
+    # ── Deuda USD ──
+    "VXTBILL": "#C7963D",   # Bronce
+    "VXCOBER": "#8B6B4A",   # Café tostado
+    "VLMXDME": "#6A5B7B",   # Violeta gris
+    # ── Renta Variable ──
+    "VALMXA":  "#41BBC9",   # Teal (brand)
+    "VALMX20": "#058B97",   # Teal oscuro (brand)
+    "VALMX28": "#A25EB5",   # Púrpura (brand)
+    "VALMXVL": "#2C9942",   # Verde oscuro (manual)
+    "VALMXES": "#80BC38",   # Verde medio (manual)
+    "VLMXTEC": "#3DA5E0",   # Azul brillante (brand)
+    "VLMXESG": "#2D8B6A",   # Verde jade
+    "VALMXHC": "#3A7A5C",   # Verde bosque
+    "VXINFRA": "#3D7A70",   # Teal apagado
+    # ── Ciclo de Vida ──
+    "VLMXJUB": "#0D3A7A",   # Navy oscuro (brand)
+    "VLMXP24": "#9B5A5A",   # Rosa viejo
+    "VLMXP31": "#D46B6B",   # Rojo pastel
+    "VLMXP38": "#EC626E",   # Coral (brand — Dólar)
+    "VLMXP45": "#E8A838",   # Dorado (brand — Oro)
+    "VLMXP52": "#A6D043",   # Verde lima (manual)
+    "VLMXP59": "#5D8AA8",   # Azul medio
+}
+_FUND_ORDER = list(_FUND_PALETTE.keys())
+
+def _compute_quilt_fondos():
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+    today = date.today()
+    current_year = today.year
+    years = list(range(2017, current_year + 1))
+
+    # Collect all Series A ISINs
+    fondos = {}
+    for fondo, series in ISIN_MAP.items():
+        isin = series.get("A")
+        if isin:
+            fondos[fondo] = isin
+
+    # Fetch NAVs in parallel
+    nav_series = {}
+
+    def fetch_fund(fondo, isin):
+        data = get_ms_nav(isin, start="2015-12-01")
+        return fondo, data
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        futures = {executor.submit(fetch_fund, f, i): f for f, i in fondos.items()}
+        for future in as_completed(futures):
+            try:
+                fondo, data = future.result()
+                if data:
+                    s = pd.Series(
+                        {datetime.strptime(n["fecha"], "%Y-%m-%d"): n["nav"] for n in data}
+                    ).sort_index()
+                    nav_series[fondo] = s
+                    print(f"[QUILT FONDOS] {fondo}: {len(s)} NAVs")
+            except Exception as e:
+                print(f"[QUILT FONDOS] Error {futures[future]}: {e}")
+
+    # Calculate annual returns (year-end / prev year-end - 1)
+    rets = {}
+    for fondo, s in nav_series.items():
+        fund_rets = {}
+        for y in years:
+            sub_end = s[s.index.year == y]
+            sub_start = s[s.index.year == y - 1]
+            if len(sub_end) > 0 and len(sub_start) > 0:
+                end_nav = float(sub_end.iloc[-1])
+                start_nav = float(sub_start.iloc[-1])
+                if start_nav > 0:
+                    ret = round((end_nav / start_nav - 1) * 100, 2)
+                    # Filter out restructurings/splits (no fund legitimately returns ±200%)
+                    if -200 <= ret <= 200:
+                        fund_rets[str(y)] = ret
+                    else:
+                        print(f"[QUILT FONDOS] {fondo} {y}: {ret}% skipped (likely restructuring)")
+        if fund_rets:
+            rets[fondo] = fund_rets
+
+    # Determine which funds actually appear in top-10 for any year / cumulative / annualized
+    visible_funds = set()
+    str_years = [str(y) for y in years]
+    for yr in str_years:
+        yr_rets = [(f, r.get(yr)) for f, r in rets.items() if r.get(yr) is not None]
+        yr_rets.sort(key=lambda x: x[1], reverse=True)
+        for f, _ in yr_rets[:10]:
+            visible_funds.add(f)
+
+    _pre_cum = {}
+    for name, r in rets.items():
+        cum = 1.0
+        for y in years:
+            v = r.get(str(y))
+            if v is not None: cum *= (1 + v / 100)
+        _pre_cum[name] = cum - 1
+    cum_sorted = sorted(_pre_cum.items(), key=lambda x: x[1], reverse=True)
+    for f, _ in cum_sorted[:10]:
+        visible_funds.add(f)
+
+    # Assign colors positionally by cumulative ranking
+    # Same 10-color order as asset class quilt RESUMEN, then extras
+    _ASSET_QUILT_COLORS = [
+        "#7CC677", "#E8A838", "#41BBC9", "#8FAFC4", "#A25EB5",
+        "#0D3A7A", "#3DA5E0", "#00205C", "#EC626E", "#058B97",
+    ]
+    _EXTRA_COLORS = [
+        "#A49E8B", "#CBC8C5", "#C7963D", "#D46B6B", "#2C9942",
+        "#80BC38", "#A6D043", "#9B5A5A", "#5D8AA8", "#8B6B4A",
+        "#6A5B7B", "#4A5568", "#34698A", "#3D7A70", "#6B7B8D",
+    ]
+    _ALL_POSITIONAL = _ASSET_QUILT_COLORS + _EXTRA_COLORS
+
+    cum_ranked = sorted(visible_funds, key=lambda f: _pre_cum.get(f, -999), reverse=True)
+    fund_color_map = {}
+    for i, f in enumerate(cum_ranked):
+        fund_color_map[f] = _ALL_POSITIONAL[i] if i < len(_ALL_POSITIONAL) else "#4A5568"
+
+    # Build assets list
+    assets = []
+    for fondo in rets:
+        assets.append({
+            "name": fondo,
+            "color": fund_color_map.get(fondo, "#666666"),
+            "returns": rets[fondo],
+        })
+
+    # Cumulative & annualized
+    cumulative, annualized, ann_years = {}, {}, {}
+    for name, r in rets.items():
+        cum, cnt = 1.0, 0
+        for y in years:
+            v = r.get(str(y))
+            if v is not None:
+                cum *= (1 + v / 100)
+                cnt += 1
+        if cnt > 0:
+            cumulative[name] = round((cum - 1) * 100, 1)
+            annualized[name] = round((cum ** (1 / cnt) - 1) * 100, 1)
+            ann_years[name] = cnt
+
+    # Reference rows: Tasa de Referencia e Inflación (same as asset quilt)
+    def bx_series_fondos(serie):
+        try:
+            url = f"https://www.banxico.org.mx/SieAPIRest/service/v1/series/{serie}/datos/2015-12-01/{today.isoformat()}"
+            r = requests.get(url, headers={"Bmx-Token": BANXICO_TOKEN, "Accept": "application/json"}, timeout=30)
+            r.raise_for_status()
+            datos = r.json()["bmx"]["series"][0]["datos"]
+            out = {}
+            for d in datos:
+                try:
+                    f = datetime.strptime(d["fecha"], "%d/%m/%Y")
+                    out[f] = float(d["dato"].replace(",", ""))
+                except: pass
+            return pd.Series(out).sort_index()
+        except Exception as e:
+            print(f"[QUILT FONDOS] Banxico {serie} error: {e}")
+            return pd.Series(dtype=float)
+
+    tasa = bx_series_fondos("SF61745")
+    inpc = bx_series_fondos("SP1")
+
+    def ye_f(s, y):
+        sub = s[s.index.year == y]
+        return float(sub.iloc[-1]) if len(sub) > 0 else None
+
+    def ev_f(s, y):
+        return ye_f(s, y)
+
+    ref_tasa, ref_infl = {}, {}
+    for y in years:
+        sub_tasa = tasa[tasa.index.year == y]
+        if len(sub_tasa) > 0:
+            avg_tasa = float(sub_tasa.mean())
+            if y == current_year:
+                months_el = sub_tasa.index[-1].month
+                ref_tasa[str(y)] = round(avg_tasa * months_el / 12, 2)
+            else:
+                ref_tasa[str(y)] = round(avg_tasa, 2)
+        ie, is_ = ev_f(inpc, y), ye_f(inpc, y - 1)
+        if ie and is_ and is_ != 0:
+            raw = ie / is_ - 1
+            ref_infl[str(y)] = round(raw * 100, 2)
+
+    def _ref_cum_ann(vals):
+        cum, cnt = 1.0, 0
+        for y in years:
+            v = vals.get(str(y))
+            if v is not None: cum *= (1 + v / 100); cnt += 1
+        if cnt > 0:
+            return round((cum - 1) * 100, 1), round((cum ** (1 / cnt) - 1) * 100, 1)
+        return None, None
+
+    tasa_cum, tasa_ann = _ref_cum_ann(ref_tasa)
+    infl_cum, infl_ann = _ref_cum_ann(ref_infl)
+
+    return {
+        "ok": True, "years": years, "assets": assets,
+        "reference": [
+            {"name": "Tasa de Referencia", "values": ref_tasa, "cumulative": tasa_cum, "annualized": tasa_ann},
+            {"name": "Inflaci\u00f3n", "values": ref_infl, "cumulative": infl_cum, "annualized": infl_ann},
+        ],
+        "cumulative": cumulative, "annualized": annualized, "ann_years": ann_years,
+        "top_n": 10,
+        "note": "Rendimientos brutos efectivos en moneda nacional. Fuente: Morningstar NAV hist\u00f3rico. Tasa de Referencia: promedio anual Banxico. Inflaci\u00f3n: INPC Banxico.",
+        "updated": datetime.now().strftime("%d/%m/%Y"),
+    }
+
+
+@app.route("/api/quilt_fondos")
+def api_quilt_fondos():
+    if "usuario" not in session:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    now = time.time()
+    if _quilt_fondos_cache["data"] and not _cache_expired(_quilt_fondos_cache["ts"]):
+        return jsonify(_quilt_fondos_cache["data"])
+    try:
+        data = _compute_quilt_fondos()
+        _quilt_fondos_cache["data"] = data
+        _quilt_fondos_cache["ts"] = now
+        return jsonify(data)
+    except Exception as e:
+        import traceback; traceback.print_exc()
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+_BRAND_PALETTE = {
+    "VXGUBCP": "#00205C",   # Navy (1)
+    "VXDEUDA": "#3DA5E0",   # Blue (2)
+    "VXUDIMP": "#41BBC9",   # Sky (3)
+    "VXGUBLP": "#7CC677",   # Verde (4)
+    "VXTBILL": "#5B6670",   # Gray (5)
+    "VALMX28": "#27325C",   # Azul apoyo (6)
+    "VALMX20": "#EC626E",   # Coral (7)
+}
+
+@app.route("/api/perfiles")
+def api_perfiles():
+    if "usuario" not in session:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    labels = ["Preservaci\u00f3n", "Conservador", "Balanceado", "Arriesgado", "Agresivo"]
+    out = []
+    for i, lbl in enumerate(labels):
+        comp = PERFILES[str(i)]
+        out.append({"id": i, "label": lbl, "funds": comp})
+    return jsonify({"ok": True, "perfiles": out, "colors": _BRAND_PALETTE})
+
+
+@app.route("/api/universo")
+def api_universo():
+    """Clasificacion de fondos Valmex — datos LIVE de Morningstar API.
+    Refresca diario (post 4pm NYSE) o con ?force=1."""
+    force = request.args.get("force", "0") == "1"
+    universe = load_ms_universe(force=force)
+    seen = {}
+    for ticker, api in universe.items():
+        prefix = ticker.split()[0]
+        if prefix in seen:
+            continue
+        stock = float(api.get("AAB-StockNet", 0) or 0)
+        bond  = float(api.get("AAB-BondNet", 0) or 0)
+        cash  = float(api.get("AAB-CashNet", 0) or 0)
+        dur   = float(api.get("PS-EffectiveDuration", 0) or 0)
+        ytm   = float(api.get("PS-YieldToMaturity", 0) or 0)
+        mkt   = float(api.get("PS-TotalMarketValueNet", 0) or 0)
+        # Tipo
+        if prefix in FONDOS_RV:
+            tipo = "rv"
+        elif prefix in FONDOS_DEUDA:
+            tipo = "deuda"
+        elif prefix in FONDOS_CICLO:
+            tipo = "ciclo"
+        else:
+            tipo = "otro"
+        # Geo
+        geo = {}
+        for item in (api.get("RE-RegionalExposure") or []):
+            region = item.get("Region", "")
+            val = float(item.get("Value", 0) or 0)
+            if val > 0.5 and region.lower() not in ("emerging market", "developing country",
+                    "developed country", "developed countries", "emerging markets"):
+                geo[region] = round(val, 2)
+        # Sectors
+        sec = {}
+        for k, v in api.items():
+            if k.startswith("GR-") and k.endswith("Net"):
+                vf = float(v or 0)
+                if vf > 0.5:
+                    sec[k.replace("GR-", "").replace("Net", "")] = round(vf, 2)
+        # Debt supersectors
+        debt_type = {}
+        for k, v in api.items():
+            if k.startswith("GBSR-SuperSector") and k.endswith("Net"):
+                vf = float(v or 0)
+                if vf > 0.5:
+                    debt_type[k.replace("GBSR-SuperSector", "").replace("Net", "")] = round(vf, 2)
+        # Holdings top 5
+        hld = api.get("FHV2-HoldingDetail") or []
+        top_hold = []
+        for h in sorted(hld, key=lambda x: float(x.get("Weighting", 0) or 0), reverse=True)[:5]:
+            top_hold.append({
+                "ticker": h.get("Ticker", h.get("ISIN", "?")),
+                "weight": round(float(h.get("Weighting", 0) or 0), 2)
+            })
+        seen[prefix] = {
+            "ticker": prefix,
+            "tipo": tipo,
+            "stock_pct": round(stock, 2),
+            "bond_pct": round(bond, 2),
+            "cash_pct": round(cash, 2),
+            "duration": round(dur, 2),
+            "ytm": round(ytm, 2),
+            "market_value": round(mkt),
+            "geo": dict(sorted(geo.items(), key=lambda x: -x[1])[:8]),
+            "sectors": dict(sorted(sec.items(), key=lambda x: -x[1])[:8]),
+            "debt_type": dict(sorted(debt_type.items(), key=lambda x: -x[1])),
+            "top_holdings": top_hold,
+        }
+    from datetime import datetime as _dt
+    return jsonify({
+        "ok": True,
+        "n_fondos": len(seen),
+        "cache_ts": _dt.fromtimestamp(_ms_cache_ts).isoformat() if _ms_cache_ts else None,
+        "fondos": dict(sorted(seen.items())),
+    })
 
 
 @app.route("/api/diag-repo")
