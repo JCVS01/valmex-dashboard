@@ -104,7 +104,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
 .prop-dash-title{grid-column:1/-1;}
 .prop-rule-full{grid-column:1/-1;height:2px;background:var(--navy);border-radius:2px;margin-bottom:2px;}
 .prop-row1{display:contents;}
-.card-comp{grid-column:span 1;height:306px;}
+.card-comp{grid-column:span 1;height:306px;} .card-comp>.ph{background:var(--sky);}
 .card-rend{grid-column:span 1;height:306px;}
 .card-deuda{grid-column:span 1;height:306px;}
 .card-back{grid-column:span 3;height:306px;}
@@ -3326,7 +3326,7 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
         if (legend) {
           legend.innerHTML = CMP2_COLORS.map((c,i) =>
             `<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c};margin-right:5px;vertical-align:middle;"></span>${portfolioNames[i]}</span>`
-          ).join('') + `<span style="color:#94A3B8;margin-left:12px;">Benchmark: MSCI ACWI</span>`;
+          ).join('') + `<span style="color:#00205C;font-weight:700;margin-left:12px;">Benchmark: MSCI ACWI</span>`;
         }
 
         function buildRvExpo(title, pLabelsArr, pValsArr, bmkLabelsVals, container) {
@@ -3337,13 +3337,16 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
           const pMaps = pLabelsArr.map((lbls,idx) => { const m={}; lbls.forEach((l,i)=>{m[l]=(pValsArr[idx]||[])[i]||0;}); return m; });
           const sorted = [...allLabels].sort((a,b) => (bmk[b]||0) - (bmk[a]||0));
           const pNames = ['Actual','Modelo','Propuesta'];
-          // Find max absolute diff for heat map intensity
-          let maxDiff = 1;
-          sorted.forEach(l => { pMaps.forEach(m => { maxDiff = Math.max(maxDiff, Math.abs((m[l]||0) - (bmk[l]||0))); }); });
+          // Max absolute diff PER COLUMN for independent heat map scaling
+          const colMaxDiff = pMaps.map(m => {
+            let mx = 1;
+            sorted.forEach(l => { mx = Math.max(mx, Math.abs((m[l]||0) - (bmk[l]||0))); });
+            return mx;
+          });
 
-          function heatBg(diff) {
-            const intensity = Math.min(Math.abs(diff) / maxDiff, 1);
-            const alpha = (0.08 + intensity * 0.18).toFixed(2);
+          function heatBg(diff, colIdx) {
+            const intensity = Math.min(Math.abs(diff) / colMaxDiff[colIdx], 1);
+            const alpha = (0.12 + intensity * 0.40).toFixed(2);
             return diff > 0.05 ? `rgba(5,150,105,${alpha})` : diff < -0.05 ? `rgba(220,38,38,${alpha})` : 'transparent';
           }
           function heatColor(diff) {
@@ -3351,6 +3354,7 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
           }
 
           const cs = 'font-size:13px;';
+          const sepBorder = 'border-right:3px solid #CBD5E1;';
           let html = `<table style="width:100%;border-collapse:collapse;font-family:'Montserrat',sans-serif;border:1px solid #E2E8F0;border-radius:8px;overflow:hidden;table-layout:fixed;">`;
           html += `<colgroup><col style="width:auto;"><col style="width:60px;">`;
           pNames.forEach(() => { html += `<col style="width:60px;"><col style="width:58px;">`; });
@@ -3358,11 +3362,10 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
           html += `<tr><th colspan="${2 + pNames.length * 2}" style="background:#00205C;color:#fff;padding:10px 14px;text-align:left;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;">${title}</th></tr>`;
           html += `<tr style="background:#F1F5F9;border-bottom:2px solid #CBD5E1;">`;
           html += `<th style="text-align:left;padding:7px 10px;${cs}font-weight:700;color:#00205C;"></th>`;
-          html += `<th style="text-align:center;padding:7px 4px;${cs}font-weight:800;color:#00205C;background:#E2E8F0;border-right:2px solid #CBD5E1;">ACWI</th>`;
+          html += `<th style="text-align:center;padding:7px 4px;${cs}font-weight:800;color:#00205C;background:#E2E8F0;${sepBorder}">ACWI</th>`;
           pNames.forEach((n,i) => {
-            const isLast = i === pNames.length - 1;
             html += `<th style="text-align:center;padding:7px 4px;${cs}font-weight:700;color:${CMP2_COLORS[i]};">${n}</th>`;
-            html += `<th style="text-align:center;padding:7px 4px;font-size:11px;font-weight:600;color:#64748B;${isLast ? '' : 'border-right:1px solid #E2E8F0;'}">+/−</th>`;
+            html += `<th style="text-align:center;padding:7px 4px;font-size:11px;font-weight:600;color:#64748B;${sepBorder}">+/−</th>`;
           });
           html += `</tr></thead><tbody>`;
 
@@ -3371,14 +3374,18 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
             const stripe = ri % 2 === 0 ? '#fff' : '#FAFCFE';
             html += `<tr style="border-bottom:1px solid #E2E8F0;background:${stripe};">`;
             html += `<td style="padding:6px 10px;font-weight:600;color:#00205C;${cs}white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${label}">${label}</td>`;
-            html += `<td style="padding:6px 4px;text-align:center;color:#00205C;font-weight:800;${cs}background:#E2E8F0;border-right:2px solid #CBD5E1;">${b.toFixed(1)}%</td>`;
+            html += `<td style="padding:6px 4px;text-align:center;color:#00205C;font-weight:800;${cs}background:#E2E8F0;${sepBorder}">${b.toFixed(1)}%</td>`;
             pMaps.forEach((m, i) => {
-              const v = m[label]||0;
-              const diff = v - b;
-              const sign = diff >= 0 ? '+' : '';
-              const isLast = i === pMaps.length - 1;
-              html += `<td style="padding:6px 4px;text-align:center;font-weight:600;color:#00205C;${cs}">${v.toFixed(1)}%</td>`;
-              html += `<td style="padding:6px 4px;text-align:center;font-weight:700;font-size:12px;color:${heatColor(diff)};background:${heatBg(diff)};${isLast ? '' : 'border-right:1px solid #E2E8F0;'}">${sign}${diff.toFixed(1)}%</td>`;
+              const v = m[label];
+              if (v === undefined || v === 0) {
+                html += `<td style="padding:6px 4px;text-align:center;font-weight:600;color:#94A3B8;${cs}">–</td>`;
+                html += `<td style="padding:6px 4px;text-align:center;font-weight:600;color:#94A3B8;${sepBorder}">–</td>`;
+              } else {
+                const diff = v - b;
+                const sign = diff >= 0 ? '+' : '';
+                html += `<td style="padding:6px 4px;text-align:center;font-weight:600;color:#00205C;${cs}">${v.toFixed(1)}%</td>`;
+                html += `<td style="padding:6px 4px;text-align:center;font-weight:700;font-size:12px;color:${heatColor(diff,i)};background:${heatBg(diff,i)};${sepBorder}">${sign}${diff.toFixed(1)}%</td>`;
+              }
             });
             html += `</tr>`;
           });
@@ -4705,8 +4712,9 @@ function aplicarDatos(data, valor) {
       return name;
     });
     charts.comp.data.datasets[0].data = sorted.map(f => f.pct);
-    charts.comp.data.datasets[0].backgroundColor = '#00205C';
-    charts.comp.options.scales.x.max  = undefined; // auto-scale, bars fill full width
+    charts.comp.data.datasets[0].backgroundColor = '#3DA5E0';
+    const maxVal = Math.max(...sorted.map(f => f.pct));
+    charts.comp.options.scales.x.max  = maxVal * 1.18;  // 18% extra for outside labels
     // Barras: ajustar grosor según cantidad
     const n = sorted.length;
     charts.comp.data.datasets[0].barPercentage    = n <= 3 ? 0.98 : n <= 5 ? 0.95 : n <= 10 ? 0.90 : 0.85;

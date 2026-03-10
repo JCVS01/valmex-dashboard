@@ -187,7 +187,7 @@ VANGUARD_REGION_MAP = {
     "emerging markets":  "Asia - Emerging",
     "middle east":       "Middle East",
     "latin america":     "Latin America",
-    "united kingdom":    "United Kingdom",
+    "united kingdom":    "Europe - ex Euro",
     "other":             "Otros",
 }
 
@@ -1053,7 +1053,7 @@ COUNTRY_TO_REGION = {
     "united states": "United States", "canada": "Canada",
     "mexico": "Latin America", "brazil": "Latin America", "chile": "Latin America",
     "colombia": "Latin America", "peru": "Latin America", "argentina": "Latin America",
-    "united kingdom": "United Kingdom",
+    "united kingdom": "Europe - ex Euro",
     "germany": "Eurozone", "france": "Eurozone", "netherlands": "Eurozone",
     "spain": "Eurozone", "italy": "Eurozone", "belgium": "Eurozone",
     "austria": "Eurozone", "finland": "Eurozone", "ireland": "Eurozone",
@@ -2410,11 +2410,13 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
         if (is_rv or is_ciclo) and stock > 0:
             geo_raw = d.get("RE-RegionalExposure", [])
             GEO_EXCLUDE = {"emerging market", "developing country", "emerging markets", "developed countries", "developed country"}
+            GEO_MERGE = {"United Kingdom": "Europe - ex Euro"}
             if isinstance(geo_raw, list):
                 for item in geo_raw:
                     region = item.get("Region", "")
                     val    = safe_float(item.get("Value", 0))
                     if region and val > 0 and region.lower() not in GEO_EXCLUDE:
+                        region = GEO_MERGE.get(region, region)
                         geo_acc[region] = geo_acc.get(region, 0) + val * (stock * w / 100)
 
             sector_map = {
@@ -2649,11 +2651,14 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
             sec_acc[yfd["sector"]] = sec_acc.get(yfd["sector"], 0) + 100 * w
 
         # Geografía
+        _GEO_MERGE = {"United Kingdom": "Europe - ex Euro"}
         if yfd.get("geo"):
             for g, v in yfd["geo"].items():
+                g = _GEO_MERGE.get(g, g)
                 geo_acc[g] = geo_acc.get(g, 0) + v * w
         elif yfd.get("pais"):
-            geo_acc[yfd["pais"]] = geo_acc.get(yfd["pais"], 0) + 100 * w
+            p = _GEO_MERGE.get(yfd["pais"], yfd["pais"])
+            geo_acc[p] = geo_acc.get(p, 0) + 100 * w
 
         # Look-through for Acciones/ETFs
         _acc_is_usd = not ticker.endswith(".MX")
@@ -2773,7 +2778,7 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
 
     GEO_TRANSLATE = {
         "united states":"Estados Unidos","canada":"Canadá","latin america":"América Latina",
-        "united kingdom":"Reino Unido","eurozone":"Eurozona","europe - ex euro":"Europa ex-Euro",
+        "eurozone":"Eurozona","europe - ex euro":"Europa ex-Euro",
         "europe - emerging":"Europa Emergente","africa":"África","middle east":"Medio Oriente",
         "japan":"Japón","australasia":"Australasia","asia - developed":"Asia Desarrollada",
         "asia - emerging":"Asia Emergente","greater asia":"Gran Asia","greater europe":"Gran Europa",
@@ -4066,12 +4071,14 @@ def api_universo():
             tipo = "otro"
         # Geo
         geo = {}
+        _GEO_MERGE_ETF = {"United Kingdom": "Europe - ex Euro"}
         for item in (api.get("RE-RegionalExposure") or []):
             region = item.get("Region", "")
             val = float(item.get("Value", 0) or 0)
             if val > 0.5 and region.lower() not in ("emerging market", "developing country",
                     "developed country", "developed countries", "emerging markets"):
-                geo[region] = round(val, 2)
+                region = _GEO_MERGE_ETF.get(region, region)
+                geo[region] = geo.get(region, 0) + round(val, 2)
         # Sectors
         sec = {}
         for k, v in api.items():
