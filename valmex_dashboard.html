@@ -3756,9 +3756,9 @@ function renderPerfiles(data, prefix, chartStore) {
   perfiles.forEach(p => Object.keys(p.funds).forEach(f => allFunds.add(f)));
 
   const FUND_COLORS = {
-    'VXGUBCP': '#00205C', 'VXDEUDA': '#3DA5E0', 'VXUDIMP': '#41BBC9',
-    'VXGUBLP': '#7CC677', 'VXTBILL': '#5B6670', 'VALMX28': '#A25EB5',
-    'VALMX20': '#EC626E'
+    'VXGUBCP': '#00205C', 'VXDEUDA': '#41BBC9', 'VXUDIMP': '#5B6670',
+    'VXGUBLP': '#2E7D5B', 'VXTBILL': '#3DA5E0', 'VALMX28': '#6C3483',
+    'VALMX20': '#922B3E'
   };
   // Merge API colors if available
   if (colors) Object.assign(FUND_COLORS, colors);
@@ -3801,7 +3801,6 @@ function renderPerfiles(data, prefix, chartStore) {
         afterDatasetsDraw(chart) {
           const {ctx, data} = chart;
           ctx.save();
-          const bgArr = data.datasets[0].backgroundColor;
           chart.getDatasetMeta(0).data.forEach((arc, i) => {
             const val = data.datasets[0].data[i];
             if (val < 5) return;
@@ -3809,12 +3808,7 @@ function renderPerfiles(data, prefix, chartStore) {
             const r = arc.outerRadius * 0.65;
             const cx = arc.x + Math.cos(midAngle) * r;
             const cy = arc.y + Math.sin(midAngle) * r;
-            // Smart text color: dark text on light backgrounds
-            const bg = bgArr[i] || '#000';
-            const hex = bg.replace('#','');
-            const rr = parseInt(hex.substring(0,2),16), gg = parseInt(hex.substring(2,4),16), bb = parseInt(hex.substring(4,6),16);
-            const lum = (0.299*rr + 0.587*gg + 0.114*bb);
-            ctx.fillStyle = lum > 150 ? '#00205C' : '#fff';
+            ctx.fillStyle = '#fff';
             ctx.font = 'bold 18px Montserrat,sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
