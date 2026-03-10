@@ -3995,7 +3995,7 @@ def api_quilt_fondos():
 _BRAND_PALETTE = {
     "VXGUBCP": "#00205C",   # Navy (1)
     "VXDEUDA": "#3DA5E0",   # Blue (2)
-    "VXUDIMP": "#41BBC9",   # Sky (3)
+    "VXUDIMP": "#8B5CF6",   # Púrpura (3) — was #41BBC9, too similar to VXDEUDA blue
     "VXGUBLP": "#7CC677",   # Verde (4)
     "VXTBILL": "#5B6670",   # Gray (5)
     "VALMX28": "#FECB46",   # Dorado (6) — was #27325C, too similar to navy
