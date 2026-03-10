@@ -3325,7 +3325,7 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
         const legend = document.getElementById('cmp2-rv-legend');
         if (legend) {
           legend.innerHTML = CMP2_COLORS.map((c,i) =>
-            `<span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c};margin-right:5px;vertical-align:middle;"></span>${portfolioNames[i]}</span>`
+            `<span style="color:#00205C;font-weight:700;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c};margin-right:5px;vertical-align:middle;"></span>${portfolioNames[i]}</span>`
           ).join('') + `<span style="color:#00205C;font-weight:700;margin-left:12px;">Benchmark: MSCI ACWI</span>`;
         }
 
