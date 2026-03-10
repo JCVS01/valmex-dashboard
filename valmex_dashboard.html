@@ -4042,7 +4042,7 @@ document.getElementById('btn-pdf-cmp2').addEventListener('click', async () => {
     return `
     ${selector}{width:${QW}px!important;min-width:${QW}px!important;height:${targetQH}px!important;padding:0!important;margin:0!important;overflow:hidden!important;}
     ${selector} > div{height:100%!important;display:flex!important;flex-direction:column!important;}
-    ${selector} .cmp-header-bar{padding:14px 20px 12px!important;flex-shrink:0!important;height:105px!important;box-sizing:border-box!important;}
+    ${selector} .cmp-header-bar{padding:14px 24px 12px!important;flex-shrink:0!important;height:105px!important;box-sizing:border-box!important;}
     ${selector} .cmp-header-bar img{height:75px!important;}
     ${selector} .cmp-main-title{font-size:32px!important;color:#00205C!important;}
     ${selector} .cmp-sub-title{font-size:18px!important;}
@@ -4095,7 +4095,7 @@ document.getElementById('btn-pdf-cmp2').addEventListener('click', async () => {
       const perfilesStyle = document.createElement('style'); perfilesStyle.id='pdf-perfiles-override';
       perfilesStyle.textContent = `
         #cmp2-slide-perfiles{width:${QW}px!important;min-width:${QW}px!important;height:${targetQH}px!important;padding:0!important;margin:0!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;}
-        #cmp2-slide-perfiles .cmp-header-bar{padding:14px 20px 12px!important;flex-shrink:0!important;height:105px!important;box-sizing:border-box!important;}
+        #cmp2-slide-perfiles .cmp-header-bar{padding:14px 24px 12px!important;flex-shrink:0!important;height:105px!important;box-sizing:border-box!important;}
         #cmp2-slide-perfiles .cmp-header-bar img{height:75px!important;}
         #cmp2-slide-perfiles .cmp-main-title{font-size:32px!important;color:#00205C!important;}
         #cmp2-slide-perfiles .cmp-sub-title{font-size:18px!important;}
@@ -4305,7 +4305,7 @@ document.getElementById('btn-pdf-cmp2').addEventListener('click', async () => {
     const removeHdr4 = injectHeader(page3, 'Características y Exposición', 'Desglose de los Portafolios por Clase de Activo');
     const p3Style = document.createElement('style'); p3Style.id = 'pdf-p3-fit';
     p3Style.textContent = `
-      #cmp2-page3{width:${W}px!important;height:${targetH}px!important;overflow:hidden!important;box-sizing:border-box!important;display:flex!important;flex-direction:column!important;gap:14px!important;}
+      #cmp2-page3{width:${W}px!important;height:${targetH}px!important;overflow:hidden!important;box-sizing:border-box!important;display:flex!important;flex-direction:column!important;gap:6px!important;}
       #cmp2-page3 .pdf-hdr-clone{flex-shrink:0!important;}
       #cmp2-page3 .cmp-header-bar.pdf-hdr-clone{padding:14px 24px 12px!important;height:${hdrH - 2}px!important;box-sizing:border-box!important;}
       #cmp2-page3 .cmp-header-bar.pdf-hdr-clone img{height:75px!important;}
