@@ -3998,7 +3998,7 @@ _BRAND_PALETTE = {
     "VXUDIMP": "#8B5CF6",   # Púrpura (3) — was #41BBC9, too similar to VXDEUDA blue
     "VXGUBLP": "#7CC677",   # Verde (4)
     "VXTBILL": "#5B6670",   # Gray (5)
-    "VALMX28": "#FECB46",   # Dorado (6) — was #27325C, too similar to navy
+    "VALMX28": "#A25EB5",   # Púrpura (6) — same as Diversificado in quilt
     "VALMX20": "#EC626E",   # Coral (7)
 }
 
