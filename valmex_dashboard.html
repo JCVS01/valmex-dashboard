@@ -3755,7 +3755,13 @@ function renderPerfiles(data, prefix, chartStore) {
   const allFunds = new Set();
   perfiles.forEach(p => Object.keys(p.funds).forEach(f => allFunds.add(f)));
 
-  const PIE_PAL = ['#00205C','#3DA5E0','#41BBC9','#7CC677','#5B6670','#FECB46'];
+  const FUND_COLORS = {
+    'VXGUBCP': '#00205C', 'VXDEUDA': '#3DA5E0', 'VXUDIMP': '#41BBC9',
+    'VXGUBLP': '#7CC677', 'VXTBILL': '#5B6670', 'VALMX28': '#27325C',
+    'VALMX20': '#EC626E'
+  };
+  // Merge API colors if available
+  if (colors) Object.assign(FUND_COLORS, colors);
   const ids = [prefix+'pie-p0',prefix+'pie-p1',prefix+'pie-p2',prefix+'pie-p3',prefix+'pie-p4'];
   perfiles.forEach((p, idx) => {
     const canvas = document.getElementById(ids[idx]);
@@ -3763,7 +3769,7 @@ function renderPerfiles(data, prefix, chartStore) {
     const funds = Object.entries(p.funds).sort((a,b) => b[1] - a[1]);
     const labels = funds.map(f => f[0]);
     const values = funds.map(f => f[1]);
-    const bgColors = funds.map((f, i) => PIE_PAL[i] || '#EC626E');
+    const bgColors = funds.map(f => FUND_COLORS[f[0]] || '#AAAAAA');
 
     chartStore[idx] = new Chart(canvas, {
       type: 'pie',
@@ -3814,13 +3820,13 @@ function renderPerfiles(data, prefix, chartStore) {
     });
   });
 
-  // Legend — use all unique funds sorted by total weight across all profiles
+  // Legend — fixed fund order, colors by fund name
   const legendWrap = document.getElementById(prefix + 'perfiles-legend');
   if (legendWrap) {
     const sortedFunds = ['VXGUBCP','VXUDIMP','VXDEUDA','VXGUBLP','VXTBILL','VALMX28','VALMX20'];
     let lh = '';
-    sortedFunds.forEach((f, i) => {
-      const c = PIE_PAL[i] || '#EC626E';
+    sortedFunds.forEach(f => {
+      const c = FUND_COLORS[f] || '#AAAAAA';
       lh += '<div style="display:flex;align-items:center;gap:4px;">';
       lh += '<div style="width:12px;height:12px;border-radius:2px;background:' + c + ';flex-shrink:0;"></div>';
       lh += '<span style="font-family:Montserrat,sans-serif;font-size:13px;font-weight:700;color:var(--navy);">' + f + '</span>';
