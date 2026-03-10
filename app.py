@@ -3792,44 +3792,6 @@ def api_quilt():
 _quilt_fondos_cache = {"data": None, "ts": 0}
 
 # Exact same 10 colors from the asset class quilt, assigned to funds
-# ── Institutional color palette — grouped by fund family ──
-# Deuda MXN: azules claros / grises
-# Deuda USD: azules acero / slate
-# RV: teals / verdes oscuros
-# Ciclo de vida: navy-to-slate gradient
-_FUND_PALETTE = {
-    # ── Deuda MXN ──
-    "VXREPO1": "#8FAFC4",   # Silver-Navy (brand)
-    "VXGUBCP": "#34698A",   # Azul petróleo
-    "VXDEUDA": "#A49E8B",   # Beige (manual)
-    "VXUDIMP": "#7CC677",   # Verde (brand)
-    "VXGUBLP": "#00205C",   # Navy (brand)
-    "VLMXETF": "#CBC8C5",   # Gris plata (manual)
-    # ── Deuda USD ──
-    "VXTBILL": "#C7963D",   # Bronce
-    "VXCOBER": "#8B6B4A",   # Café tostado
-    "VLMXDME": "#6A5B7B",   # Violeta gris
-    # ── Renta Variable ──
-    "VALMXA":  "#41BBC9",   # Teal (brand)
-    "VALMX20": "#058B97",   # Teal oscuro (brand)
-    "VALMX28": "#A25EB5",   # Púrpura (brand)
-    "VALMXVL": "#2C9942",   # Verde oscuro (manual)
-    "VALMXES": "#80BC38",   # Verde medio (manual)
-    "VLMXTEC": "#3DA5E0",   # Azul brillante (brand)
-    "VLMXESG": "#2D8B6A",   # Verde jade
-    "VALMXHC": "#3A7A5C",   # Verde bosque
-    "VXINFRA": "#3D7A70",   # Teal apagado
-    # ── Ciclo de Vida ──
-    "VLMXJUB": "#0D3A7A",   # Navy oscuro (brand)
-    "VLMXP24": "#9B5A5A",   # Rosa viejo
-    "VLMXP31": "#D46B6B",   # Rojo pastel
-    "VLMXP38": "#EC626E",   # Coral (brand — Dólar)
-    "VLMXP45": "#E8A838",   # Dorado (brand — Oro)
-    "VLMXP52": "#A6D043",   # Verde lima (manual)
-    "VLMXP59": "#5D8AA8",   # Azul medio
-}
-_FUND_ORDER = list(_FUND_PALETTE.keys())
-
 def _compute_quilt_fondos():
     from concurrent.futures import ThreadPoolExecutor, as_completed
     today = date.today()
@@ -4036,7 +3998,7 @@ _BRAND_PALETTE = {
     "VXUDIMP": "#41BBC9",   # Sky (3)
     "VXGUBLP": "#7CC677",   # Verde (4)
     "VXTBILL": "#5B6670",   # Gray (5)
-    "VALMX28": "#27325C",   # Azul apoyo (6)
+    "VALMX28": "#FECB46",   # Dorado (6) — was #27325C, too similar to navy
     "VALMX20": "#EC626E",   # Coral (7)
 }
 
