@@ -3028,6 +3028,7 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
         "sectores":      filter_pct(sec_acc),
         "supersectores": filter_pct(supersec_acc),
         "has_rv":        stock_t + accion_t + etf_t + indice_t > 0,
+        "pct_rv":        round(stock_t + accion_t + etf_t + indice_t, 2),
         "has_deuda":     has_mxn or has_usd,
         "bt_repo":       sorted(
             [{"fecha": f, "valor": round(v, 4)} for f, v in bt_repo_filtered.items()],
@@ -3043,11 +3044,19 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
             "ytm_mxn":  round(ytm_mxn_num / bond_mxn_denom, 2) if has_mxn else 0,
             "cred_mxn": weighted_credit_rating(cred_mxn) if cred_mxn else "—",
             "pct_mxn":  round(bond_mxn_denom * 100, 2) if has_mxn else 0,
+            "fondos_mxn": sorted(
+                [{"fondo": f, "pct": round(lt["weight"], 2)} for f, lt in fund_lookthrough.items() if lt.get("tipo") == "deuda_mxn"],
+                key=lambda x: -x["pct"]
+            ),
             "has_usd":  has_usd,
             "dur_usd":  round(dur_usd_num / bond_usd_denom, 2) if has_usd else 0,
             "ytm_usd":  round(ytm_usd_num / bond_usd_denom, 2) if has_usd else 0,
             "cred_usd": weighted_credit_rating(cred_usd) if cred_usd else "—",
             "pct_usd":  round(bond_usd_denom * 100, 2) if has_usd else 0,
+            "fondos_usd": sorted(
+                [{"fondo": f, "pct": round(lt["weight"], 2)} for f, lt in fund_lookthrough.items() if lt.get("tipo") == "deuda_usd"],
+                key=lambda x: -x["pct"]
+            ),
         },
         "historical_scenarios": historical_scenarios,
         "fund_risk_contrib": fund_risk_contrib,

@@ -294,7 +294,8 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
 .cmp2-grid-mid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:0 20px;}
 .cmp2-tbl{width:100%;border-collapse:collapse;font-family:'Montserrat',sans-serif;font-size:13px;}
 .cmp2-tbl th{background:#F8FAFC;color:var(--navy);font-weight:700;padding:10px 14px;text-align:left;border-bottom:2px solid #CBD5E1;font-size:13px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
-.cmp2-tbl td{padding:9px 14px;border-bottom:1px solid #F1F5F9;color:#00205C;font-weight:500;}
+.cmp2-tbl{table-layout:auto;}
+.cmp2-tbl td{padding:9px 14px;border-bottom:1px solid #F1F5F9;color:#00205C;font-weight:500;white-space:nowrap;}
 .cmp2-tbl tr:nth-child(even){background:#FAFBFC;}
 .cmp2-tbl tr:hover{background:#F0F4FF;}
 .cmp2-tbl .r{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;}
@@ -1196,13 +1197,13 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
       <div id="cmp2-page3" style="display:flex;flex-direction:column;gap:12px;">
 
       <!-- ═══ Características (conditional) ═══ -->
-      <div class="cmp2-panel" id="cmp2-chars-panel" style="margin:0 20px;display:none;">
-        <div class="cmp2-panel-hdr">Caracter&iacute;sticas</div>
-        <div class="cmp2-panel-body" style="padding:0;overflow-x:auto;">
-          <table class="cmp2-tbl">
-            <thead><tr><th>Caracter&iacute;stica</th><th class="r" id="cmp2-ch-th-a">P. Actual</th><th class="r" id="cmp2-ch-th-b">P. Modelo</th><th class="r" id="cmp2-ch-th-c">P. Propuesta</th></tr></thead>
-            <tbody id="cmp2-chars-tbody"></tbody>
-          </table>
+      <div class="cmp2-panel" id="cmp2-chars-panel" style="margin:0 20px;display:none;"></div>
+
+      <!-- ═══ Deuda Drilldown: MXN + USD side by side ═══ -->
+      <div id="cmp2-deuda-expo-panel" style="margin:0 20px;display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+          <div id="cmp2-deuda-mxn-card"></div>
+          <div id="cmp2-deuda-usd-card"></div>
         </div>
       </div>
 
@@ -1215,14 +1216,6 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
             <div id="cmp2-rv-geo-card"></div>
             <div id="cmp2-rv-sec-card"></div>
           </div>
-        </div>
-      </div>
-
-      <!-- ═══ Deuda Exposure ═══ -->
-      <div class="cmp2-panel" id="cmp2-deuda-expo-panel" style="margin:0 20px;display:none;">
-        <div class="cmp2-panel-hdr">Exposici&oacute;n Renta Fija</div>
-        <div class="cmp2-panel-body" style="padding:12px 16px;">
-          <div id="cmp2-deuda-expo-grid"></div>
         </div>
       </div>
 
@@ -3293,20 +3286,7 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
       if (acs.some(m=>(m[cls]||0)>0)) chars.push(['% '+cls, ...acs.map(m=>(m[cls]||0).toFixed(1)+' %')]);
     });
     const charsPanel = document.getElementById('cmp2-chars-panel');
-    const tbody = document.getElementById('cmp2-chars-tbody');
-    if (tbody) {
-      tbody.innerHTML = '';
-      if (chars.length > 0) {
-        if (charsPanel) charsPanel.style.display = '';
-        chars.forEach(([label, a, b, c]) => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td style="font-weight:600;">${label}</td><td class="r">${a}</td><td class="r">${b}</td><td class="r">${c}</td>`;
-          tbody.appendChild(tr);
-        });
-      } else {
-        if (charsPanel) charsPanel.style.display = 'none';
-      }
-    }
+    if (charsPanel) charsPanel.style.display = 'none';
   }
 
   // ── Exposure: RV vs ACWI + Deuda ──
@@ -3318,18 +3298,20 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
     // ── RV: Overweight/Underweight vs ACWI ──
     const rvPanel = document.getElementById('cmp2-rv-expo-panel');
     if (anyRV && rvPanel) {
-      const acwi = (dataA || dataB || dataC)?.acwi_benchmark;
+      const acwi = dataA?.acwi_benchmark || dataB?.acwi_benchmark || dataC?.acwi_benchmark;
       if (acwi?.geo?.labels?.length || acwi?.sectores?.labels?.length) {
         rvPanel.style.display = '';
         // Legend
         const legend = document.getElementById('cmp2-rv-legend');
         if (legend) {
-          legend.innerHTML = CMP2_COLORS.map((c,i) =>
-            `<span style="color:#00205C;font-weight:700;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c};margin-right:5px;vertical-align:middle;"></span>${portfolioNames[i]}</span>`
-          ).join('') + `<span style="color:#00205C;font-weight:700;margin-left:12px;">Benchmark: MSCI ACWI</span>`;
+          const rvPcts = [dataA,dataB,dataC].map(d => d?.pct_rv);
+          legend.innerHTML = CMP2_COLORS.map((c,i) => {
+            const pct = ` (${(rvPcts[i] || 0).toFixed(1)}%)`;
+            return `<span style="color:#00205C;font-weight:700;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c};margin-right:5px;vertical-align:middle;"></span>${portfolioNames[i]}${pct}</span>`;
+          }).join('') + `<span style="color:#00205C;font-weight:700;margin-left:12px;">Benchmark: MSCI ACWI</span>`;
         }
 
-        function buildRvExpo(title, pLabelsArr, pValsArr, bmkLabelsVals, container) {
+        function buildRvExpo(title, pLabelsArr, pValsArr, bmkLabelsVals, container, datasetsRaw) {
           const bmk = {}; (bmkLabelsVals.labels||[]).forEach((l,i) => { bmk[l] = (bmkLabelsVals.values||[])[i]||0; });
           const allLabels = new Set();
           pLabelsArr.flat().forEach(l => allLabels.add(l));
@@ -3380,15 +3362,21 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
             pMaps.forEach((m, i) => {
               const isLastCol = i === pNames.length - 1;
               const sep = isLastCol ? '' : sepBorder;
-              const v = m[label];
-              if (v === undefined || v === 0) {
+              const hasPortfolio = datasetsRaw[i]?.has_rv;
+              if (!hasPortfolio) {
+                // Portfolio has no RV data at all
                 html += `<td style="padding:6px 4px;text-align:center;font-weight:600;color:#94A3B8;${cs}">–</td>`;
                 html += `<td style="padding:6px 4px;text-align:center;font-weight:600;color:#94A3B8;${sep}">–</td>`;
               } else {
+                const v = m[label] || 0;
                 const diff = v - b;
                 const sign = diff >= 0 ? '+' : '';
                 html += `<td style="padding:6px 4px;text-align:center;font-weight:600;color:#00205C;${cs}">${v.toFixed(1)}%</td>`;
-                html += `<td style="padding:6px 4px;text-align:center;font-weight:700;${cs}color:${heatColor(diff)};background:${heatBg(diff,i)};${sep}">${sign}${diff.toFixed(1)}%</td>`;
+                if (v === 0) {
+                  html += `<td style="padding:6px 4px;text-align:center;font-weight:600;color:#94A3B8;${sep}">–</td>`;
+                } else {
+                  html += `<td style="padding:6px 4px;text-align:center;font-weight:700;${cs}color:${heatColor(diff)};background:${heatBg(diff,i)};${sep}">${sign}${diff.toFixed(1)}%</td>`;
+                }
               }
             });
             html += `</tr>`;
@@ -3402,14 +3390,14 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
           buildRvExpo('Exposici\u00f3n Geogr\u00e1fica',
             [dataA,dataB,dataC].map(d=>d?.geo?.labels||[]),
             [dataA,dataB,dataC].map(d=>d?.geo?.values||[]),
-            acwi.geo, geoCard);
+            acwi.geo, geoCard, [dataA,dataB,dataC]);
         }
         const secCard = document.getElementById('cmp2-rv-sec-card');
         if (secCard && acwi.sectores) {
           buildRvExpo('Exposici\u00f3n Sectorial',
             [dataA,dataB,dataC].map(d=>d?.sectores?.labels||[]),
             [dataA,dataB,dataC].map(d=>d?.sectores?.values||[]),
-            acwi.sectores, secCard);
+            acwi.sectores, secCard, [dataA,dataB,dataC]);
           // Fix header label for sectors
           const hdr = secCard.querySelector('.expo-rv-row .expo-rv-label');
           if (hdr) hdr.textContent = 'Sector';
@@ -3421,30 +3409,73 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
     const deudaPanel = document.getElementById('cmp2-deuda-expo-panel');
     if (anyDeuda && deudaPanel) {
       deudaPanel.style.display = '';
-      const grid = document.getElementById('cmp2-deuda-expo-grid');
-      if (grid) {
-        const DEUDA_COLORS = {'Gubernamental':'#00205C','Corporativo':'#3DA5E0','Reporto':'#41BBC9','Bursatilizado':'#7C93C3','Municipal':'#94B8D1','Derivados':'#CBD5E1'};
-        let html = `<div class="expo-deuda-hdr">Composici\u00f3n por Tipo de Deuda</div>`;
-        [dataA,dataB,dataC].forEach((d,i) => {
-          if (!d?.supersectores?.labels?.length) return;
-          const lbls = d.supersectores.labels, vals = d.supersectores.values;
-          html += `<div class="expo-deuda-row"><div class="expo-deuda-label">${portfolioNames[i]}</div><div class="expo-deuda-bar">`;
-          lbls.forEach((lbl,j) => {
-            const pct = vals[j]||0; if (pct < 0.5) return;
-            const color = DEUDA_COLORS[lbl]||'#94A3B8';
-            html += `<div class="expo-deuda-seg" style="width:${pct.toFixed(1)}%;background:${color};" title="${lbl}: ${pct.toFixed(1)}%">${pct > 8 ? pct.toFixed(0)+'%' : ''}</div>`;
+      const pNames = ['Actual','Modelo','Propuesta'];
+      const datasets = [dataA,dataB,dataC];
+      const cs = 'font-size:13px;';
+      const sepBorder = 'border-right:3px solid #CBD5E1;';
+
+      function buildDeudaTable(title, ccyKey, container) {
+        if (!container) return;
+        const hasCcy = datasets.some(d => d?.deuda?.[`has_${ccyKey}`]);
+        if (!hasCcy) { container.innerHTML = ''; return; }
+
+        // Collect all fund names across portfolios
+        const allFunds = new Set();
+        datasets.forEach(d => (d?.deuda?.[`fondos_${ccyKey}`]||[]).forEach(f => allFunds.add(f.fondo)));
+        const fundMaps = datasets.map(d => {
+          const m = {};
+          (d?.deuda?.[`fondos_${ccyKey}`]||[]).forEach(f => { m[f.fondo] = f.pct; });
+          return m;
+        });
+        const sorted = [...allFunds].sort((a,b) => {
+          const maxA = Math.max(...fundMaps.map(m=>m[a]||0));
+          const maxB = Math.max(...fundMaps.map(m=>m[b]||0));
+          return maxB - maxA;
+        });
+
+        let html = `<table style="width:100%;border-collapse:collapse;font-family:'Montserrat',sans-serif;border:1px solid #E2E8F0;border-radius:8px;overflow:hidden;">`;
+        html += `<thead>`;
+        html += `<tr><th colspan="${1 + pNames.length}" style="background:#00205C;color:#fff;padding:10px 14px;text-align:left;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;">${title}</th></tr>`;
+        // Summary row: Duration / YTM / Credit
+        const summaryRows = [
+          {label:'Duración', key:`dur_${ccyKey}`, fmt:v=>v.toFixed(2)+' años'},
+          {label:'YTM', key:`ytm_${ccyKey}`, fmt:v=>v.toFixed(2)+'%'},
+          {label:'Calificación', key:`cred_${ccyKey}`, fmt:v=>v},
+          {label:'% del Portafolio', key:`pct_${ccyKey}`, fmt:v=>v.toFixed(1)+'%'},
+        ];
+        html += `<tr style="background:#F1F5F9;border-bottom:2px solid #CBD5E1;">`;
+        html += `<th style="text-align:left;padding:7px 10px;${cs}font-weight:700;color:#00205C;"></th>`;
+        pNames.forEach((n,i) => {
+          const isLast = i === pNames.length - 1;
+          html += `<th style="text-align:center;padding:7px 4px;${cs}font-weight:700;color:${CMP2_COLORS[i]};${isLast ? '' : sepBorder}">${n}</th>`;
+        });
+        html += `</tr></thead><tbody>`;
+
+        summaryRows.forEach((row, ri) => {
+          const stripe = ri % 2 === 0 ? '#fff' : '#FAFCFE';
+          html += `<tr style="border-bottom:1px solid #E2E8F0;background:${stripe};">`;
+          html += `<td style="padding:6px 10px;font-weight:700;color:#00205C;${cs}">${row.label}</td>`;
+          datasets.forEach((d, i) => {
+            const isLast = i === pNames.length - 1;
+            const sep = isLast ? '' : sepBorder;
+            const hasCcyP = d?.deuda?.[`has_${ccyKey}`];
+            if (!hasCcyP) {
+              html += `<td style="padding:6px 4px;text-align:center;font-weight:600;color:#94A3B8;${cs}${sep}">–</td>`;
+            } else {
+              const v = d.deuda[row.key];
+              const display = (v === 0 || v === '—' || v === null || v === undefined) ? '–' : row.fmt(v);
+              html += `<td style="padding:6px 4px;text-align:center;font-weight:600;color:${display === '–' ? '#94A3B8' : '#00205C'};${cs}${sep}">${display}</td>`;
+            }
           });
-          html += `</div></div>`;
+          html += `</tr>`;
         });
-        const allTypes = new Set();
-        [dataA,dataB,dataC].forEach(d => (d?.supersectores?.labels||[]).forEach(l => allTypes.add(l)));
-        html += `<div class="expo-deuda-legend">`;
-        allTypes.forEach(t => {
-          html += `<span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${DEUDA_COLORS[t]||'#94A3B8'};margin-right:4px;vertical-align:middle;"></span>${t}</span>`;
-        });
-        html += `</div>`;
-        grid.innerHTML = html;
+
+        html += `</tbody></table>`;
+        container.innerHTML = html;
       }
+
+      buildDeudaTable('Deuda MXN', 'mxn', document.getElementById('cmp2-deuda-mxn-card'));
+      buildDeudaTable('Deuda USD', 'usd', document.getElementById('cmp2-deuda-usd-card'));
     } else if (deudaPanel) { deudaPanel.style.display = 'none'; }
   }
 }
@@ -4270,30 +4301,42 @@ document.getElementById('btn-pdf-cmp2').addEventListener('click', async () => {
   // PDF PAGE 4: Características + Exposición (Drilldown RV y Deuda)
   // ════════════════════════════════════════════════════════════════════
   const hasP3Data = document.getElementById('cmp2-rv-expo-panel')?.style.display !== 'none'
-    || document.getElementById('cmp2-deuda-expo-panel')?.style.display !== 'none'
-    || document.getElementById('cmp2-chars-panel')?.style.display !== 'none';
+    || document.getElementById('cmp2-deuda-expo-panel')?.style.display !== 'none';
   if (inclP3 && hasP3Data) {
-    const tH4 = Math.round(W * (215.9 / 279.4));
+    const targetH = Math.round(W * (215.9 / 279.4));
     const removeHdr4 = injectHeader(page3, 'Características y Exposición', 'Desglose de los Portafolios por Clase de Activo');
     const p3Style = document.createElement('style'); p3Style.id = 'pdf-p3-fit';
     p3Style.textContent = `
-      #cmp2-page3{width:${W}px!important;height:${tH4}px!important;overflow:hidden!important;box-sizing:border-box!important;display:flex!important;flex-direction:column!important;justify-content:space-between!important;}
+      #cmp2-page3{width:${W}px!important;height:${targetH}px!important;overflow:hidden!important;box-sizing:border-box!important;display:flex!important;flex-direction:column!important;gap:14px!important;}
       #cmp2-page3 .pdf-hdr-clone{flex-shrink:0!important;}
       #cmp2-page3 .cmp-header-bar.pdf-hdr-clone{padding:14px 24px 12px!important;height:${hdrH - 2}px!important;box-sizing:border-box!important;}
       #cmp2-page3 .cmp-header-bar.pdf-hdr-clone img{height:75px!important;}
       #cmp2-page3 .cmp-header-bar.pdf-hdr-clone .cmp-main-title{font-size:32px!important;color:#00205C!important;}
       #cmp2-page3 .cmp-header-bar.pdf-hdr-clone .cmp-sub-title{font-size:18px!important;}
-      #cmp2-page3 .cmp2-panel{flex:1!important;display:flex!important;flex-direction:column!important;}
-      #cmp2-page3 .cmp2-panel-body{flex:1!important;}
-      #cmp2-page3 .expo-rv-row{padding:3px 12px!important;}
-      #cmp2-page3 .expo-rv-bar-row{height:4px!important;}
-      #cmp2-page3 .expo-rv-card{break-inside:avoid!important;}
+      #cmp2-page3 #cmp2-deuda-expo-panel{margin:0 24px!important;flex-shrink:0!important;}
+      #cmp2-page3 #cmp2-deuda-expo-panel table{font-size:16px!important;}
+      #cmp2-page3 #cmp2-deuda-expo-panel table th,
+      #cmp2-page3 #cmp2-deuda-expo-panel table td{padding:8px 12px!important;font-size:16px!important;}
+      #cmp2-page3 #cmp2-deuda-expo-panel .cmp2-tbl caption,
+      #cmp2-page3 #cmp2-deuda-expo-panel .cmp2-panel-hdr{font-size:15px!important;}
+      #cmp2-page3 #cmp2-rv-expo-panel{margin:0 24px!important;flex:1!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;}
+      #cmp2-page3 #cmp2-rv-expo-panel .cmp2-panel-hdr{padding:10px 20px!important;font-size:16px!important;flex-shrink:0!important;}
+      #cmp2-page3 #cmp2-rv-expo-panel .cmp2-panel-body{flex:1!important;padding:12px 20px!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;}
+      #cmp2-page3 #cmp2-rv-legend{font-size:14px!important;margin-bottom:10px!important;gap:20px!important;flex-shrink:0!important;}
+      #cmp2-page3 #cmp2-rv-expo-grid{gap:20px!important;flex:1!important;}
+      #cmp2-page3 #cmp2-rv-expo-grid table{font-size:14px!important;}
+      #cmp2-page3 #cmp2-rv-expo-grid table th,
+      #cmp2-page3 #cmp2-rv-expo-grid table td{padding:5px 8px!important;font-size:14px!important;}
+      #cmp2-page3 #cmp2-rv-expo-grid table th:first-child,
+      #cmp2-page3 #cmp2-rv-expo-grid table td:first-child{padding-left:10px!important;}
+      #cmp2-page3 .cmp2-footer{flex-shrink:0!important;padding:6px 24px!important;}
+      #cmp2-page3 .cmp2-footer p{font-size:10px!important;margin:0!important;padding:2px 0!important;}
     `;
     document.head.appendChild(p3Style);
     page3.style.width = W + 'px';
     void page3.offsetWidth;
     await new Promise(r => setTimeout(r, 300));
-    const cv = await html2canvas(page3, {scale:2, useCORS:true, backgroundColor:'#fff', logging:false, scrollX:0, scrollY:0, width:W, height:tH4});
+    const cv = await html2canvas(page3, {scale:2, useCORS:true, backgroundColor:'#fff', logging:false, scrollX:0, scrollY:0, width:W, height:targetH});
     p3Style.remove();
     removeHdr4();
     page3.style.width = '';
