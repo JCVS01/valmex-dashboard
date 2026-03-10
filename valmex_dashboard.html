@@ -4134,54 +4134,52 @@ document.getElementById('btn-pdf-cmp2').addEventListener('click', async () => {
   // ════════════════════════════════════════════════════════════════════
   if (inclP1) {
     const targetH = Math.round(W * (215.9 / 279.4));
-    const origP2 = page2.style.display, origP3 = page3.style.display;
-    page2.style.display = 'none'; page3.style.display = 'none';
+
+    // Inject header into page1 (same pattern as pages 2-4)
+    const removeHdr1 = injectHeader(page1, 'Composición y Desempeño', 'Asignación Estratégica de los Portafolios');
 
     // Auto-adjust spacing: expand when few rows, compact when many
     const compactStyle = document.createElement('style'); compactStyle.id = 'pdf-cmp2-compact';
     const nRows = document.querySelectorAll('#cmp2-holdings-tbody tr').length;
     const extra = Math.max(0, nRows - 12);
-    let css = '';
+    let css = `
+      #cmp2-page1{width:${W}px!important;height:${targetH}px!important;overflow:hidden!important;box-sizing:border-box!important;display:flex!important;flex-direction:column!important;}
+      #cmp2-page1 .pdf-hdr-clone{flex-shrink:0!important;}
+      #cmp2-page1 .cmp-header-bar.pdf-hdr-clone{padding:14px 24px 12px!important;height:${hdrH - 2}px!important;box-sizing:border-box!important;}
+      #cmp2-page1 .cmp-header-bar.pdf-hdr-clone img{height:75px!important;}
+      #cmp2-page1 .cmp-header-bar.pdf-hdr-clone .cmp-main-title{font-size:32px!important;color:#00205C!important;}
+      #cmp2-page1 .cmp-header-bar.pdf-hdr-clone .cmp-sub-title{font-size:18px!important;}
+    `;
     if (nRows < 12) {
-      // Expand rows + gaps to fill page (fewer rows = more padding)
       const deficit = 12 - nRows;
       const pad = Math.min(20, 9 + Math.floor(deficit * 2));
       const gap = Math.min(18, 12 + deficit);
-      css = `#cmp2-page1{gap:${gap}px!important;}
+      css += `#cmp2-page1{gap:${gap}px!important;}
         #cmp2-holdings-tbody td{padding:${pad}px 14px!important;}
         #cmp2-holdings-thead th{padding:${Math.min(14, 10 + Math.floor(deficit/2))}px 14px!important;}`;
     } else if (extra <= 2) {
-      // 13-14 rows: just reduce gap + slight td padding trim
       const gap = extra === 1 ? 8 : 5;
       const pad = extra === 1 ? 8 : 7;
-      css = `#cmp2-page1{gap:${gap}px!important;}
+      css += `#cmp2-page1{gap:${gap}px!important;}
         #cmp2-holdings-tbody td{padding:${pad}px 10px!important;}`;
     } else if (extra <= 5) {
-      // 15-17 rows: tighter gap + td compacting
       const pad = Math.max(4, 9 - extra);
-      css = `#cmp2-page1{gap:3px!important;}
+      css += `#cmp2-page1{gap:3px!important;}
         #cmp2-holdings-tbody td{padding:${pad}px 8px!important;}`;
     } else {
-      // 18+ rows: maximum compacting
-      css = `#cmp2-page1{gap:2px!important;}
+      css += `#cmp2-page1{gap:2px!important;}
         #cmp2-holdings-tbody td{padding:3px 6px!important;font-size:11px!important;}`;
     }
     compactStyle.textContent = css;
     document.head.appendChild(compactStyle);
 
-    // Temporarily change header subtitle for this page
-    const subEl = document.getElementById('cmp2-title-sub');
-    const origSub = subEl?.textContent;
-    if (subEl) subEl.textContent = 'Asignación Estratégica de los Portafolios'; // already the default
-
-    dash.style.height = targetH + 'px'; dash.style.overflow = 'hidden';
-    void dash.offsetWidth;
+    page1.style.width = W + 'px';
+    void page1.offsetWidth;
     await new Promise(r => setTimeout(r, 300));
-    const cv = await html2canvas(dash, {scale:2, useCORS:true, backgroundColor:'#fff', logging:false, scrollX:0, scrollY:0, width:W, height:targetH});
-    page2.style.display = origP2; page3.style.display = origP3;
-    dash.style.height = ''; dash.style.overflow = '';
+    const cv = await html2canvas(page1, {scale:2, useCORS:true, backgroundColor:'#fff', logging:false, scrollX:0, scrollY:0, width:W, height:targetH});
     compactStyle.remove();
-    if (subEl) subEl.textContent = origSub;
+    removeHdr1();
+    page1.style.width = '';
 
     if (!firstPage) pdf.addPage('letter', 'landscape');
     firstPage = false;
