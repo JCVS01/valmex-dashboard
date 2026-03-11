@@ -2637,7 +2637,7 @@ function initCmp2Charts() {
       layout:{padding:{right:60,top:18}},
       scales:{x:{grid:{display:false},ticks:{font:{size:13,family:'Montserrat'},color:'#00205C',maxTicksLimit:8,maxRotation:0,autoSkip:true,callback:_btTickFmt},border:{display:false}},
         y:{grid:{display:false},ticks:{font:{size:13,family:'Montserrat'},color:'#00205C'},border:{display:false}}}},
-    plugins:[{id:'endLabels2',afterDatasetsDraw(chart){const{ctx}=chart;ctx.save();const pts=chart.data.datasets.map((ds,i)=>{const meta=chart.getDatasetMeta(i);const lp=meta.data[meta.data.length-1];if(!lp||!ds.data.length)return null;return{x:lp.x,y:lp.y,val:ds.data[ds.data.length-1],color:ds.borderColor};}).filter(Boolean);
+    plugins:[{id:'endLabels2',afterDatasetsDraw(chart){const{ctx}=chart;ctx.save();const pts=chart.data.datasets.map((ds,i)=>{const meta=chart.getDatasetMeta(i);if(meta.hidden||ds.hidden)return null;const lp=meta.data[meta.data.length-1];if(!lp||!ds.data.length)return null;return{x:lp.x,y:lp.y,val:ds.data[ds.data.length-1],color:ds.borderColor};}).filter(Boolean);
       // Spread overlapping labels
       pts.sort((a,b)=>a.y-b.y);for(let i=1;i<pts.length;i++){if(pts[i].y-pts[i-1].y<16)pts[i].y=pts[i-1].y+16;}
       pts.forEach(p=>{ctx.fillStyle=p.color;ctx.font='bold 14px Montserrat,sans-serif';ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(p.val,p.x+6,p.y);});ctx.restore();}}]
@@ -2652,7 +2652,7 @@ function initCmp2Charts() {
       {label:'P. Propuesta',data:[],backgroundColor:CMP2_COLORS[2],borderRadius:4,barPercentage:.92,categoryPercentage:.88}
     ]},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:28}},
-      plugins:{legend:{position:'bottom',labels:{boxWidth:14,boxHeight:14,font:{size:13,family:'Montserrat',weight:'700'},padding:16,usePointStyle:true,pointStyle:'rectRounded',color:'#00205C'}},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:14,boxHeight:14,font:{size:13,family:'Montserrat',weight:'700'},padding:16,usePointStyle:true,pointStyle:'rectRounded',color:'#00205C',filter:(item,data)=>!data.datasets[item.datasetIndex].hidden}},
         tooltip:{callbacks:{label:ctx=>' '+ctx.dataset.label+': '+(ctx.raw*100).toFixed(2)+'%'},backgroundColor:'#00205C',titleFont:{size:13},bodyFont:{size:13},padding:10,cornerRadius:6},
         datalabels:false},
       scales:{x:{ticks:{font:{size:13,family:'Montserrat',weight:'600'},color:'#00205C',maxRotation:0,minRotation:0,autoSkip:false},grid:{display:false},border:{display:false}},
@@ -2660,7 +2660,7 @@ function initCmp2Charts() {
     plugins:[{id:'sensLabels',afterDatasetsDraw(chart){
       const{ctx}=chart;ctx.save();const placed=[];
       chart.data.datasets.forEach((ds,di)=>{
-        const meta=chart.getDatasetMeta(di);if(!meta||!meta.data)return;
+        const meta=chart.getDatasetMeta(di);if(!meta||meta.hidden||ds.hidden||!meta.data)return;
         meta.data.forEach((bar,i)=>{
           const v=ds.data[i];if(v==null||Math.abs(v)<0.0001)return;
           const lbl=(v*100).toFixed(2)+'%';
@@ -2683,7 +2683,7 @@ function initCmp2Charts() {
       {label:'P. Propuesta',data:[],backgroundColor:CMP2_COLORS[2],borderRadius:4,barPercentage:.92,categoryPercentage:.88}
     ]},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:28}},
-      plugins:{legend:{position:'bottom',labels:{boxWidth:14,boxHeight:14,font:{size:13,family:'Montserrat',weight:'700'},padding:16,usePointStyle:true,pointStyle:'rectRounded',color:'#00205C'}},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:14,boxHeight:14,font:{size:13,family:'Montserrat',weight:'700'},padding:16,usePointStyle:true,pointStyle:'rectRounded',color:'#00205C',filter:(item,data)=>!data.datasets[item.datasetIndex].hidden}},
         tooltip:{callbacks:{label:ctx=>' '+ctx.dataset.label+': '+(ctx.raw*100).toFixed(2)+'%'},backgroundColor:'#00205C',titleFont:{size:13},bodyFont:{size:13},padding:10,cornerRadius:6},
         datalabels:false},
       scales:{x:{ticks:{font:{size:13,family:'Montserrat',weight:'600'},color:'#00205C',maxRotation:0,minRotation:0,autoSkip:false},grid:{display:false},border:{display:false}},
@@ -2691,7 +2691,7 @@ function initCmp2Charts() {
     plugins:[{id:'scenLabels',afterDatasetsDraw(chart){
       const{ctx}=chart;ctx.save();const placed=[];
       chart.data.datasets.forEach((ds,di)=>{
-        const meta=chart.getDatasetMeta(di);if(!meta||!meta.data)return;
+        const meta=chart.getDatasetMeta(di);if(!meta||meta.hidden||ds.hidden||!meta.data)return;
         meta.data.forEach((bar,i)=>{
           const v=ds.data[i];if(v==null||Math.abs(v)<0.0001)return;
           const lbl=(v*100).toFixed(2)+'%';
@@ -2714,7 +2714,7 @@ function initCmp2Charts() {
       {label:'P. Propuesta',data:[],backgroundColor:CMP2_COLORS[2],borderColor:CMP2_COLORS[2],pointRadius:10,pointHoverRadius:12}
     ]},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22,right:22}},
-      plugins:{legend:{position:'bottom',labels:{boxWidth:14,boxHeight:14,font:{size:11,family:'Montserrat',weight:'700'},padding:14,usePointStyle:true,pointStyle:'rectRounded',color:'#00205C'}},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:14,boxHeight:14,font:{size:11,family:'Montserrat',weight:'700'},padding:14,usePointStyle:true,pointStyle:'rectRounded',color:'#00205C',filter:(item,data)=>!data.datasets[item.datasetIndex].hidden}},
         tooltip:{callbacks:{label:ctx=>' '+ctx.dataset.label+': Rend. '+(ctx.parsed.y*100).toFixed(2)+'%, Vol. '+(ctx.parsed.x*100).toFixed(2)+'%'},backgroundColor:'#00205C',padding:8,cornerRadius:6}},
       scales:{x:{title:{display:true,text:'Volatilidad Anualizada',font:{size:11,weight:'700',family:'Montserrat'},color:'#00205C'},ticks:{callback:v=>(v*100).toFixed(2)+'%',font:{size:10,family:'Montserrat'},color:'#00205C'},grid:{color:'rgba(0,32,92,0.06)'},border:{display:false}},
         y:{title:{display:true,text:'Rendimiento Anualizado',font:{size:11,weight:'700',family:'Montserrat'},color:'#00205C'},ticks:{callback:v=>(v*100).toFixed(2)+'%',font:{size:10,family:'Montserrat'},color:'#00205C'},grid:{color:'rgba(0,32,92,0.06)'},border:{display:false}}}},
@@ -2726,7 +2726,7 @@ function initCmp2Charts() {
       const items=[];
       chart.data.datasets.forEach((ds,i)=>{
         const meta=chart.getDatasetMeta(i);
-        if(!meta.visible||!meta.data.length) return;
+        if(!meta.visible||meta.hidden||ds.hidden||!meta.data.length) return;
         const pt=meta.data[0];
         const w=ctx.measureText(ds.label).width;
         items.push({label:ds.label,color:ds.borderColor,px:pt.x,py:pt.y,w,h:H});

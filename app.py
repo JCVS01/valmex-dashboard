@@ -3176,7 +3176,7 @@ def set_security_headers(response):
                 try:
                     minified = _simple_js_minify(js_code)
                     encoded = _b64.b64encode(minified.encode('utf-8')).decode('ascii')
-                    return '<script>eval(atob("' + encoded + '"))</script>'
+                    return '<script>eval(decodeURIComponent(escape(atob("' + encoded + '"))))</script>'
                 except Exception:
                     return m.group(0)
             result = _re.sub(
