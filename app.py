@@ -11,11 +11,6 @@ from datetime import date, timedelta, datetime
 from flask import Flask, send_file, request, jsonify, redirect, url_for, session, send_from_directory, make_response
 import json
 from werkzeug.security import generate_password_hash, check_password_hash
-try:
-    import htmlmin
-    HAS_HTMLMIN = True
-except ImportError:
-    HAS_HTMLMIN = False
 def _simple_js_minify(js):
     """Pure-Python JS minifier: strips comments + collapses whitespace."""
     # Remove single-line comments (but not URLs like http://)
@@ -3175,13 +3170,10 @@ def set_security_headers(response):
             result = _re.sub(
                 r'(<script[^>]*>)(.*?)(</script>)',
                 _minify_script, result, flags=_re.DOTALL)
-            # 2. Minify HTML structure
-            if HAS_HTMLMIN:
-                result = htmlmin.minify(result,
-                    remove_comments=True,
-                    remove_empty_space=True,
-                    reduce_boolean_attributes=True,
-                    remove_optional_attribute_quotes=False)
+            # 2. Minify HTML structure (pure Python, no external deps)
+            result = _re.sub(r'<!--(?!\[).*?-->', '', result, flags=_re.DOTALL)
+            result = _re.sub(r'>\s+<', '><', result)
+            result = _re.sub(r'\s+', ' ', result)
             response.set_data(result)
         except Exception:
             pass  # serve unminified if minification fails
