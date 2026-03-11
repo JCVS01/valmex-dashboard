@@ -54,6 +54,7 @@ def _cache_expired(ts: float) -> bool:
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=12)
 
@@ -3152,24 +3153,32 @@ def set_security_headers(response):
     response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, private'
     response.headers['Pragma'] = 'no-cache'
-    # Minify HTML + JS to make source code unreadable
+    # Minify + obfuscate HTML + JS to make source code unreadable
     if response.content_type and 'text/html' in response.content_type:
         try:
+            import re as _re
+            import base64 as _b64
             original = response.get_data(as_text=True)
             result = original
-            # 1. Minify inline JS inside <script> tags
-            import re as _re
-            def _minify_script(m):
+            # 1. Minify + base64-encode inline JS inside <script> tags
+            def _obfuscate_script(m):
                 tag_open = m.group(1)
                 js_code = m.group(2)
                 tag_close = m.group(3)
+                if not js_code.strip():
+                    return m.group(0)
+                # Skip scripts with src= (external CDN scripts)
+                if 'src=' in tag_open:
+                    return m.group(0)
                 try:
-                    return tag_open + _simple_js_minify(js_code) + tag_close
+                    minified = _simple_js_minify(js_code)
+                    encoded = _b64.b64encode(minified.encode('utf-8')).decode('ascii')
+                    return '<script>eval(atob("' + encoded + '"))</script>'
                 except Exception:
                     return m.group(0)
             result = _re.sub(
                 r'(<script[^>]*>)(.*?)(</script>)',
-                _minify_script, result, flags=_re.DOTALL)
+                _obfuscate_script, result, flags=_re.DOTALL)
             # 2. Minify HTML structure (pure Python, no external deps)
             result = _re.sub(r'<!--(?!\[).*?-->', '', result, flags=_re.DOTALL)
             result = _re.sub(r'>\s+<', '><', result)
