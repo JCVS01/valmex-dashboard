@@ -4111,17 +4111,17 @@ let _cmp2QuiltsLoaded = false;
 const _cmp2PerfilCharts = {};
 async function loadCmp2Quilts() {
   if (_cmp2QuiltsLoaded) return;
-  if (!_quiltData) {
-    try { const r = await fetch('/api/quilt'); const d = await r.json(); if (d.ok) _quiltData = d; } catch(e) {}
-  }
+  // Fetch all three endpoints in parallel
+  const [qRes, qfRes, pRes] = await Promise.allSettled([
+    !_quiltData ? fetch('/api/quilt').then(r => r.json()) : Promise.resolve(null),
+    !_quiltFondosData ? fetch('/api/quilt_fondos').then(r => r.json()) : Promise.resolve(null),
+    !_perfilesData ? fetch('/api/perfiles').then(r => r.json()) : Promise.resolve(null),
+  ]);
+  if (qRes.status === 'fulfilled' && qRes.value?.ok) _quiltData = qRes.value;
+  if (qfRes.status === 'fulfilled' && qfRes.value?.ok) _quiltFondosData = qfRes.value;
+  if (pRes.status === 'fulfilled' && pRes.value?.ok) _perfilesData = pRes.value;
   if (_quiltData) renderQuiltChart(_quiltData, 'cmp2-quilt-table-wrap', 'cmp2-quilt-note');
-  if (!_quiltFondosData) {
-    try { const r = await fetch('/api/quilt_fondos'); const d = await r.json(); if (d.ok) _quiltFondosData = d; } catch(e) {}
-  }
   if (_quiltFondosData) renderQuiltFondos(_quiltFondosData, 'cmp2-quilt-fondos-wrap', 'cmp2-quilt-fondos-note');
-  if (!_perfilesData) {
-    try { const r = await fetch('/api/perfiles'); const d = await r.json(); if (d.ok) _perfilesData = d; } catch(e) {}
-  }
   if (_perfilesData) renderPerfiles(_perfilesData, 'cmp2-', _cmp2PerfilCharts);
   _cmp2QuiltsLoaded = true;
 }

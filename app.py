@@ -3625,7 +3625,7 @@ def _compute_quilt():
     def bx_series(serie):
         try:
             url = f"https://www.banxico.org.mx/SieAPIRest/service/v1/series/{serie}/datos/2015-12-01/{today.isoformat()}"
-            r = requests.get(url, headers={"Bmx-Token": BANXICO_TOKEN, "Accept": "application/json"}, timeout=30)
+            r = requests.get(url, headers={"Bmx-Token": BANXICO_TOKEN, "Accept": "application/json"}, timeout=15)
             r.raise_for_status()
             datos = r.json()["bmx"]["series"][0]["datos"]
             out = {}
@@ -3705,8 +3705,21 @@ def _compute_quilt():
             return round((eu * ef / (su * sf) - 1) * 100, 2)
         return None
 
-    # Fetch all data in parallel where possible
-    with ThreadPoolExecutor(max_workers=10) as _pool:
+    # Fetch all data in parallel (Banxico, FRED, Morningstar, Yahoo Finance)
+    def _yf_series(ticker):
+        try:
+            df = yf.download(ticker, start="2015-12-01", end=today.isoformat(),
+                             auto_adjust=True, progress=False)
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = df.columns.get_level_values(0)
+            s = df["Close"]
+            print(f"[QUILT] {ticker}: {len(s)} prices")
+            return s
+        except Exception as e:
+            print(f"[QUILT] {ticker} error: {e}")
+            return pd.Series(dtype=float)
+
+    with ThreadPoolExecutor(max_workers=12) as _pool:
         _fx_f = _pool.submit(bx_series, "SF43718")
         _cetes_f = _pool.submit(bx_series, "SF43936")
         _inpc_f = _pool.submit(bx_series, "SP1")
@@ -3716,6 +3729,8 @@ def _compute_quilt():
         _eem_f = _pool.submit(ms_series, "EEM")
         _urth_f = _pool.submit(ms_series, "URTH")
         _bwx_f = _pool.submit(ms_series, "BWX")
+        _gold_f = _pool.submit(_yf_series, "GC=F")
+        _oil_f = _pool.submit(_yf_series, "CL=F")
     fx = _fx_f.result()
     cetes = _cetes_f.result()
     inpc = _inpc_f.result()
@@ -3725,28 +3740,8 @@ def _compute_quilt():
     eem = _eem_f.result()
     urth = _urth_f.result()
     bwx = _bwx_f.result()
-    # Oro: Gold futures USD/oz (Yahoo Finance)
-    try:
-        gold_df = yf.download("GC=F", start="2015-12-01", end=today.isoformat(),
-                              auto_adjust=True, progress=False)
-        if isinstance(gold_df.columns, pd.MultiIndex):
-            gold_df.columns = gold_df.columns.get_level_values(0)
-        gold = gold_df["Close"]
-        print(f"[QUILT] Gold: {len(gold)} prices")
-    except Exception as e:
-        print(f"[QUILT] Gold error: {e}")
-        gold = pd.Series(dtype=float)
-    # Petróleo: WTI Crude futures USD/bbl (Yahoo Finance)
-    try:
-        oil_df = yf.download("CL=F", start="2015-12-01", end=today.isoformat(),
-                             auto_adjust=True, progress=False)
-        if isinstance(oil_df.columns, pd.MultiIndex):
-            oil_df.columns = oil_df.columns.get_level_values(0)
-        oil = oil_df["Close"]
-        print(f"[QUILT] Oil: {len(oil)} prices")
-    except Exception as e:
-        print(f"[QUILT] Oil error: {e}")
-        oil = pd.Series(dtype=float)
+    gold = _gold_f.result()
+    oil = _oil_f.result()
 
     rets = {}
 
