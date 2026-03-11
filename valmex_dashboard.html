@@ -1256,7 +1256,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
         <div class="cmp2-panel-hdr">Exposici&oacute;n Renta Variable vs ACWI</div>
         <div class="cmp2-panel-body" style="padding:10px 0 0 0;">
           <div id="cmp2-rv-legend" style="display:flex;justify-content:center;gap:20px;margin-bottom:10px;font-family:'Montserrat',sans-serif;font-size:13px;color:#00205C;"></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;" id="cmp2-rv-expo-grid">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" id="cmp2-rv-expo-grid">
             <div id="cmp2-rv-geo-card"></div>
             <div id="cmp2-rv-sec-card"></div>
           </div>
@@ -4096,7 +4096,7 @@ document.getElementById('btn-pdf').addEventListener('click', async () => {
   const y = Math.min(mt, ph - imgH - mb);
   pdf.addImage(cv.toDataURL('image/jpeg', 0.92), 'JPEG', mx, Math.max(mt, y), usableW, imgH);
   const contrato = document.getElementById('cfg-contrato')?.value?.trim() || '';
-  const propName = contrato ? `Comparativa ${contrato} - VALMEX.pdf` : 'Comparativa - VALMEX.pdf';
+  const propName = contrato ? `Estrategia de Inversión - ${contrato}.pdf` : 'Estrategia de Inversión - VALMEX.pdf';
   pdf.save(propName);
 });
 
