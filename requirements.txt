@@ -10,4 +10,3 @@ numpy>=1.24.0
 scikit-learn>=1.3.0
 scipy>=1.11.0
 htmlmin>=0.1.12
-rjsmin>=1.2.0

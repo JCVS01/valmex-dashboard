@@ -16,11 +16,21 @@ try:
     HAS_HTMLMIN = True
 except ImportError:
     HAS_HTMLMIN = False
-try:
-    import rjsmin
-    HAS_RJSMIN = True
-except ImportError:
-    HAS_RJSMIN = False
+def _simple_js_minify(js):
+    """Pure-Python JS minifier: strips comments + collapses whitespace."""
+    # Remove single-line comments (but not URLs like http://)
+    result = re.sub(r'(?<![:"\'\\])//[^\n]*', '', js)
+    # Remove multi-line comments
+    result = re.sub(r'/\*.*?\*/', '', result, flags=re.DOTALL)
+    # Collapse multiple whitespace/newlines into single space
+    result = re.sub(r'\s+', ' ', result)
+    # Remove spaces around operators/punctuation
+    result = re.sub(r'\s*([{}\[\]();,:<>+=\-*/&|!?])\s*', r'\1', result)
+    # Restore necessary spaces (keywords)
+    for kw in ['return ', 'var ', 'let ', 'const ', 'function ', 'typeof ', 'instanceof ',
+               'new ', 'delete ', 'throw ', 'case ', 'in ', 'of ', 'else ', 'void ', 'yield ', 'async ', 'await ']:
+        result = result.replace(kw.strip(), kw.rstrip() + ' ' if kw.endswith(' ') else kw)
+    return result.strip()
 from scipy.stats import skew, kurtosis
 from sklearn.linear_model import ElasticNetCV
 from sklearn.covariance import LedoitWolf
@@ -3153,19 +3163,18 @@ def set_security_headers(response):
             original = response.get_data(as_text=True)
             result = original
             # 1. Minify inline JS inside <script> tags
-            if HAS_RJSMIN:
-                import re as _re
-                def _minify_script(m):
-                    tag_open = m.group(1)
-                    js_code = m.group(2)
-                    tag_close = m.group(3)
-                    try:
-                        return tag_open + rjsmin.jsmin(js_code) + tag_close
-                    except Exception:
-                        return m.group(0)
-                result = _re.sub(
-                    r'(<script[^>]*>)(.*?)(</script>)',
-                    _minify_script, result, flags=_re.DOTALL)
+            import re as _re
+            def _minify_script(m):
+                tag_open = m.group(1)
+                js_code = m.group(2)
+                tag_close = m.group(3)
+                try:
+                    return tag_open + _simple_js_minify(js_code) + tag_close
+                except Exception:
+                    return m.group(0)
+            result = _re.sub(
+                r'(<script[^>]*>)(.*?)(</script>)',
+                _minify_script, result, flags=_re.DOTALL)
             # 2. Minify HTML structure
             if HAS_HTMLMIN:
                 result = htmlmin.minify(result,
