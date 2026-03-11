@@ -3473,10 +3473,20 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
     if (movTbody && monto > 0) {
       movTbody.innerHTML = '';
       let sumPctA = 0, sumMonA = 0, sumPctD = 0, sumMonD = 0, sumDifPct = 0, sumDifMon = 0;
-      // First pass: compute raw montos
-      const rows = sortedM.map(fund => {
-        const pA = mapA[fund] || 0;
-        const pD = mapD[fund] || 0;
+      // Normalize percentages so each side sums to exactly 100%
+      const rawA = sortedM.map(f => mapA[f] || 0);
+      const rawD = sortedM.map(f => mapD[f] || 0);
+      const sumRawA = rawA.reduce((a,b) => a+b, 0);
+      const sumRawD = rawD.reduce((a,b) => a+b, 0);
+      const normA = sumRawA > 0 ? rawA.map(v => +(v * 100 / sumRawA).toFixed(2)) : rawA;
+      const normD = sumRawD > 0 ? rawD.map(v => +(v * 100 / sumRawD).toFixed(2)) : rawD;
+      // Adjust largest entry to absorb rounding residual
+      if (sumRawA > 0) { const s = normA.reduce((a,b)=>a+b,0); const mx = normA.indexOf(Math.max(...normA)); normA[mx] = +(normA[mx] + (100 - s)).toFixed(2); }
+      if (sumRawD > 0) { const s = normD.reduce((a,b)=>a+b,0); const mx = normD.indexOf(Math.max(...normD)); normD[mx] = +(normD[mx] + (100 - s)).toFixed(2); }
+      // Compute rows with normalized percentages
+      const rows = sortedM.map((fund, i) => {
+        const pA = normA[i];
+        const pD = normD[i];
         const monA = +(monto * pA / 100).toFixed(2);
         const monD = +(monto * pD / 100).toFixed(2);
         const difP = +(pD - pA).toFixed(2);

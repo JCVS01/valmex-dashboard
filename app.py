@@ -525,6 +525,7 @@ _ms_cache_ts = 0.0          # epoch timestamp of last fetch
 MS_URL    = os.environ.get("MS_URL", "https://api.morningstar.com/v2/service/mf/hlk0d0zmiy1b898b/universeid/txcm88fa8x3vxapp")
 MS_ACCESS = os.environ.get("MS_ACCESS", "hwg0cty5re7araij32k035091f43wxd0")
 MS_NAV_URL = os.environ.get("MS_NAV_URL", "https://api.morningstar.com/service/mf/UnadjustedNAV/ISIN")
+_ms_session = requests.Session()          # reuse TCP connections to Morningstar
 
 
 def load_ms_universe(force=False):
@@ -532,7 +533,7 @@ def load_ms_universe(force=False):
     if _ms_cache and not force and not _cache_expired(_ms_cache_ts):
         return _ms_cache
     try:
-        resp = requests.get(MS_URL, params={"accesscode": MS_ACCESS, "format": "JSON"}, timeout=25)
+        resp = _ms_session.get(MS_URL, params={"accesscode": MS_ACCESS, "format": "JSON"}, timeout=15)
         resp.raise_for_status()
         new_cache = {}
         for fund in resp.json().get("data", []):
@@ -566,10 +567,10 @@ def get_ms_nav(isin: str, start: str = "2000-01-01", end: str = None,
     if cached and not _cache_expired(cached["ts"]):
         return cached["data"]
     try:
-        r = requests.get(
+        r = _ms_session.get(
             f"{MS_NAV_URL}/{isin}",
             params={"startdate": start, "enddate": end, "accesscode": MS_ACCESS},
-            timeout=25,
+            timeout=15,
         )
         r.raise_for_status()
         root = ET.fromstring(r.text)
@@ -2344,7 +2345,7 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
         def _fetch_nav(args):
             isin, f, s = args
             get_ms_nav(isin, expect_fund=f, expect_serie=s)
-        with ThreadPoolExecutor(max_workers=15) as executor:
+        with ThreadPoolExecutor(max_workers=6) as executor:
             list(executor.map(_fetch_nav, _prefetch_items))
 
     for fondo, pct in fondos_pct.items():
@@ -3655,14 +3656,19 @@ def _compute_quilt():
 
     MS_NAV_TICKER_URL = "https://api.morningstar.com/service/mf/UnadjustedNAV/TICKER"
 
+    _ms_ticker_cache: dict = {}
+
     def ms_series(ticker):
-        """Fetch daily NAV/price from Morningstar by TICKER symbol."""
+        """Fetch daily NAV/price from Morningstar by TICKER symbol (cached daily)."""
+        cached = _ms_ticker_cache.get(ticker)
+        if cached and not _cache_expired(cached["ts"]):
+            return cached["data"]
         try:
-            r = requests.get(
+            r = _ms_session.get(
                 f"{MS_NAV_TICKER_URL}/{ticker}",
                 params={"startdate": "2015-12-01", "enddate": today.isoformat(),
                         "accesscode": MS_ACCESS},
-                timeout=30,
+                timeout=15,
             )
             r.raise_for_status()
             root = ET.fromstring(r.text)
@@ -3671,8 +3677,10 @@ def _compute_quilt():
                 try:
                     out[datetime.strptime(elem.get("d"), "%Y-%m-%d")] = float(elem.get("v"))
                 except: pass
+            result = pd.Series(out).sort_index()
+            _ms_ticker_cache[ticker] = {"ts": time.time(), "data": result}
             print(f"[QUILT MS] {ticker}: {len(out)} prices")
-            return pd.Series(out).sort_index()
+            return result
         except Exception as e:
             print(f"[QUILT MS ERROR] {ticker}: {e}")
             return pd.Series(dtype=float)
@@ -3697,17 +3705,26 @@ def _compute_quilt():
             return round((eu * ef / (su * sf) - 1) * 100, 2)
         return None
 
-    # Fetch all data
-    fx = bx_series("SF43718")
-    cetes = bx_series("SF43936")
-    inpc = bx_series("SP1")
-    tasa = bx_series("SF61745")
-    bond10y = fred_series("IRLTLT01MXM156N")
-    # Morningstar NAV: NAFTRAC (MXN), EEM/URTH/BWX (USD)
-    naftrac = ms_series("NAFTRAC")
-    eem = ms_series("EEM")
-    urth = ms_series("URTH")
-    bwx = ms_series("BWX")
+    # Fetch all data in parallel where possible
+    with ThreadPoolExecutor(max_workers=10) as _pool:
+        _fx_f = _pool.submit(bx_series, "SF43718")
+        _cetes_f = _pool.submit(bx_series, "SF43936")
+        _inpc_f = _pool.submit(bx_series, "SP1")
+        _tasa_f = _pool.submit(bx_series, "SF61745")
+        _bond_f = _pool.submit(fred_series, "IRLTLT01MXM156N")
+        _naftrac_f = _pool.submit(ms_series, "NAFTRAC")
+        _eem_f = _pool.submit(ms_series, "EEM")
+        _urth_f = _pool.submit(ms_series, "URTH")
+        _bwx_f = _pool.submit(ms_series, "BWX")
+    fx = _fx_f.result()
+    cetes = _cetes_f.result()
+    inpc = _inpc_f.result()
+    tasa = _tasa_f.result()
+    bond10y = _bond_f.result()
+    naftrac = _naftrac_f.result()
+    eem = _eem_f.result()
+    urth = _urth_f.result()
+    bwx = _bwx_f.result()
     # Oro: Gold futures USD/oz (Yahoo Finance)
     try:
         gold_df = yf.download("GC=F", start="2015-12-01", end=today.isoformat(),
@@ -3904,7 +3921,7 @@ def _compute_quilt_fondos():
         data = get_ms_nav(isin, start="2015-12-01")
         return fondo, data
 
-    with ThreadPoolExecutor(max_workers=15) as executor:
+    with ThreadPoolExecutor(max_workers=6) as executor:
         futures = {executor.submit(fetch_fund, f, i): f for f, i in fondos.items()}
         for future in as_completed(futures):
             try:
