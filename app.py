@@ -3994,12 +3994,12 @@ def api_quilt_fondos():
 
 _BRAND_PALETTE = {
     "VXGUBCP": "#00205C",   # Navy (brand — Pantone 281 C)
-    "VXDEUDA": "#41BBC9",   # Sky (brand — Pantone 319 C)
+    "VXDEUDA": "#75A1DE",   # Silver-Blue (brand tint)
     "VXUDIMP": "#5B6670",   # Gray (brand — Pantone 431 C)
     "VXGUBLP": "#2E7D5B",   # Emerald Green (complementario)
     "VXTBILL": "#3DA5E0",   # Blue (brand — Pantone 299 C)
-    "VALMX28": "#6C3483",   # Deep Purple (complementario RV)
-    "VALMX20": "#922B3E",   # Burgundy (complementario RV)
+    "VALMX28": "#FECB46",   # Gold (brand accent RV)
+    "VALMX20": "#BFDD7E",   # Lime Green (brand accent RV)
 }
 
 @app.route("/api/perfiles")
