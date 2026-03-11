@@ -2833,8 +2833,8 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
   const rcGrid = document.getElementById('cmp2-risk-contrib-grid');
   if (rcGrid) rcGrid.style.gridTemplateColumns = is3way ? 'repeat(3,1fr)' : 'repeat(2,1fr)';
 
-  // Chart labels + dataset visibility
-  [cmp2Charts.perf, cmp2Charts.scatter, cmp2Charts.sensitivity, cmp2Charts.scenarios].forEach(c => {
+  // Chart labels + dataset visibility (line/scatter use hidden flag; bar charts rebuilt below)
+  [cmp2Charts.perf, cmp2Charts.scatter].forEach(c => {
     if (!c) return;
     c.data.datasets[0].label = lblAshort;
     c.data.datasets[1].label = lblBshort;
@@ -3270,21 +3270,25 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
       ['Oro -10%',                   f => f?.goldDown],
       ['VIX +10%',                   f => f?.vixSpike != null ? f.vixSpike * (10/50) : null],
     ];
-    const activeSens = sensScenarios.filter(([, fn]) => fi.some(f => f && Math.abs(fn(f)||0) > 0.0001));
+    const _sensVis = [true, showB, showC];
+    const _visFi = fi.filter((_, i) => _sensVis[i]);
+    const activeSens = sensScenarios.filter(([, fn]) => _visFi.some(f => f && Math.abs(fn(f)||0) > 0.0001));
     // Split long labels into 2 lines for readability
     function splitLabel(s){const w=s.split(' ');if(w.length<=2)return s;const m=Math.ceil(w.length/2);return[w.slice(0,m).join(' '),w.slice(m).join(' ')];}
     if (cmp2Charts.sensitivity) {
       cmp2Charts.sensitivity.data.labels = activeSens.map(([l]) => splitLabel(l));
-      [lblA, lblB, lblC].forEach((lbl, i) => { cmp2Charts.sensitivity.data.datasets[i].label = lbl; });
-      fi.forEach((f, i) => {
-        cmp2Charts.sensitivity.data.datasets[i].data = activeSens.map(([, fn]) => f ? (fn(f) ?? 0) : 0);
-      });
+      const _sLbls = [lblA, lblB, lblC].filter((_, i) => _sensVis[i]);
+      const _sClrs = CMP2_COLORS.filter((_, i) => _sensVis[i]);
+      cmp2Charts.sensitivity.data.datasets = _sLbls.map((lbl, j) => ({
+        label: lbl, data: activeSens.map(([, fn]) => _visFi[j] ? (fn(_visFi[j]) ?? 0) : 0),
+        backgroundColor: _sClrs[j], borderRadius: 4, barPercentage: .92, categoryPercentage: .88
+      }));
       cmp2Charts.sensitivity.update();
     }
     // Show R² in sensitivity footer
     const r2El = document.getElementById('cmp2-r2-display');
     if (r2El) {
-      const allB = [dataA, dataB, dataC].map(d => d?.betas || {});
+      const allB = [dataA, dataB, dataC].filter((_, i) => _sensVis[i]).map(d => d?.betas || {});
       const r2vals = allB.filter(b => b.r_squared != null).map(b => b.r_squared);
       const adjR2vals = allB.filter(b => b.adj_r_squared != null).map(b => b.adj_r_squared);
       const nvals = allB.filter(b => b.n_months != null).map(b => b.n_months);
@@ -3318,12 +3322,17 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
       ['Recuperaci\u00f3n Bancaria 2023', i => hs[i]?.bankRecovery],
       ['Crisis Arancelaria 2025', i => hs[i]?.tariffCrisis],
     ];
-    const active = scenarios.filter(([, fn]) => [0, 1, 2].some(i => fn(i) != null));
+    const _scVis = [true, showB, showC];
+    const _scIdx = [0, 1, 2].filter(i => _scVis[i]);
+    const active = scenarios.filter(([, fn]) => _scIdx.some(i => fn(i) != null));
     if (cmp2Charts.scenarios) {
       cmp2Charts.scenarios.data.labels = active.map(([l]) => {if(Array.isArray(l))return l;const w=l.split(' ');if(w.length<=2)return l;const m=Math.ceil(w.length/2);return[w.slice(0,m).join(' '),w.slice(m).join(' ')];});
-      [0, 1, 2].forEach(i => {
-        cmp2Charts.scenarios.data.datasets[i].data = active.map(([, fn]) => fn(i) ?? 0);
-      });
+      const _scClrs = CMP2_COLORS.filter((_, i) => _scVis[i]);
+      const _scLbls = [lblAshort, lblBshort, lblCshort].filter((_, i) => _scVis[i]);
+      cmp2Charts.scenarios.data.datasets = _scLbls.map((lbl, j) => ({
+        label: lbl, data: active.map(([, fn]) => fn(_scIdx[j]) ?? 0),
+        backgroundColor: _scClrs[j], borderRadius: 4, barPercentage: .92, categoryPercentage: .88
+      }));
       // Dynamic height based on number of scenarios
       const canvas = cmp2Charts.scenarios.canvas;
       if (canvas?.parentElement) canvas.parentElement.style.height = Math.max(280, active.length * 50 + 60) + 'px';
