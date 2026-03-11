@@ -4495,7 +4495,7 @@ document.getElementById('btn-pdf-cmp2').addEventListener('click', async () => {
   window.scrollTo(savedScrollX, savedScrollY);
 
   const contrato2 = document.getElementById('cfg-contrato')?.value?.trim() || '';
-  const name2 = contrato2 ? `Comparativa 3-Way ${contrato2} - VALMEX.pdf` : 'Comparativa 3-Way - VALMEX.pdf';
+  const name2 = contrato2 ? `Inversión VALMEX - ${contrato2}.pdf` : 'Inversión VALMEX.pdf';
   pdf.save(name2);
 });
 
