@@ -604,6 +604,50 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
 /* ── RESPONSIVE: prop-dash-scaler containment ── */
 .prop-dash-scaler{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}
 </style>
+<script>
+// ── Security: anti-inspect, anti-copy ──
+(function(){
+  // Disable right-click context menu
+  document.addEventListener('contextmenu',function(e){e.preventDefault();return false;});
+  // Disable keyboard shortcuts for DevTools
+  document.addEventListener('keydown',function(e){
+    // F12
+    if(e.key==='F12'){e.preventDefault();return false;}
+    // Ctrl+Shift+I / Cmd+Opt+I (Inspector)
+    if((e.ctrlKey||e.metaKey)&&e.shiftKey&&e.key==='I'){e.preventDefault();return false;}
+    // Ctrl+Shift+J / Cmd+Opt+J (Console)
+    if((e.ctrlKey||e.metaKey)&&e.shiftKey&&e.key==='J'){e.preventDefault();return false;}
+    // Ctrl+Shift+C / Cmd+Opt+C (Element picker)
+    if((e.ctrlKey||e.metaKey)&&e.shiftKey&&e.key==='C'){e.preventDefault();return false;}
+    // Ctrl+U / Cmd+U (View Source)
+    if((e.ctrlKey||e.metaKey)&&e.key==='u'){e.preventDefault();return false;}
+    if((e.ctrlKey||e.metaKey)&&e.key==='U'){e.preventDefault();return false;}
+    // Ctrl+S / Cmd+S (Save page)
+    if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();return false;}
+    if((e.ctrlKey||e.metaKey)&&e.key==='S'){e.preventDefault();return false;}
+  });
+  // Disable text selection and drag
+  document.addEventListener('selectstart',function(e){
+    if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
+    e.preventDefault();
+  });
+  document.addEventListener('dragstart',function(e){e.preventDefault();});
+  // Console warning
+  console.log('%c⚠️ ALTO','font-size:48px;color:red;font-weight:bold;');
+  console.log('%cEste es un sistema privado de VALMEX Asset Management.\nEl acceso no autorizado será perseguido conforme a la ley.','font-size:16px;color:#00205C;');
+  // DevTools detection via debugger timing
+  var _dt=false;
+  setInterval(function(){
+    var t0=performance.now();
+    debugger;
+    if(performance.now()-t0>100&&!_dt){
+      _dt=true;
+      document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:Montserrat,sans-serif;color:#00205C;font-size:24px;text-align:center;padding:40px;">⚠️ Herramientas de desarrollo detectadas.<br>Sesión terminada por seguridad.</div>';
+      fetch('/logout');
+    }
+  },2000);
+})();
+</script>
 </head>
 <body>
 

@@ -503,9 +503,9 @@ SERIE_MAP = {
 
 _ms_cache = {}
 _ms_cache_ts = 0.0          # epoch timestamp of last fetch
-MS_URL    = "https://api.morningstar.com/v2/service/mf/hlk0d0zmiy1b898b/universeid/txcm88fa8x3vxapp"
-MS_ACCESS = "hwg0cty5re7araij32k035091f43wxd0"
-MS_NAV_URL = "https://api.morningstar.com/service/mf/UnadjustedNAV/ISIN"
+MS_URL    = os.environ.get("MS_URL", "https://api.morningstar.com/v2/service/mf/hlk0d0zmiy1b898b/universeid/txcm88fa8x3vxapp")
+MS_ACCESS = os.environ.get("MS_ACCESS", "hwg0cty5re7araij32k035091f43wxd0")
+MS_NAV_URL = os.environ.get("MS_NAV_URL", "https://api.morningstar.com/service/mf/UnadjustedNAV/ISIN")
 
 
 def load_ms_universe(force=False):
@@ -3119,12 +3119,24 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
 @app.after_request
 def set_security_headers(response):
     response.headers['X-Content-Type-Options'] = 'nosniff'
-    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['X-Frame-Options'] = 'DENY'
     response.headers['X-XSS-Protection'] = '1; mode=block'
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
-    response.headers['Permissions-Policy'] = 'geolocation=(), camera=(), microphone=()'
-    if request.is_secure:
-        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    response.headers['Permissions-Policy'] = 'geolocation=(), camera=(), microphone=(), usb=(), bluetooth=()'
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://html2canvas.hertzen.com; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; "
+        "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
+        "img-src 'self' data: blob:; "
+        "connect-src 'self'; "
+        "frame-ancestors 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self';"
+    )
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, private'
+    response.headers['Pragma'] = 'no-cache'
     return response
 
 _login_attempts = {}
@@ -3144,6 +3156,32 @@ def _check_login_rate_limit(ip):
         return True
     _login_attempts[ip] = (1, now)
     return True
+
+# ── Global API rate limiting ──
+_api_calls = {}
+_API_MAX_RPM = 120  # max requests per minute per IP
+_API_WINDOW  = 60
+
+def _check_api_rate_limit():
+    ip = request.remote_addr or "unknown"
+    now = time.time()
+    if ip in _api_calls:
+        calls, first = _api_calls[ip]
+        if now - first > _API_WINDOW:
+            _api_calls[ip] = (1, now)
+            return True
+        if calls >= _API_MAX_RPM:
+            return False
+        _api_calls[ip] = (calls + 1, first)
+        return True
+    _api_calls[ip] = (1, now)
+    return True
+
+@app.before_request
+def global_rate_limit():
+    if request.path.startswith('/api/'):
+        if not _check_api_rate_limit():
+            return jsonify({"error": "Rate limit exceeded"}), 429
 
 _TICKER_RE = re.compile(r'^[A-Za-z0-9.&Ññ^]{1,20}$')
 
@@ -4018,6 +4056,8 @@ def api_perfiles():
 def api_universo():
     """Clasificacion de fondos Valmex — datos LIVE de Morningstar API.
     Refresca diario (post 4pm NYSE) o con ?force=1."""
+    if "usuario" not in session:
+        return jsonify({"error": "No autorizado"}), 401
     force = request.args.get("force", "0") == "1"
     universe = load_ms_universe(force=force)
     seen = {}
