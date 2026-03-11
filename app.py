@@ -12,19 +12,22 @@ from flask import Flask, send_file, request, jsonify, redirect, url_for, session
 import json
 from werkzeug.security import generate_password_hash, check_password_hash
 def _simple_js_minify(js):
-    """Pure-Python JS minifier: strips comments + collapses whitespace."""
+    """Pure-Python JS minifier: strips comments + collapses whitespace.
+    Conservative approach — only removes clearly safe whitespace to avoid
+    breaking identifiers like innerHTML, injectHeader, etc."""
     # Remove single-line comments (but not URLs like http://)
     result = re.sub(r'(?<![:"\'\\])//[^\n]*', '', js)
     # Remove multi-line comments
     result = re.sub(r'/\*.*?\*/', '', result, flags=re.DOTALL)
     # Collapse multiple whitespace/newlines into single space
     result = re.sub(r'\s+', ' ', result)
-    # Remove spaces around operators/punctuation
-    result = re.sub(r'\s*([{}\[\]();,:<>+=\-*/&|!?])\s*', r'\1', result)
-    # Restore necessary spaces (keywords)
-    for kw in ['return ', 'var ', 'let ', 'const ', 'function ', 'typeof ', 'instanceof ',
-               'new ', 'delete ', 'throw ', 'case ', 'in ', 'of ', 'else ', 'void ', 'yield ', 'async ', 'await ']:
-        result = result.replace(kw.strip(), kw.rstrip() + ' ' if kw.endswith(' ') else kw)
+    # Remove space only around punctuation that never needs adjacent spaces
+    result = re.sub(r' *([{}()\[\];,]) *', r'\1', result)
+    # Restore spaces that keywords MUST have before identifiers
+    _KW = r'(return|var|let|const|function|typeof|instanceof|new|delete|throw|case|else|void|yield|async|await|if|for|while|switch|catch)'
+    result = re.sub(r'\b' + _KW + r'\b(?=[a-zA-Z_$"\'\`0-9{(\[])', r'\1 ', result)
+    # Restore spaces for 'in' and 'of' only as standalone keywords (word boundaries)
+    result = re.sub(r'(?<=[\w$]) (in|of) (?=[\w$])', r' \1 ', result)
     return result.strip()
 from scipy.stats import skew, kurtosis
 from sklearn.linear_model import ElasticNetCV
