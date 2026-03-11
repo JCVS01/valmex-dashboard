@@ -2340,13 +2340,17 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
         _isin = ISIN_MAP.get(_f, {}).get(_s)
         if _isin:
             _prefetch_items.append((_isin, _f, _s))
-    if _prefetch_items:
-        from concurrent.futures import ThreadPoolExecutor
-        def _fetch_nav(args):
-            isin, f, s = args
-            get_ms_nav(isin, expect_fund=f, expect_serie=s)
-        with ThreadPoolExecutor(max_workers=6) as executor:
+    from concurrent.futures import ThreadPoolExecutor
+    # Pre-warm factor series cache + NAV cache in parallel
+    def _fetch_nav(args):
+        isin, f, s = args
+        get_ms_nav(isin, expect_fund=f, expect_serie=s)
+    with ThreadPoolExecutor(max_workers=12) as executor:
+        # Factor series: 15-30s uncached, runs alongside NAV fetches
+        _factor_future = executor.submit(_fetch_factor_series)
+        if _prefetch_items:
             list(executor.map(_fetch_nav, _prefetch_items))
+        _factor_future.result()  # ensure factor cache is warm
 
     for fondo, pct in fondos_pct.items():
         if pct <= 0:
@@ -3719,7 +3723,7 @@ def _compute_quilt():
             print(f"[QUILT] {ticker} error: {e}")
             return pd.Series(dtype=float)
 
-    with ThreadPoolExecutor(max_workers=12) as _pool:
+    with ThreadPoolExecutor(max_workers=14) as _pool:
         _fx_f = _pool.submit(bx_series, "SF43718")
         _cetes_f = _pool.submit(bx_series, "SF43936")
         _inpc_f = _pool.submit(bx_series, "SP1")
@@ -3729,6 +3733,7 @@ def _compute_quilt():
         _eem_f = _pool.submit(ms_series, "EEM")
         _urth_f = _pool.submit(ms_series, "URTH")
         _bwx_f = _pool.submit(ms_series, "BWX")
+        _qqq_f = _pool.submit(ms_series, "QQQ")
         _gold_f = _pool.submit(_yf_series, "GC=F")
         _oil_f = _pool.submit(_yf_series, "CL=F")
     fx = _fx_f.result()
@@ -3740,6 +3745,7 @@ def _compute_quilt():
     eem = _eem_f.result()
     urth = _urth_f.result()
     bwx = _bwx_f.result()
+    qqq = _qqq_f.result()
     gold = _gold_f.result()
     oil = _oil_f.result()
 
@@ -3785,8 +3791,7 @@ def _compute_quilt():
                 dlp[str(y)] = round((carry - DUR_LP * delta) * 100, 2)
     rets["Deuda Largo Plazo"] = dlp
 
-    # 8. Tecnología (QQQ — Invesco QQQ Trust, USD → MXN)
-    qqq = ms_series("QQQ")
+    # 8. Tecnología (QQQ — Invesco QQQ Trust, USD → MXN) — already fetched in parallel above
     rets["Tecnolog\u00eda"] = {str(y): v for y in years if (v := ar_mxn(qqq, fx, y)) is not None}
 
     # 9. Oro (Gold futures USD/oz → MXN)
@@ -3916,7 +3921,7 @@ def _compute_quilt_fondos():
         data = get_ms_nav(isin, start="2015-12-01")
         return fondo, data
 
-    with ThreadPoolExecutor(max_workers=6) as executor:
+    with ThreadPoolExecutor(max_workers=12) as executor:
         futures = {executor.submit(fetch_fund, f, i): f for f, i in fondos.items()}
         for future in as_completed(futures):
             try:
