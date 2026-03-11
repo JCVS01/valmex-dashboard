@@ -2886,18 +2886,18 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
           if (iA !== -1) return -1; if (iB !== -1) return 1;
           return 0;
         });
-        // Largest remainder method — display values sum exactly 100
+        // Largest remainder method — display values sum exactly 100.0 (1 decimal)
         const rawSum = segs.reduce((s,x) => s + x.val, 0);
         if (rawSum > 0 && segs.length > 0) {
-          const displayVals = segs.map(s => ({...s, dispRaw: s.val / rawSum * 100}));
+          const displayVals = segs.map(s => ({...s, dispRaw: s.val / rawSum * 1000}));
           const floored = displayVals.map(d => Math.floor(d.dispRaw));
-          let remainder = 100 - floored.reduce((s,v) => s + v, 0);
+          let remainder = 1000 - floored.reduce((s,v) => s + v, 0);
           const remainders = displayVals.map((d, idx) => ({idx, r: d.dispRaw - floored[idx]}));
           remainders.sort((a,b) => b.r - a.r);
           for (let ri = 0; ri < remainder && ri < remainders.length; ri++) floored[remainders[ri].idx]++;
-          segs.forEach((s, idx) => { s.dispVal = floored[idx]; });
+          segs.forEach((s, idx) => { s.dispVal = (floored[idx] / 10).toFixed(1); });
         } else {
-          segs.forEach(s => { s.dispVal = 0; });
+          segs.forEach(s => { s.dispVal = '0.0'; });
         }
         html += `<div style="display:flex;flex-direction:column;gap:6px;">`;
         html += `<span style="font-size:13px;font-weight:800;color:#00205C;font-family:'Montserrat',sans-serif;text-transform:uppercase;letter-spacing:0.5px;">${lbls[i]}</span>`;
@@ -2950,6 +2950,7 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
         return 0;
       });
       assetBars.innerHTML = html;
+      assetBars.style.justifyContent = is3way ? '' : 'center';
       // Render AC legend in shared row
       const acLeg = document.getElementById('cmp2-ac-legend');
       if (acLeg) {
