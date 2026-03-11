@@ -302,6 +302,12 @@ input,textarea,select{-webkit-user-select:text;-moz-user-select:text;-ms-user-se
 .cmp2-tbl .r{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;}
 .cmp2-tbl .pos{color:#059669;font-weight:700;}.cmp2-tbl .neg{color:#DC2626;font-weight:700;}
 .cmp2-footer{padding:16px 24px 12px;background:transparent;border-top:1px solid #E2E8F0;margin:0 20px;}
+.cmp2-vf-btn{padding:8px 18px;border:2px solid #00205C;background:#fff;color:#00205C;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;font-family:'Montserrat',sans-serif;letter-spacing:.3px;}
+.cmp2-vf-btn:first-child{border-radius:8px 0 0 8px;}
+.cmp2-vf-btn:last-child{border-radius:0 8px 8px 0;}
+.cmp2-vf-btn:not(:first-child){border-left:none;}
+.cmp2-vf-btn.active{background:#00205C;color:#fff;}
+.cmp2-vf-btn:hover:not(.active){background:#F1F5F9;}
 .cmp2-footer p{font-size:10px;color:#94A3B8;line-height:1.5;margin:0;font-family:'Montserrat',sans-serif;}
 @media(max-width:600px) and (orientation:portrait){
   .cmp2-grid-top,.cmp2-grid-mid{grid-template-columns:1fr!important;}
@@ -1010,6 +1016,13 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
       </div>
     </div>
 
+    <!-- View mode filter -->
+    <div id="cmp2-view-filter" style="display:flex;justify-content:center;gap:0;margin:10px 20px 0;font-family:'Montserrat',sans-serif;">
+      <button class="cmp2-vf-btn active" data-mode="3way" onclick="setCmp2ViewMode('3way')">Actual vs Modelo vs Propuesta</button>
+      <button class="cmp2-vf-btn" data-mode="avb" onclick="setCmp2ViewMode('avb')">Actual vs Modelo</button>
+      <button class="cmp2-vf-btn" data-mode="avc" onclick="setCmp2ViewMode('avc')">Actual vs Propuesta</button>
+    </div>
+
     <!-- ═══ CMP2: QUILT CHART: Rendimientos por Clase de Activo ═══ -->
     <div class="prop-dash-scaler" id="cmp2-quilt-activos-scaler" style="margin-bottom:20px;">
       <div style="background:#fff;width:100%;">
@@ -1161,17 +1174,17 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
         <div id="cmp2-bt-legend" style="display:flex;flex-wrap:nowrap;gap:16px;justify-content:center;align-items:center;min-height:28px;"></div>
       </div>
 
-      <!-- ═══ RENDIMIENTOS: 3 KPI cards (1/3 each) ═══ -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:0 20px;">
-        <div class="cmp2-panel" style="display:flex;flex-direction:column;">
+      <!-- ═══ RENDIMIENTOS: KPI cards ═══ -->
+      <div id="cmp2-rend-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:0 20px;">
+        <div class="cmp2-panel" style="display:flex;flex-direction:column;" id="cmp2-rend-card-a">
           <div class="cmp2-panel-hdr" style="background:#00205C;" id="cmp2-rend-hdr-a">P. Actual</div>
           <div class="cmp2-panel-body" style="padding:12px 16px;" id="cmp2-rend-body-a"></div>
         </div>
-        <div class="cmp2-panel" style="display:flex;flex-direction:column;">
+        <div class="cmp2-panel" style="display:flex;flex-direction:column;" id="cmp2-rend-card-b">
           <div class="cmp2-panel-hdr" style="background:#00205C;" id="cmp2-rend-hdr-b">P. Modelo</div>
           <div class="cmp2-panel-body" style="padding:12px 16px;" id="cmp2-rend-body-b"></div>
         </div>
-        <div class="cmp2-panel" style="display:flex;flex-direction:column;">
+        <div class="cmp2-panel" style="display:flex;flex-direction:column;" id="cmp2-rend-card-c">
           <div class="cmp2-panel-hdr" style="background:#00205C;" id="cmp2-rend-hdr-c">P. Propuesta</div>
           <div class="cmp2-panel-body" style="padding:12px 16px;" id="cmp2-rend-body-c"></div>
         </div>
@@ -2595,6 +2608,16 @@ function computeRiskMetrics(bt, rfOverride) {
 let _cmp2Inited = false, _cmp2Loaded = false;
 const cmp2Charts = {};
 const CMP2_COLORS = ['#00205C','#41BBC9','#3DA5E0'];
+let _cmp2ViewMode = '3way'; // '3way' | 'avb' | 'avc'
+let _cmp2DataA = null, _cmp2DataB = null, _cmp2DataC = null;
+
+function setCmp2ViewMode(mode) {
+  _cmp2ViewMode = mode;
+  document.querySelectorAll('.cmp2-vf-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  if (_cmp2DataA || _cmp2DataB || _cmp2DataC) {
+    aplicarDatosCmp2(_cmp2DataA, _cmp2DataB, _cmp2DataC);
+  }
+}
 
 function initCmp2Charts() {
   if (_cmp2Inited) return;
@@ -2747,6 +2770,13 @@ function initCmp2Charts() {
 }
 
 function aplicarDatosCmp2(dataA, dataB, dataC) {
+  // Cache for mode switching without re-fetch
+  _cmp2DataA = dataA; _cmp2DataB = dataB; _cmp2DataC = dataC;
+  const mode = _cmp2ViewMode;
+  const is3way = mode === '3way';
+  const showB = mode !== 'avc';
+  const showC = mode !== 'avb';
+
   const fmtR = v => (v == null) ? '\u2014' : (v >= 0 ? '+' : '') + v.toFixed(2) + ' %';
   const fmtPct = v => v != null ? (v * 100).toFixed(2) + ' %' : '\u2014';
   const fmtNum = v => v != null ? v.toFixed(2) : '\u2014';
@@ -2767,7 +2797,11 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
   const sub = document.getElementById('cmp2-title-sub');
   if (sub) sub.innerHTML = `Asignación Estratégica de los Portafolios`;
   const toolbarLbl = document.getElementById('cmp2-toolbar-labels');
-  if (toolbarLbl) toolbarLbl.innerHTML = `A: Portafolio Actual &nbsp;|&nbsp; B: ${_cmp2LblB} &nbsp;|&nbsp; C: Portafolio Propuesta`;
+  if (toolbarLbl) {
+    if (is3way) toolbarLbl.innerHTML = `A: ${lblA} &nbsp;|&nbsp; B: ${_cmp2LblB} &nbsp;|&nbsp; C: ${lblC}`;
+    else if (mode === 'avb') toolbarLbl.innerHTML = `A: ${lblA} &nbsp;|&nbsp; B: ${_cmp2LblB}`;
+    else toolbarLbl.innerHTML = `A: ${lblA} &nbsp;|&nbsp; C: ${lblC}`;
+  }
 
   // Fecha actualizacion
   const fechaEl = document.getElementById('cmp2-fecha-actualizacion');
@@ -2776,18 +2810,37 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
     fechaEl.textContent = src?.fecha_actualizacion || new Date().toLocaleDateString('es-MX');
   }
 
-  // Headers
+  // Headers — set text for all, then hide/show B/C
   const setT = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+  const setV = (id, vis) => { const el = document.getElementById(id); if (el) el.style.display = vis ? '' : 'none'; };
   ['cmp2-ov-th-a','cmp2-h-th-a','cmp2-r-th-a','cmp2-ch-th-a','cmp2-rend-hdr-a'].forEach(id => setT(id, lblA));
   ['cmp2-ov-th-b','cmp2-h-th-b','cmp2-r-th-b','cmp2-ch-th-b','cmp2-rend-hdr-b'].forEach(id => setT(id, lblB));
   ['cmp2-ov-th-c','cmp2-h-th-c','cmp2-r-th-c','cmp2-ch-th-c','cmp2-rend-hdr-c'].forEach(id => setT(id, lblC));
   ['cmp2-st-th-a','cmp2-sc-th-a'].forEach(id => setT(id, lblAshort));
   ['cmp2-st-th-b','cmp2-sc-th-b'].forEach(id => setT(id, lblBshort));
   ['cmp2-st-th-c','cmp2-sc-th-c'].forEach(id => setT(id, lblCshort));
+  // Hide/show header columns for B and C
+  ['cmp2-h-th-b','cmp2-st-th-b','cmp2-sc-th-b'].forEach(id => setV(id, showB));
+  ['cmp2-h-th-c','cmp2-st-th-c','cmp2-sc-th-c'].forEach(id => setV(id, showC));
 
-  // Chart labels
+  // Rendimientos cards: show/hide + adjust grid
+  setV('cmp2-rend-card-b', showB);
+  setV('cmp2-rend-card-c', showC);
+  const rendGrid = document.getElementById('cmp2-rend-grid');
+  if (rendGrid) rendGrid.style.gridTemplateColumns = is3way ? '1fr 1fr 1fr' : '1fr 1fr';
+
+  // Risk contrib grid columns
+  const rcGrid = document.getElementById('cmp2-risk-contrib-grid');
+  if (rcGrid) rcGrid.style.gridTemplateColumns = is3way ? 'repeat(3,1fr)' : 'repeat(2,1fr)';
+
+  // Chart labels + dataset visibility
   [cmp2Charts.perf, cmp2Charts.scatter, cmp2Charts.sensitivity, cmp2Charts.scenarios].forEach(c => {
-    if (c) { c.data.datasets[0].label = lblA; c.data.datasets[1].label = lblB; c.data.datasets[2].label = lblC; }
+    if (!c) return;
+    c.data.datasets[0].label = lblAshort;
+    c.data.datasets[1].label = lblBshort;
+    c.data.datasets[2].label = lblCshort;
+    c.data.datasets[1].hidden = !showB;
+    c.data.datasets[2].hidden = !showC;
   });
 
   // ── Composición table + Clase de Activo stacked bars ──
@@ -2807,9 +2860,10 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
     const AC_COLORS = {'Reporto':'#00205C','Deuda':'#3DA5E0','Renta Variable':'#41BBC9','Ciclo de Vida':'#5B6670','Índice':'#3F559E','Acciones':'#FECB46','ETF':'#7CC677'};
     const assetBars = document.getElementById('cmp2-asset-bars');
     if (assetBars) {
-      const datas = [dataA, dataB, dataC];
-      const lbls = [lblA, lblB, lblC];
-      const barColors = [CMP2_COLORS[0], CMP2_COLORS[1], CMP2_COLORS[2]];
+      const _allDatas = [dataA, dataB, dataC], _allLbls = [lblA, lblB, lblC], _allShowFlags = [true, showB, showC];
+      const datas = _allDatas.filter((_, i) => _allShowFlags[i]);
+      const lbls = _allLbls.filter((_, i) => _allShowFlags[i]);
+      const barColors = CMP2_COLORS.filter((_, i) => _allShowFlags[i]);
       const allClasses = new Set();
       datas.forEach(d => { (d?.clase_activos?.labels||[]).forEach(l => allClasses.add(l)); });
       const AC_ORDER = ['Reporto','Deuda','Renta Variable','Ciclo de Vida','Índice','Acciones','Acción',"ETF's",'ETF'];
@@ -2911,7 +2965,9 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
   // ── Holdings ──
   {
     const FUND_ORDER = ['Reporto MXN','Reporto USD','VXREPO1','VXGUBCP','VLMXETF','VXUDIMP','VXDEUDA','VXGUBLP','VXCOBER','VXTBILL','VLMXDME','VALMXA','VALMX28','VALMX20','VALMXVL','VALMXES','VLMXTEC','VLMXESG','VALMXHC','VXINFRA','Fondos Ciclo de Vida','Acciones',"ETF's"];
-    const comps = [dataA?.composicion||[], dataB?.composicion||[], dataC?.composicion||[]];
+    const _hAllComps = [dataA?.composicion||[], dataB?.composicion||[], dataC?.composicion||[]];
+    const _hShowFlags = [true, showB, showC];
+    const comps = _hAllComps.filter((_, i) => _hShowFlags[i]);
     const mps = comps.map(c => { const m={}; c.forEach(f => { m[f.fondo]=f; }); return m; });
     const allFunds = new Set(comps.flat().map(f=>f.fondo));
     const DEUDA_SET = new Set(['VXREPO1','VXGUBCP','VXUDIMP','VXDEUDA','VXGUBLP','VLMXETF','VXTBILL','VXCOBER','VLMXDME']);
@@ -3086,10 +3142,10 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
     const allVals = maps.flatMap(m => Object.values(m)).filter(v => v != null);
     if (allVals.length) cmp2Charts.perf.options.scales.y.min = Math.floor(Math.min(...allVals) * 0.95);
     cmp2Charts.perf.update('none');
-    // Render BT legend in shared row
+    // Render BT legend in shared row (only visible datasets)
     const btLeg = document.getElementById('cmp2-bt-legend');
     if (btLeg) {
-      btLeg.innerHTML = cmp2Charts.perf.data.datasets.map(d =>
+      btLeg.innerHTML = cmp2Charts.perf.data.datasets.filter(d => !d.hidden).map(d =>
         `<div style="display:flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border-radius:3px;background:${d.borderColor};flex-shrink:0;"></div><span style="font-size:13px;font-weight:600;color:#00205C;font-family:'Montserrat',sans-serif;white-space:nowrap;">${d.label}</span></div>`
       ).join('');
     }
@@ -3127,17 +3183,19 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
       metrics.forEach(row => {
         const [label, a, b, c, fmt, sign] = row;
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td style="font-weight:600;">${label}</td>`
-          + `<td class="r" style="${colorVal(a,sign)};font-weight:600;">${fmt(a)}</td>`
-          + `<td class="r" style="${colorVal(b,sign)};font-weight:600;">${fmt(b)}</td>`
-          + `<td class="r" style="${colorVal(c,sign)};font-weight:600;">${fmt(c)}</td>`;
+        let tdHtml = `<td style="font-weight:600;">${label}</td>`
+          + `<td class="r" style="${colorVal(a,sign)};font-weight:600;">${fmt(a)}</td>`;
+        if (showB) tdHtml += `<td class="r" style="${colorVal(b,sign)};font-weight:600;">${fmt(b)}</td>`;
+        if (showC) tdHtml += `<td class="r" style="${colorVal(c,sign)};font-weight:600;">${fmt(c)}</td>`;
+        tr.innerHTML = tdHtml;
         tbody.appendChild(tr);
       });
       // Footnote for Sharpe
       const fnRow = document.createElement('tr');
       const rfVal = dataA?.rf_annual ?? dataB?.rf_annual ?? dataC?.rf_annual;
       const rfPct = rfVal != null ? (rfVal * 100).toFixed(2) + '%' : 'N/A';
-      fnRow.innerHTML = `<td colspan="4" style="font-size:10px;color:#64748B;padding-top:6px;font-style:italic;">*Rf = CETES 28d promedio del per\u00edodo (${rfPct} anual)</td>`;
+      const _statsCols = 1 + 1 + (showB ? 1 : 0) + (showC ? 1 : 0);
+      fnRow.innerHTML = `<td colspan="${_statsCols}" style="font-size:10px;color:#64748B;padding-top:6px;font-style:italic;">*Rf = CETES 28d promedio del per\u00edodo (${rfPct} anual)</td>`;
       tbody.appendChild(fnRow);
       // Update footer Rf display too
       const rfSpan = document.getElementById('cmp2-rf-display');
@@ -3278,16 +3336,22 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
   {
     const grid = document.getElementById('cmp2-risk-contrib-grid');
     const panel = document.getElementById('cmp2-risk-contrib-panel');
-    const allFRC = [dataA, dataB, dataC].map(d => d?.fund_risk_contrib || {});
-    const allLT = [dataA, dataB, dataC].map(d => d?.fund_lookthrough || {});
+    const _rcAllDatas = [dataA, dataB, dataC];
+    const _rcShowFlags = [true, showB, showC];
+    const _rcAllLbls = [lblA, lblB, lblC];
+    const _rcDatas = _rcAllDatas.filter((_, i) => _rcShowFlags[i]);
+    const _rcLbls = _rcAllLbls.filter((_, i) => _rcShowFlags[i]);
+    const _rcColors = CMP2_COLORS.filter((_, i) => _rcShowFlags[i]);
+    const allFRC = _rcDatas.map(d => d?.fund_risk_contrib || {});
+    const allLT = _rcDatas.map(d => d?.fund_lookthrough || {});
     const anyData = allFRC.some(frc => Object.keys(frc).length > 0) || allLT.some(lt => Object.keys(lt).length > 0);
     if (panel) panel.style.display = anyData ? '' : 'none';
     if (grid && anyData) {
       grid.innerHTML = '';
-      const colors = CMP2_COLORS;
+      const colors = _rcColors;
       const driverColors = {fx:'#F59E0B',sp500:'#3B82F6',ipc:'#10B981',bono_m10:'#8B5CF6',ust_10y:'#6366F1',ust_10y_short:'#818CF8',tiie_28d:'#EC4899',vix:'#EF4444',oil:'#78716C',gold:'#D97706',em_spread:'#14B8A6',mx_breakeven:'#F43F5E'};
       const driverLabels = {fx:'FX (USD/MXN)',sp500:'S&P 500',ipc:'IPC',bono_m10:'Bono M10',ust_10y:'UST 10Y',ust_10y_short:'UST CP',tiie_28d:'TIIE',vix:'VIX',oil:'Petroleo',gold:'Oro',em_spread:'EM Spread',mx_breakeven:'Breakeven MX'};
-      [lblA, lblB, lblC].forEach((lbl, idx) => {
+      _rcLbls.forEach((lbl, idx) => {
         const frc = allFRC[idx];
         const lt = allLT[idx];
         // Merge: use lookthrough fund list sorted by Euler contribution
@@ -3354,10 +3418,20 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
     const movTbody = document.getElementById('cmp2-mov-tbody');
     const movTfoot = document.getElementById('cmp2-mov-tfoot');
     const movPanel = document.getElementById('cmp2-movimientos-panel');
-    // Decide destination: propuesta if available, else modelo
+    // Decide destination based on view mode
     const compA = dataA?.composicion || [];
-    const compDest = (dataC?.composicion && dataC.composicion.length) ? dataC.composicion : (dataB?.composicion || []);
-    const destLabel = (dataC?.composicion && dataC.composicion.length) ? 'Propuesta' : _cmp2LblB.replace('Portafolio ','P. ');
+    let compDest, destLabel;
+    if (mode === 'avb') {
+      compDest = dataB?.composicion || [];
+      destLabel = _cmp2LblB.replace('Portafolio ','P. ');
+    } else if (mode === 'avc') {
+      compDest = dataC?.composicion || [];
+      destLabel = 'Propuesta';
+    } else {
+      // 3way: propuesta if available, else modelo
+      compDest = (dataC?.composicion && dataC.composicion.length) ? dataC.composicion : (dataB?.composicion || []);
+      destLabel = (dataC?.composicion && dataC.composicion.length) ? 'Propuesta' : _cmp2LblB.replace('Portafolio ','P. ');
+    }
     setT('cmp2-mov-th-dest', '% ' + destLabel);
     setT('cmp2-mov-th-dest2', 'Monto ' + destLabel);
     const mapA = {}; compA.forEach(f => { mapA[f.fondo] = f.pct || 0; });
@@ -3461,9 +3535,15 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
 
   // ── Exposure: RV vs ACWI + Deuda ──
   {
-    const anyRV = [dataA,dataB,dataC].some(d=>d?.has_rv);
-    const anyDeuda = [dataA,dataB,dataC].some(d=>d?.has_deuda);
-    const portfolioNames = ['P. Actual','P. Modelo','P. Propuesta'];
+    const _exAllDatas = [dataA,dataB,dataC];
+    const _exShowFlags = [true, showB, showC];
+    const _exDatas = _exAllDatas.filter((_, i) => _exShowFlags[i]);
+    const _exColors = CMP2_COLORS.filter((_, i) => _exShowFlags[i]);
+    const _exPNames = ['P. Actual','P. Modelo','P. Propuesta'].filter((_, i) => _exShowFlags[i]);
+    const _exShortNames = ['Actual','Modelo','Propuesta'].filter((_, i) => _exShowFlags[i]);
+
+    const anyRV = _exDatas.some(d=>d?.has_rv);
+    const anyDeuda = _exDatas.some(d=>d?.has_deuda);
 
     // ── RV: Overweight/Underweight vs ACWI ──
     const rvPanel = document.getElementById('cmp2-rv-expo-panel');
@@ -3474,10 +3554,10 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
         // Legend
         const legend = document.getElementById('cmp2-rv-legend');
         if (legend) {
-          const rvPcts = [dataA,dataB,dataC].map(d => d?.pct_rv);
-          legend.innerHTML = CMP2_COLORS.map((c,i) => {
+          const rvPcts = _exDatas.map(d => d?.pct_rv);
+          legend.innerHTML = _exColors.map((c,i) => {
             const pct = ` (${(rvPcts[i] || 0).toFixed(1)}%)`;
-            return `<span style="color:#00205C;font-weight:700;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c};margin-right:5px;vertical-align:middle;"></span>${portfolioNames[i]}${pct}</span>`;
+            return `<span style="color:#00205C;font-weight:700;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c};margin-right:5px;vertical-align:middle;"></span>${_exPNames[i]}${pct}</span>`;
           }).join('') + `<span style="color:#00205C;font-weight:700;margin-left:12px;">Benchmark: MSCI ACWI</span>`;
         }
 
@@ -3488,7 +3568,7 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
           Object.keys(bmk).forEach(l => allLabels.add(l));
           const pMaps = pLabelsArr.map((lbls,idx) => { const m={}; lbls.forEach((l,i)=>{m[l]=(pValsArr[idx]||[])[i]||0;}); return m; });
           const sorted = [...allLabels].sort((a,b) => (bmk[b]||0) - (bmk[a]||0));
-          const pNames = ['Actual','Modelo','Propuesta'];
+          const pNames = _exShortNames;
           // Max absolute diff PER COLUMN for independent heat map scaling
           const colMaxDiff = pMaps.map(m => {
             let mx = 1;
@@ -3517,7 +3597,7 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
           html += `<th style="text-align:center;padding:7px 4px;${cs}font-weight:800;color:#00205C;background:#E2E8F0;${sepBorder}">ACWI</th>`;
           pNames.forEach((n,i) => {
             const isLastCol = i === pNames.length - 1;
-            html += `<th style="text-align:center;padding:7px 4px;${cs}font-weight:700;color:${CMP2_COLORS[i]};">${n}</th>`;
+            html += `<th style="text-align:center;padding:7px 4px;${cs}font-weight:700;color:${_exColors[i]};">${n}</th>`;
             html += `<th style="text-align:center;padding:7px 4px;${cs}font-weight:600;color:#64748B;${isLastCol ? '' : sepBorder}">+/−</th>`;
           });
           html += `</tr></thead><tbody>`;
@@ -3558,16 +3638,16 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
         const geoCard = document.getElementById('cmp2-rv-geo-card');
         if (geoCard && acwi.geo) {
           buildRvExpo('Exposici\u00f3n Geogr\u00e1fica',
-            [dataA,dataB,dataC].map(d=>d?.geo?.labels||[]),
-            [dataA,dataB,dataC].map(d=>d?.geo?.values||[]),
-            acwi.geo, geoCard, [dataA,dataB,dataC]);
+            _exDatas.map(d=>d?.geo?.labels||[]),
+            _exDatas.map(d=>d?.geo?.values||[]),
+            acwi.geo, geoCard, _exDatas);
         }
         const secCard = document.getElementById('cmp2-rv-sec-card');
         if (secCard && acwi.sectores) {
           buildRvExpo('Exposici\u00f3n Sectorial',
-            [dataA,dataB,dataC].map(d=>d?.sectores?.labels||[]),
-            [dataA,dataB,dataC].map(d=>d?.sectores?.values||[]),
-            acwi.sectores, secCard, [dataA,dataB,dataC]);
+            _exDatas.map(d=>d?.sectores?.labels||[]),
+            _exDatas.map(d=>d?.sectores?.values||[]),
+            acwi.sectores, secCard, _exDatas);
           // Fix header label for sectors
           const hdr = secCard.querySelector('.expo-rv-row .expo-rv-label');
           if (hdr) hdr.textContent = 'Sector';
@@ -3579,8 +3659,8 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
     const deudaPanel = document.getElementById('cmp2-deuda-expo-panel');
     if (anyDeuda && deudaPanel) {
       deudaPanel.style.display = '';
-      const pNames = ['Actual','Modelo','Propuesta'];
-      const datasets = [dataA,dataB,dataC];
+      const pNames = _exShortNames;
+      const datasets = _exDatas;
       const cs = 'font-size:13px;';
       const sepBorder = 'border-right:3px solid #CBD5E1;';
 
@@ -3617,7 +3697,7 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
         html += `<th style="text-align:left;padding:7px 10px;${cs}font-weight:700;color:#00205C;"></th>`;
         pNames.forEach((n,i) => {
           const isLast = i === pNames.length - 1;
-          html += `<th style="text-align:center;padding:7px 4px;${cs}font-weight:700;color:${CMP2_COLORS[i]};${isLast ? '' : sepBorder}">${n}</th>`;
+          html += `<th style="text-align:center;padding:7px 4px;${cs}font-weight:700;color:${_exColors[i]};${isLast ? '' : sepBorder}">${n}</th>`;
         });
         html += `</tr></thead><tbody>`;
 
@@ -4536,10 +4616,12 @@ document.getElementById('btn-pdf-cmp2').addEventListener('click', async () => {
   if (scaler) scaler.scrollLeft = 0;
   // 7. Force layout reflow so containers report correct CSS widths
   void dash.offsetWidth;
-  // 8. Wait for browser paint, then let Chart.js 4 auto-resize to container
+  // 8. Re-apply view mode (restores rend grid, card visibility, risk contrib grid after PDF reset)
+  if (_cmp2DataA || _cmp2DataB || _cmp2DataC) aplicarDatosCmp2(_cmp2DataA, _cmp2DataB, _cmp2DataC);
+  // 9. Wait for browser paint, then let Chart.js 4 auto-resize to container
   await new Promise(r => requestAnimationFrame(() => setTimeout(r, 50)));
   Object.values(cmp2Charts).forEach(c => { if (c?.resize) c.resize(); });
-  // 9. Second pass after DOM fully settles
+  // 10. Second pass after DOM fully settles
   await new Promise(r => setTimeout(r, 400));
   Object.values(cmp2Charts).forEach(c => { if (c?.resize) c.resize(); });
   // 10. Restore scroll position
