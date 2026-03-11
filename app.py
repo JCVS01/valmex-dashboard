@@ -8,9 +8,19 @@ import pandas as pd
 import yfinance as yf
 import xml.etree.ElementTree as ET
 from datetime import date, timedelta, datetime
-from flask import Flask, send_file, request, jsonify, redirect, url_for, session, send_from_directory
+from flask import Flask, send_file, request, jsonify, redirect, url_for, session, send_from_directory, make_response
 import json
 from werkzeug.security import generate_password_hash, check_password_hash
+try:
+    import htmlmin
+    HAS_HTMLMIN = True
+except ImportError:
+    HAS_HTMLMIN = False
+try:
+    import rjsmin
+    HAS_RJSMIN = True
+except ImportError:
+    HAS_RJSMIN = False
 from scipy.stats import skew, kurtosis
 from sklearn.linear_model import ElasticNetCV
 from sklearn.covariance import LedoitWolf
@@ -3137,6 +3147,35 @@ def set_security_headers(response):
     response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, private'
     response.headers['Pragma'] = 'no-cache'
+    # Minify HTML + JS to make source code unreadable
+    if response.content_type and 'text/html' in response.content_type:
+        try:
+            original = response.get_data(as_text=True)
+            result = original
+            # 1. Minify inline JS inside <script> tags
+            if HAS_RJSMIN:
+                import re as _re
+                def _minify_script(m):
+                    tag_open = m.group(1)
+                    js_code = m.group(2)
+                    tag_close = m.group(3)
+                    try:
+                        return tag_open + rjsmin.jsmin(js_code) + tag_close
+                    except Exception:
+                        return m.group(0)
+                result = _re.sub(
+                    r'(<script[^>]*>)(.*?)(</script>)',
+                    _minify_script, result, flags=_re.DOTALL)
+            # 2. Minify HTML structure
+            if HAS_HTMLMIN:
+                result = htmlmin.minify(result,
+                    remove_comments=True,
+                    remove_empty_space=True,
+                    reduce_boolean_attributes=True,
+                    remove_optional_attribute_quotes=False)
+            response.set_data(result)
+        except Exception:
+            pass  # serve unminified if minification fails
     return response
 
 _login_attempts = {}
@@ -3320,7 +3359,9 @@ def valmex_logo2():
 def index():
     if "usuario" not in session:
         return redirect(url_for("login"))
-    return send_file(os.path.join(BASE, "valmex_dashboard.html"))
+    with open(os.path.join(BASE, "valmex_dashboard.html"), "r", encoding="utf-8") as f:
+        html = f.read()
+    return make_response(html)
 
 
 @app.route("/api/accion/validate", methods=["POST"])
