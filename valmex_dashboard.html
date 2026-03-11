@@ -293,9 +293,9 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
 .cmp2-grid-top{display:grid;grid-template-columns:1fr 2fr;gap:16px;margin:0 20px;}
 .cmp2-grid-mid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:0 20px;}
 .cmp2-tbl{width:100%;border-collapse:collapse;font-family:'Montserrat',sans-serif;font-size:13px;}
-.cmp2-tbl th{background:#F8FAFC;color:var(--navy);font-weight:700;padding:10px 14px;text-align:left;border-bottom:2px solid #CBD5E1;font-size:13px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
+.cmp2-tbl th{background:#F8FAFC;color:var(--navy);font-weight:700;padding:8px 10px;text-align:left;border-bottom:2px solid #CBD5E1;font-size:12px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
 .cmp2-tbl{table-layout:auto;}
-.cmp2-tbl td{padding:9px 14px;border-bottom:1px solid #F1F5F9;color:#00205C;font-weight:500;white-space:nowrap;}
+.cmp2-tbl td{padding:7px 10px;border-bottom:1px solid #F1F5F9;color:#00205C;font-weight:500;white-space:nowrap;}
 .cmp2-tbl tr:nth-child(even){background:#FAFBFC;}
 .cmp2-tbl tr:hover{background:#F0F4FF;}
 .cmp2-tbl .r{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;}
@@ -1131,7 +1131,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
         <div class="cmp2-panel-hdr">Composici&oacute;n</div>
         <div class="cmp2-panel-body" style="padding:0;overflow-x:auto;">
           <table class="cmp2-tbl" style="font-size:13px;">
-            <thead><tr><th>Fondo</th><th>Serie</th><th>Clase de Activo</th><th class="r" id="cmp2-h-th-a">P. Actual</th><th class="r" id="cmp2-h-th-b">P. Modelo</th><th class="r" id="cmp2-h-th-c">P. Propuesta</th><th class="r">MTD</th><th class="r">6 Meses</th><th class="r">YTD</th><th class="r">12M</th><th class="r">24M</th></tr></thead>
+            <thead><tr><th>Fondo</th><th>Serie</th><th>Descripci&oacute;n</th><th class="r" id="cmp2-h-th-a">P. Actual</th><th class="r" id="cmp2-h-th-b">P. Modelo</th><th class="r" id="cmp2-h-th-c">P. Propuesta</th><th class="r">MTD</th><th class="r">6 Meses</th><th class="r">YTD</th><th class="r">12M</th><th class="r">24M</th></tr></thead>
             <tbody id="cmp2-holdings-tbody"></tbody>
           </table>
           <p style="font-size:10px;color:#64748B;padding:8px 16px 10px;margin:0;font-family:'Montserrat',sans-serif;line-height:1.5;font-style:italic;">Deuda: rendimientos &lt;1 a&ntilde;o anualizados, &gt;1 a&ntilde;o efectivos. Renta variable, acciones, ETFs e &iacute;ndices: rendimientos efectivos en todos los periodos.</p>
@@ -1210,12 +1210,29 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
       <!-- ═══ RV Exposure vs ACWI ═══ -->
       <div class="cmp2-panel" id="cmp2-rv-expo-panel" style="margin:0 20px;display:none;">
         <div class="cmp2-panel-hdr">Exposici&oacute;n Renta Variable vs ACWI</div>
-        <div class="cmp2-panel-body" style="padding:12px 16px;">
+        <div class="cmp2-panel-body" style="padding:10px 0 0 0;">
           <div id="cmp2-rv-legend" style="display:flex;justify-content:center;gap:20px;margin-bottom:10px;font-family:'Montserrat',sans-serif;font-size:13px;color:#00205C;"></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;" id="cmp2-rv-expo-grid">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;" id="cmp2-rv-expo-grid">
             <div id="cmp2-rv-geo-card"></div>
             <div id="cmp2-rv-sec-card"></div>
           </div>
+        </div>
+      </div>
+
+      <!-- ═══ MOVIMIENTOS ═══ -->
+      <div class="cmp2-panel" style="margin:0 20px;" id="cmp2-movimientos-panel">
+        <div class="cmp2-panel-hdr">Movimientos</div>
+        <div class="cmp2-panel-body" style="padding:0;">
+          <table class="cmp2-tbl">
+            <thead><tr>
+              <th>Instrumento</th><th>Descripci&oacute;n</th>
+              <th class="r">% Actual</th><th class="r">Monto Actual</th>
+              <th class="r" id="cmp2-mov-th-dest">% Propuesta</th><th class="r" id="cmp2-mov-th-dest2">Monto Propuesta</th>
+              <th class="r">Dif %</th><th class="r">Dif Monto</th>
+            </tr></thead>
+            <tbody id="cmp2-mov-tbody"></tbody>
+            <tfoot id="cmp2-mov-tfoot"></tfoot>
+          </table>
         </div>
       </div>
 
@@ -2688,6 +2705,7 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
   const perfilLabel = perfilSel ? perfilSel.options[perfilSel.selectedIndex].text : 'Perfil';
   const _cmp2LblB = 'Portafolio ' + perfilVal;
   const lblA = 'Portafolio Actual', lblB = _cmp2LblB, lblC = 'Portafolio Propuesta';
+  const lblAshort = 'P. Actual', lblBshort = lblB.replace('Portafolio','P.'), lblCshort = 'P. Propuesta';
 
   // Title
   const cmpMain = document.getElementById('cmp2-title-main');
@@ -2709,9 +2727,12 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
 
   // Headers
   const setT = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
-  ['cmp2-ov-th-a','cmp2-h-th-a','cmp2-r-th-a','cmp2-st-th-a','cmp2-ch-th-a','cmp2-rend-hdr-a','cmp2-sc-th-a'].forEach(id => setT(id, lblA));
-  ['cmp2-ov-th-b','cmp2-h-th-b','cmp2-r-th-b','cmp2-st-th-b','cmp2-ch-th-b','cmp2-rend-hdr-b','cmp2-sc-th-b'].forEach(id => setT(id, lblB));
-  ['cmp2-ov-th-c','cmp2-h-th-c','cmp2-r-th-c','cmp2-st-th-c','cmp2-ch-th-c','cmp2-rend-hdr-c','cmp2-sc-th-c'].forEach(id => setT(id, lblC));
+  ['cmp2-ov-th-a','cmp2-h-th-a','cmp2-r-th-a','cmp2-ch-th-a','cmp2-rend-hdr-a'].forEach(id => setT(id, lblA));
+  ['cmp2-ov-th-b','cmp2-h-th-b','cmp2-r-th-b','cmp2-ch-th-b','cmp2-rend-hdr-b'].forEach(id => setT(id, lblB));
+  ['cmp2-ov-th-c','cmp2-h-th-c','cmp2-r-th-c','cmp2-ch-th-c','cmp2-rend-hdr-c'].forEach(id => setT(id, lblC));
+  ['cmp2-st-th-a','cmp2-sc-th-a'].forEach(id => setT(id, lblAshort));
+  ['cmp2-st-th-b','cmp2-sc-th-b'].forEach(id => setT(id, lblBshort));
+  ['cmp2-st-th-c','cmp2-sc-th-c'].forEach(id => setT(id, lblCshort));
 
   // Chart labels
   [cmp2Charts.perf, cmp2Charts.scatter, cmp2Charts.sensitivity, cmp2Charts.scenarios].forEach(c => {
@@ -2888,6 +2909,25 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
       if (iA !== -1) return -1; if (iB !== -1) return 1;
       return a.localeCompare(b);
     });
+    const FUND_DESC = {
+      'Reporto MXN':'Reporto MXN','Reporto USD':'Reporto USD',
+      'VXREPO1':'Reporto Gubernamental',
+      'VXGUBCP':'Deuda Gubernamental CP','VLMXETF':'Fondo Fiscalmente Eficiente',
+      'VXUDIMP':'Deuda Cobertura Inflacionaria','VXDEUDA':'Deuda Nominal y Real MXN',
+      'VXGUBLP':'Deuda Gubernamental LP',
+      'VXCOBER':'Cobertura Tipo de Cambio USD/MXN','VXTBILL':'Treasury Bills USD',
+      'VLMXDME':'Deuda Global',
+      'VALMXA':'Deuda y RV Dinámico','VALMX28':'RV Global',
+      'VALMX20':'RV Local','VALMXVL':'RV Value',
+      'VALMXES':'RV España','VLMXTEC':'RV Sector Tecnológico',
+      'VLMXESG':'RV ESG','VALMXHC':'RV Sector Salud',
+      'VXINFRA':'RV Infraestructura',
+      'Fondos Ciclo de Vida':'RV Ciclo de Vida',
+      'VLMXP24':'RV Ciclo de Vida','VLMXP31':'RV Ciclo de Vida',
+      'VLMXP38':'RV Ciclo de Vida','VLMXP45':'RV Ciclo de Vida',
+      'VLMXP52':'RV Ciclo de Vida','VLMXP59':'RV Ciclo de Vida',
+      'VLMXJUB':'RV Ciclo de Vida','VLMXLPE':'RV Ciclo de Vida'
+    };
     const tbody = document.getElementById('cmp2-holdings-tbody');
     if (tbody) {
       tbody.innerHTML = '';
@@ -2925,8 +2965,9 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
         if (fund.startsWith('Reporto ') && claseActivo === '—') { claseActivo = 'Reporto'; serie = '—'; }
         // Reporto funds
         if (REPORTO_SET.has(fund)) { claseActivo = 'Reporto'; serie = '—'; }
+        const desc = FUND_DESC[fund] || claseActivo;
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td style="font-weight:700;color:var(--navy);font-size:13px;">${fund}</td><td style="font-size:13px;">${serie}</td><td style="font-size:13px;">${claseActivo}</td>${pcts.map(p => `<td class="r" style="font-size:13px;">${p > 0 ? p.toFixed(2) + '%' : '\u2014'}</td>`).join('')}<td class="${clsR(v_r1m)}" style="font-size:13px;">${fmtR(v_r1m)}</td><td class="${clsR(v_r6m)}" style="font-size:13px;">${fmtR(v_r6m)}</td><td class="${clsR(v_ytd)}" style="font-size:13px;">${fmtR(v_ytd)}</td><td class="${clsR(v_r1y)}" style="font-size:13px;">${fmtR(v_r1y)}</td><td class="${clsR(v_r2y)}" style="font-size:13px;">${fmtR(v_r2y)}</td>`;
+        tr.innerHTML = `<td style="font-weight:700;color:var(--navy);font-size:13px;">${fund}</td><td style="font-size:12px;">${serie}</td><td style="font-size:12px;">${desc}</td>${pcts.map(p => `<td class="r" style="font-size:12px;">${p > 0 ? p.toFixed(2) + '%' : '\u2014'}</td>`).join('')}<td class="${clsR(v_r1m)}" style="font-size:12px;">${fmtR(v_r1m)}</td><td class="${clsR(v_r6m)}" style="font-size:12px;">${fmtR(v_r6m)}</td><td class="${clsR(v_ytd)}" style="font-size:12px;">${fmtR(v_ytd)}</td><td class="${clsR(v_r1y)}" style="font-size:12px;">${fmtR(v_r1y)}</td><td class="${clsR(v_r2y)}" style="font-size:12px;">${fmtR(v_r2y)}</td>`;
         tbody.appendChild(tr);
       });
     }
@@ -3209,8 +3250,8 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
           const uid = 'rc-'+idx+'-'+name.replace(/[^a-zA-Z0-9]/g,'');
           const w = Math.abs(eulerPct * 100);
           const barColor = eulerPct >= -0.005 ? colors[idx] : '#DC2626';
-          const weightTxt = info ? `${info.weight.toFixed(1)}%` : '';
-          const metaTxt = info ? `${info.ccy} | Dur ${info.duration}` : '';
+          const weightTxt = info ? `${info.weight.toFixed(2)}%` : '';
+          const metaTxt = info ? `${info.ccy} | Dur ${Number(info.duration).toFixed(2)}` : '';
           // Fund row with Euler bar + clickable
           html += `<div style="margin-bottom:5px;border:1px solid #E2E8F0;border-radius:6px;overflow:hidden;">`;
           html += `<div onclick="var el=document.getElementById('${uid}');if(el)el.style.display=el.style.display==='none'?'block':'none'" style="padding:7px 12px;cursor:pointer;background:#fff;border-left:3px solid ${barColor};">`;
@@ -3253,6 +3294,84 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
         });
         grid.innerHTML += `<div>${html}</div>`;
       });
+    }
+  }
+
+  // ── Movimientos table ──
+  {
+    const monto = getMonto();
+    const movTbody = document.getElementById('cmp2-mov-tbody');
+    const movTfoot = document.getElementById('cmp2-mov-tfoot');
+    const movPanel = document.getElementById('cmp2-movimientos-panel');
+    // Decide destination: propuesta if available, else modelo
+    const compA = dataA?.composicion || [];
+    const compDest = (dataC?.composicion && dataC.composicion.length) ? dataC.composicion : (dataB?.composicion || []);
+    const destLabel = (dataC?.composicion && dataC.composicion.length) ? 'Propuesta' : _cmp2LblB.replace('Portafolio ','P. ');
+    setT('cmp2-mov-th-dest', '% ' + destLabel);
+    setT('cmp2-mov-th-dest2', 'Monto ' + destLabel);
+    const mapA = {}; compA.forEach(f => { mapA[f.fondo] = f.pct || 0; });
+    const mapD = {}; compDest.forEach(f => { mapD[f.fondo] = f.pct || 0; });
+    const allM = new Set([...Object.keys(mapA), ...Object.keys(mapD)]);
+    const FUND_ORDER_M = ['Reporto MXN','Reporto USD','VXREPO1','VXGUBCP','VLMXETF','VXUDIMP','VXDEUDA','VXGUBLP','VXCOBER','VXTBILL','VLMXDME','VALMXA','VALMX28','VALMX20','VALMXVL','VALMXES','VLMXTEC','VLMXESG','VALMXHC','VXINFRA'];
+    const sortedM = [...allM].sort((a,b) => {
+      const iA = FUND_ORDER_M.indexOf(a), iB = FUND_ORDER_M.indexOf(b);
+      if (iA !== -1 && iB !== -1) return iA - iB;
+      if (iA !== -1) return -1; if (iB !== -1) return 1;
+      return a.localeCompare(b);
+    });
+    const FUND_DESC_M = {
+      'Reporto MXN':'Reporto MXN','Reporto USD':'Reporto USD',
+      'VXREPO1':'Reporto Gubernamental',
+      'VXGUBCP':'Deuda Gubernamental CP','VLMXETF':'Fondo Fiscalmente Eficiente',
+      'VXUDIMP':'Deuda Cobertura Inflacionaria','VXDEUDA':'Deuda Nominal y Real MXN',
+      'VXGUBLP':'Deuda Gubernamental LP',
+      'VXCOBER':'Cobertura Tipo de Cambio USD/MXN','VXTBILL':'Treasury Bills USD',
+      'VLMXDME':'Deuda Global',
+      'VALMXA':'Deuda y RV Din\u00e1mico','VALMX28':'RV Global',
+      'VALMX20':'RV Local','VALMXVL':'RV Value',
+      'VALMXES':'RV Espa\u00f1a','VLMXTEC':'RV Sector Tecnol\u00f3gico',
+      'VLMXESG':'RV ESG','VALMXHC':'RV Sector Salud',
+      'VXINFRA':'RV Infraestructura',
+      'Fondos Ciclo de Vida':'RV Ciclo de Vida'
+    };
+    if (movPanel) movPanel.style.display = (allM.size && monto > 0) ? '' : 'none';
+    if (movTbody && monto > 0) {
+      movTbody.innerHTML = '';
+      let sumPctA = 0, sumMonA = 0, sumPctD = 0, sumMonD = 0, sumDifPct = 0, sumDifMon = 0;
+      // First pass: compute raw montos
+      const rows = sortedM.map(fund => {
+        const pA = mapA[fund] || 0;
+        const pD = mapD[fund] || 0;
+        const monA = +(monto * pA / 100).toFixed(2);
+        const monD = +(monto * pD / 100).toFixed(2);
+        const difP = +(pD - pA).toFixed(2);
+        const difM = +(monD - monA).toFixed(2);
+        return { fund, pA, pD, monA, monD, difP: difP === 0 ? 0 : difP, difM: difM === 0 ? 0 : difM };
+      });
+      rows.forEach(r => {
+        sumPctA += r.pA; sumMonA += r.monA;
+        sumPctD += r.pD; sumMonD += r.monD;
+        sumDifPct += r.difP; sumDifMon += r.difM;
+        const desc = FUND_DESC_M[r.fund] || '';
+        const fmtM = v => v === 0 ? '$0.00' : '$' + v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+        const clsDif = v => v > 0.005 ? 'r pos' : v < -0.005 ? 'r neg' : 'r';
+        const fmtDifP = v => Math.abs(v) < 0.005 ? '\u2014' : (v > 0 ? '+' : '') + v.toFixed(2) + '%';
+        const fmtDifM = v => Math.abs(v) < 0.005 ? '\u2014' : (v > 0 ? '+' : '') + fmtM(v);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td style="font-weight:700;color:var(--navy);font-size:12px;">${r.fund}</td><td style="font-size:11px;color:#64748B;">${desc}</td><td class="r" style="font-size:12px;">${r.pA > 0 ? r.pA.toFixed(2)+'%' : '\u2014'}</td><td class="r" style="font-size:12px;">${r.pA > 0 ? fmtM(r.monA) : '\u2014'}</td><td class="r" style="font-size:12px;">${r.pD > 0 ? r.pD.toFixed(2)+'%' : '\u2014'}</td><td class="r" style="font-size:12px;">${r.pD > 0 ? fmtM(r.monD) : '\u2014'}</td><td class="${clsDif(r.difP)}" style="font-size:12px;">${fmtDifP(r.difP)}</td><td class="${clsDif(r.difM)}" style="font-size:12px;">${fmtDifM(r.difM)}</td>`;
+        movTbody.appendChild(tr);
+      });
+      // Totals row — compute diffs from totals (not sum of diffs) to avoid rounding drift
+      if (movTfoot) {
+        const fmtM = v => '$' + v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+        const tPctA = +sumPctA.toFixed(2), tPctD = +sumPctD.toFixed(2);
+        const tMonA = +sumMonA.toFixed(2), tMonD = +sumMonD.toFixed(2);
+        const tDifPct = +(tPctD - tPctA).toFixed(2);
+        const tDifMon = +(tMonD - tMonA).toFixed(2);
+        const fmtTDifP = Math.abs(tDifPct) < 0.005 ? '\u2014' : tDifPct.toFixed(2) + '%';
+        const fmtTDifM = Math.abs(tDifMon) < 0.005 ? '\u2014' : fmtM(tDifMon);
+        movTfoot.innerHTML = `<tr style="font-weight:800;border-top:2px solid #CBD5E1;"><td style="font-size:12px;color:var(--navy);">TOTAL</td><td></td><td class="r" style="font-size:12px;">${tPctA.toFixed(2)}%</td><td class="r" style="font-size:12px;">${fmtM(tMonA)}</td><td class="r" style="font-size:12px;">${tPctD.toFixed(2)}%</td><td class="r" style="font-size:12px;">${fmtM(tMonD)}</td><td class="r" style="font-size:12px;">${fmtTDifP}</td><td class="r" style="font-size:12px;">${fmtTDifM}</td></tr>`;
+      }
     }
   }
 
@@ -3757,7 +3876,7 @@ function renderPerfiles(data, prefix, chartStore) {
 
   const FUND_COLORS = {
     'VXGUBCP': '#00205C', 'VXDEUDA': '#75A1DE', 'VXUDIMP': '#5B6670',
-    'VXGUBLP': '#2E7D5B', 'VXTBILL': '#3DA5E0', 'VALMX28': '#FECB46',
+    'VXGUBLP': '#2E7D5B', 'VXTBILL': '#FECB46', 'VALMX28': '#3DA5E0',
     'VALMX20': '#BFDD7E'
   };
   // Merge API colors if available
@@ -4311,17 +4430,21 @@ document.getElementById('btn-pdf-cmp2').addEventListener('click', async () => {
     const removeHdr4 = injectHeader(page3, 'Características y Exposición', 'Desglose de los Portafolios por Clase de Activo');
     const p3Style = document.createElement('style'); p3Style.id = 'pdf-p3-fit';
     p3Style.textContent = `
-      #cmp2-page3{width:${W}px!important;height:${targetH}px!important;overflow:hidden!important;box-sizing:border-box!important;display:flex!important;flex-direction:column!important;gap:6px!important;}
+      #cmp2-page3{width:${W}px!important;height:${targetH}px!important;overflow:hidden!important;box-sizing:border-box!important;display:flex!important;flex-direction:column!important;gap:4px!important;justify-content:flex-start!important;}
       #cmp2-page3 .pdf-hdr-clone{flex-shrink:0!important;}
       #cmp2-page3 .cmp-header-bar.pdf-hdr-clone{padding:14px 24px 12px!important;height:${hdrH - 2}px!important;box-sizing:border-box!important;}
       #cmp2-page3 .cmp-header-bar.pdf-hdr-clone img{height:75px!important;}
       #cmp2-page3 .cmp-header-bar.pdf-hdr-clone .cmp-main-title{font-size:32px!important;color:#00205C!important;}
       #cmp2-page3 .cmp-header-bar.pdf-hdr-clone .cmp-sub-title{font-size:18px!important;}
       #cmp2-page3 #cmp2-deuda-expo-panel{margin:0 20px!important;flex-shrink:0!important;}
-      #cmp2-page3 #cmp2-rv-expo-panel{margin:0 20px!important;flex:1!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;}
-      #cmp2-page3 #cmp2-rv-expo-panel .cmp2-panel-body{flex:1!important;padding:10px 16px!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;}
+      #cmp2-page3 #cmp2-rv-expo-panel{margin:0 20px!important;flex-shrink:0!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;}
+      #cmp2-page3 #cmp2-rv-expo-panel .cmp2-panel-body{flex-shrink:0!important;padding:10px 0 0 0!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;}
       #cmp2-page3 #cmp2-rv-legend{flex-shrink:0!important;}
       #cmp2-page3 #cmp2-rv-expo-grid{flex:1!important;}
+      #cmp2-page3 #cmp2-movimientos-panel{margin:0 20px!important;flex-shrink:0!important;}
+      #cmp2-page3 #cmp2-movimientos-panel .cmp2-panel-hdr{font-size:13px!important;padding:8px 16px!important;}
+      #cmp2-page3 #cmp2-movimientos-panel .cmp2-tbl th{font-size:13px!important;padding:7px 10px!important;}
+      #cmp2-page3 #cmp2-movimientos-panel .cmp2-tbl td{font-size:13px!important;padding:6px 10px!important;}
       #cmp2-page3 .cmp2-footer{flex-shrink:0!important;padding:4px 20px!important;}
       #cmp2-page3 .cmp2-footer p{font-size:10px!important;margin:0!important;padding:2px 0!important;}
     `;

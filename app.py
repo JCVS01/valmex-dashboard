@@ -3997,8 +3997,8 @@ _BRAND_PALETTE = {
     "VXDEUDA": "#75A1DE",   # Silver-Blue (brand tint)
     "VXUDIMP": "#5B6670",   # Gray (brand — Pantone 431 C)
     "VXGUBLP": "#2E7D5B",   # Emerald Green (complementario)
-    "VXTBILL": "#3DA5E0",   # Blue (brand — Pantone 299 C)
-    "VALMX28": "#FECB46",   # Gold (brand accent RV)
+    "VXTBILL": "#FECB46",   # Gold (brand accent)
+    "VALMX28": "#3DA5E0",   # Blue (brand — Pantone 299 C)
     "VALMX20": "#BFDD7E",   # Lime Green (brand accent RV)
 }
 
