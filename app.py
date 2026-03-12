@@ -3928,11 +3928,16 @@ def _compute_quilt():
 def api_quilt():
     if "usuario" not in session:
         return jsonify({"ok": False, "error": "No autenticado"}), 401
-    # Wait for prewarm if it hasn't finished yet (up to 90s)
-    if not _quilt_cache["data"]:
-        _prewarm_done.wait(timeout=90)
+    # Return cached data immediately if available
     if _quilt_cache["data"] and not _cache_expired(_quilt_cache["ts"]):
         return jsonify(_quilt_cache["data"])
+    # Wait for prewarm (up to 25s — Render proxy kills at 30s)
+    if not _prewarm_done.is_set():
+        _prewarm_done.wait(timeout=25)
+        if _quilt_cache["data"]:
+            return jsonify(_quilt_cache["data"])
+        return jsonify({"ok": False, "loading": True, "error": "Datos cargando, reintenta en unos segundos"}), 202
+    # Prewarm finished but cache empty (prewarm failed) — try once
     try:
         data = _compute_quilt()
         _quilt_cache["data"] = data
@@ -4134,11 +4139,13 @@ def _compute_quilt_fondos():
 def api_quilt_fondos():
     if "usuario" not in session:
         return jsonify({"ok": False, "error": "No autenticado"}), 401
-    # Wait for prewarm if it hasn't finished yet (up to 90s)
-    if not _quilt_fondos_cache["data"]:
-        _prewarm_done.wait(timeout=90)
     if _quilt_fondos_cache["data"] and not _cache_expired(_quilt_fondos_cache["ts"]):
         return jsonify(_quilt_fondos_cache["data"])
+    if not _prewarm_done.is_set():
+        _prewarm_done.wait(timeout=25)
+        if _quilt_fondos_cache["data"]:
+            return jsonify(_quilt_fondos_cache["data"])
+        return jsonify({"ok": False, "loading": True, "error": "Datos cargando, reintenta en unos segundos"}), 202
     try:
         data = _compute_quilt_fondos()
         _quilt_fondos_cache["data"] = data
@@ -4460,14 +4467,18 @@ def _prewarm_quilts():
     """Pre-compute ALL caches at startup so first user request is instant."""
     import time as _t
     _t0 = _t.time()
-    try:
-        print("[PREWARM] Computing quilt (asset classes)...")
-        data = _compute_quilt()
-        _quilt_cache["data"] = data
-        _quilt_cache["ts"] = _t.time()
-        print(f"[PREWARM] Quilt done in {_t.time()-_t0:.1f}s")
-    except Exception as e:
-        print(f"[PREWARM] Quilt error: {e}")
+    for _attempt in range(3):
+        try:
+            print(f"[PREWARM] Computing quilt (asset classes)... attempt {_attempt+1}")
+            data = _compute_quilt()
+            _quilt_cache["data"] = data
+            _quilt_cache["ts"] = _t.time()
+            print(f"[PREWARM] Quilt done in {_t.time()-_t0:.1f}s")
+            break
+        except Exception as e:
+            print(f"[PREWARM] Quilt error (attempt {_attempt+1}): {e}")
+            if _attempt < 2:
+                _t.sleep(5)
     try:
         _t1 = _t.time()
         print("[PREWARM] Computing quilt fondos...")

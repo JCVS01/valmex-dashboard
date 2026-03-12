@@ -3781,17 +3781,24 @@ async function cargarComparativa2() {
 // ── QUILT CHART (Rendimientos por Clase de Activo) ──
 let _quiltLoaded = false;
 let _quiltData = null;
-async function loadQuiltChart() {
+async function loadQuiltChart(retries) {
   if (_quiltLoaded) return;
+  retries = retries || 0;
   try {
     const resp = await fetch('/api/quilt');
     const data = await resp.json();
+    if (data.loading && retries < 6) {
+      document.getElementById('quilt-table-wrap').innerHTML = '<p style="color:#5B6670;text-align:center;padding:20px;">Precargando datos de mercado... (puede tardar unos segundos en la primera visita)</p>';
+      setTimeout(() => loadQuiltChart(retries + 1), 5000);
+      return;
+    }
     if (!data.ok) { document.getElementById('quilt-table-wrap').innerHTML = '<p style="color:#DC2626;text-align:center;padding:20px;">Error: ' + (data.error||'') + '</p>'; return; }
     _quiltData = data;
     renderQuiltChart(data);
     _quiltLoaded = true;
   } catch(e) {
     console.error('Quilt error:', e);
+    if (retries < 6) { setTimeout(() => loadQuiltChart(retries + 1), 5000); return; }
     document.getElementById('quilt-table-wrap').innerHTML = '<p style="color:#DC2626;text-align:center;padding:20px;">Error cargando datos de mercado</p>';
   }
 }
@@ -3894,17 +3901,24 @@ function renderQuiltChart(data, wrapId, noteId) {
 // ── QUILT FONDOS VALMEX ──
 let _quiltFondosLoaded = false;
 let _quiltFondosData = null;
-async function loadQuiltFondos() {
+async function loadQuiltFondos(retries) {
   if (_quiltFondosLoaded) return;
+  retries = retries || 0;
   try {
     const resp = await fetch('/api/quilt_fondos');
     const data = await resp.json();
+    if (data.loading && retries < 6) {
+      document.getElementById('quilt-fondos-wrap').innerHTML = '<p style="color:#5B6670;text-align:center;padding:20px;">Precargando datos de fondos... (puede tardar unos segundos en la primera visita)</p>';
+      setTimeout(() => loadQuiltFondos(retries + 1), 5000);
+      return;
+    }
     if (!data.ok) { document.getElementById('quilt-fondos-wrap').innerHTML = '<p style="color:#DC2626;text-align:center;padding:20px;">Error: ' + (data.error||'') + '</p>'; return; }
     _quiltFondosData = data;
     renderQuiltFondos(data);
     _quiltFondosLoaded = true;
   } catch(e) {
     console.error('Quilt fondos error:', e);
+    if (retries < 6) { setTimeout(() => loadQuiltFondos(retries + 1), 5000); return; }
     document.getElementById('quilt-fondos-wrap').innerHTML = '<p style="color:#DC2626;text-align:center;padding:20px;">Error cargando rendimientos de fondos</p>';
   }
 }
