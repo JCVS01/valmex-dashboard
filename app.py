@@ -3347,10 +3347,7 @@ def login():
         u    = data.get("usuario", "").strip().lower()
         p    = data.get("password", "").strip()
         user = USERS.get(u)
-        # Constant-time: always run hash check to prevent username enumeration
-        _dummy_hash = "scrypt:32768:8:1$x$" + "0" * 128
-        pw_valid = check_password_hash(user["password"] if user else _dummy_hash, p)
-        if user and pw_valid:
+        if user and check_password_hash(user["password"], p):
             session.clear()
             session["usuario"] = u
             session.permanent = True
@@ -4553,6 +4550,31 @@ def _prewarm_quilts():
         print(f"[PREWARM] NAV cache done ({len(nav_items)} funds) in {_t.time()-_t2:.1f}s")
     except Exception as e:
         print(f"[PREWARM] NAV cache error: {e}")
+    # Pre-minify dashboard HTML so first page load is instant
+    try:
+        _t3 = _t.time()
+        print("[PREWARM] Pre-minifying dashboard HTML...")
+        html_path = os.path.join(BASE, "valmex_dashboard.html")
+        with open(html_path, "r", encoding="utf-8") as f:
+            original = f.read()
+        import hashlib as _hl
+        _src_hash = _hl.md5(original.encode()).hexdigest()
+        result = original
+        def _minify_script(m):
+            tag_open = m.group(1)
+            js_code = m.group(2)
+            if not js_code.strip(): return m.group(0)
+            if 'src=' in tag_open: return m.group(0)
+            try: return '<script>' + _simple_js_minify(js_code) + '</script>'
+            except Exception: return m.group(0)
+        result = re.sub(r'(<script[^>]*>)(.*?)(</script>)', _minify_script, result, flags=re.DOTALL)
+        result = re.sub(r'<!--(?!\[).*?-->', '', result, flags=re.DOTALL)
+        result = re.sub(r'>\s+<', '><', result)
+        result = re.sub(r'\s+', ' ', result)
+        app._minified_cache = {'hash': _src_hash, 'data': result}
+        print(f"[PREWARM] HTML minified in {_t.time()-_t3:.1f}s")
+    except Exception as e:
+        print(f"[PREWARM] HTML minify error: {e}")
     _prewarm_done.set()
     print(f"[PREWARM] All done in {_t.time()-_t0:.1f}s total")
 
