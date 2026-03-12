@@ -3413,8 +3413,7 @@ def pc_pdf():
 
 @app.route("/VALMEX.png")
 def valmex_logo():
-    if "usuario" not in session:
-        return redirect(url_for("login"))
+    # No auth — needed by login page before user is authenticated
     return send_from_directory(BASE, "VALMEX.png")
 
 @app.route("/VALMEX2.png")
@@ -4507,7 +4506,7 @@ def api_creditos_db():
 
 
 def _prewarm_quilts():
-    """Pre-compute quilt caches at startup so first user request is instant."""
+    """Pre-compute ALL caches at startup so first user request is instant."""
     import time as _t
     _t0 = _t.time()
     try:
@@ -4530,9 +4529,26 @@ def _prewarm_quilts():
     try:
         print("[PREWARM] Pre-warming factor series...")
         _fetch_factor_series()
-        print(f"[PREWARM] All done in {_t.time()-_t0:.1f}s total")
     except Exception as e:
         print(f"[PREWARM] Factor series error: {e}")
+    # Pre-warm NAV cache for all Serie A funds (most commonly used)
+    try:
+        _t2 = _t.time()
+        print("[PREWARM] Pre-warming NAV cache (all Serie A)...")
+        nav_items = []
+        for fondo, series in ISIN_MAP.items():
+            isin = series.get("A")
+            if isin:
+                nav_items.append((isin, fondo, "A"))
+        def _fetch_nav(args):
+            isin, f, s = args
+            get_ms_nav(isin, expect_fund=f, expect_serie=s)
+        with ThreadPoolExecutor(max_workers=12) as executor:
+            list(executor.map(_fetch_nav, nav_items))
+        print(f"[PREWARM] NAV cache done ({len(nav_items)} funds) in {_t.time()-_t2:.1f}s")
+    except Exception as e:
+        print(f"[PREWARM] NAV cache error: {e}")
+    print(f"[PREWARM] All done in {_t.time()-_t0:.1f}s total")
 
 
 # ── Pre-warm caches at startup (works with both gunicorn and direct run) ──
