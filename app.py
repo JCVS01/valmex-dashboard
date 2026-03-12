@@ -3094,6 +3094,14 @@ def set_security_headers(response):
     response.headers['X-XSS-Protection'] = '1; mode=block'
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
     response.headers['Permissions-Policy'] = 'geolocation=(), camera=(), microphone=()'
+    response.headers['Content-Security-Policy'] = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://html2canvas.hertzen.com; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; "
+        "font-src 'self' https://fonts.gstatic.com; "
+        "img-src 'self' data: blob:; "
+        "connect-src 'self'; "
+    )
     if request.is_secure:
         response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
     return response
@@ -3576,39 +3584,46 @@ def _compute_quilt():
             return round((eu * ef / (su * sf) - 1) * 100, 2)
         return None
 
-    # Fetch all data
-    fx = bx_series("SF43718")
-    cetes = bx_series("SF43936")
-    inpc = bx_series("SP1")
-    tasa = bx_series("SF61745")
-    bond10y = fred_series("IRLTLT01MXM156N")
-    # Morningstar NAV: NAFTRAC (MXN), EEM/URTH/BWX (USD)
-    naftrac = ms_series("NAFTRAC")
-    eem = ms_series("EEM")
-    urth = ms_series("URTH")
-    bwx = ms_series("BWX")
-    # Oro: Gold futures USD/oz (Yahoo Finance)
-    try:
-        gold_df = yf.download("GC=F", start="2015-12-01", end=today.isoformat(),
-                              auto_adjust=True, progress=False)
-        if isinstance(gold_df.columns, pd.MultiIndex):
-            gold_df.columns = gold_df.columns.get_level_values(0)
-        gold = gold_df["Close"]
-        print(f"[QUILT] Gold: {len(gold)} prices")
-    except Exception as e:
-        print(f"[QUILT] Gold error: {e}")
-        gold = pd.Series(dtype=float)
-    # Petróleo: WTI Crude futures USD/bbl (Yahoo Finance)
-    try:
-        oil_df = yf.download("CL=F", start="2015-12-01", end=today.isoformat(),
+    # Fetch all data in parallel to avoid Heroku 30s timeout
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    def _fetch_yf(ticker):
+        try:
+            df = yf.download(ticker, start="2015-12-01", end=today.isoformat(),
                              auto_adjust=True, progress=False)
-        if isinstance(oil_df.columns, pd.MultiIndex):
-            oil_df.columns = oil_df.columns.get_level_values(0)
-        oil = oil_df["Close"]
-        print(f"[QUILT] Oil: {len(oil)} prices")
-    except Exception as e:
-        print(f"[QUILT] Oil error: {e}")
-        oil = pd.Series(dtype=float)
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = df.columns.get_level_values(0)
+            s = df["Close"]
+            print(f"[QUILT] {ticker}: {len(s)} prices")
+            return s
+        except Exception as e:
+            print(f"[QUILT] {ticker} error: {e}")
+            return pd.Series(dtype=float)
+
+    with ThreadPoolExecutor(max_workers=11) as executor:
+        f_fx      = executor.submit(bx_series, "SF43718")
+        f_cetes   = executor.submit(bx_series, "SF43936")
+        f_inpc    = executor.submit(bx_series, "SP1")
+        f_tasa    = executor.submit(bx_series, "SF61745")
+        f_bond10y = executor.submit(fred_series, "IRLTLT01MXM156N")
+        f_naftrac = executor.submit(ms_series, "NAFTRAC")
+        f_eem     = executor.submit(ms_series, "EEM")
+        f_urth    = executor.submit(ms_series, "URTH")
+        f_bwx     = executor.submit(ms_series, "BWX")
+        f_gold    = executor.submit(_fetch_yf, "GC=F")
+        f_oil     = executor.submit(_fetch_yf, "CL=F")
+
+    fx      = f_fx.result()
+    cetes   = f_cetes.result()
+    inpc    = f_inpc.result()
+    tasa    = f_tasa.result()
+    bond10y = f_bond10y.result()
+    naftrac = f_naftrac.result()
+    eem     = f_eem.result()
+    urth    = f_urth.result()
+    bwx     = f_bwx.result()
+    gold    = f_gold.result()
+    oil     = f_oil.result()
 
     rets = {}
 
