@@ -13,24 +13,6 @@ from concurrent.futures import ThreadPoolExecutor
 from flask import Flask, send_file, request, jsonify, redirect, url_for, session, send_from_directory, make_response
 import json
 from werkzeug.security import generate_password_hash, check_password_hash
-def _simple_js_minify(js):
-    """Pure-Python JS minifier: strips comments + collapses whitespace.
-    Conservative approach — only removes clearly safe whitespace to avoid
-    breaking identifiers like innerHTML, injectHeader, etc."""
-    # Remove single-line comments (but not URLs like http://)
-    result = re.sub(r'(?<![:"\'\\])//[^\n]*', '', js)
-    # Remove multi-line comments
-    result = re.sub(r'/\*.*?\*/', '', result, flags=re.DOTALL)
-    # Collapse multiple whitespace/newlines into single space
-    result = re.sub(r'\s+', ' ', result)
-    # Remove space only around punctuation that never needs adjacent spaces
-    result = re.sub(r' *([{}()\[\];,]) *', r'\1', result)
-    # Restore spaces that keywords MUST have before identifiers
-    _KW = r'(return|var|let|const|function|typeof|instanceof|new|delete|throw|case|else|void|yield|async|await|if|for|while|switch|catch)'
-    result = re.sub(r'\b' + _KW + r'\b(?=[a-zA-Z_$"\'\`0-9{(\[])', r'\1 ', result)
-    # Restore spaces for 'in' and 'of' only as standalone keywords (word boundaries)
-    result = re.sub(r'(?<=[\w$]) (in|of) (?=[\w$])', r' \1 ', result)
-    return result.strip()
 from scipy.stats import skew, kurtosis
 from sklearn.linear_model import ElasticNetCV
 from sklearn.covariance import LedoitWolf
@@ -3185,39 +3167,6 @@ def set_security_headers(response):
     response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, private'
     response.headers['Pragma'] = 'no-cache'
-    # Minify + obfuscate HTML + JS to make source code unreadable (CACHED)
-    if response.content_type and 'text/html' in response.content_type:
-        try:
-            original = response.get_data(as_text=True)
-            import hashlib as _hl
-            _src_hash = _hl.md5(original.encode()).hexdigest()
-            if hasattr(app, '_minified_cache') and app._minified_cache.get('hash') == _src_hash:
-                response.set_data(app._minified_cache['data'])
-            else:
-                import re as _re
-                import base64 as _b64
-                result = original
-                def _minify_script(m):
-                    tag_open = m.group(1)
-                    js_code = m.group(2)
-                    if not js_code.strip():
-                        return m.group(0)
-                    if 'src=' in tag_open:
-                        return m.group(0)
-                    try:
-                        return '<script>' + _simple_js_minify(js_code) + '</script>'
-                    except Exception:
-                        return m.group(0)
-                result = _re.sub(
-                    r'(<script[^>]*>)(.*?)(</script>)',
-                    _minify_script, result, flags=_re.DOTALL)
-                result = _re.sub(r'<!--(?!\[).*?-->', '', result, flags=_re.DOTALL)
-                result = _re.sub(r'>\s+<', '><', result)
-                result = _re.sub(r'\s+', ' ', result)
-                app._minified_cache = {'hash': _src_hash, 'data': result}
-                response.set_data(result)
-        except Exception:
-            pass
     return response
 
 _login_attempts = {}
@@ -4550,31 +4499,6 @@ def _prewarm_quilts():
         print(f"[PREWARM] NAV cache done ({len(nav_items)} funds) in {_t.time()-_t2:.1f}s")
     except Exception as e:
         print(f"[PREWARM] NAV cache error: {e}")
-    # Pre-minify dashboard HTML so first page load is instant
-    try:
-        _t3 = _t.time()
-        print("[PREWARM] Pre-minifying dashboard HTML...")
-        html_path = os.path.join(BASE, "valmex_dashboard.html")
-        with open(html_path, "r", encoding="utf-8") as f:
-            original = f.read()
-        import hashlib as _hl
-        _src_hash = _hl.md5(original.encode()).hexdigest()
-        result = original
-        def _minify_script(m):
-            tag_open = m.group(1)
-            js_code = m.group(2)
-            if not js_code.strip(): return m.group(0)
-            if 'src=' in tag_open: return m.group(0)
-            try: return '<script>' + _simple_js_minify(js_code) + '</script>'
-            except Exception: return m.group(0)
-        result = re.sub(r'(<script[^>]*>)(.*?)(</script>)', _minify_script, result, flags=re.DOTALL)
-        result = re.sub(r'<!--(?!\[).*?-->', '', result, flags=re.DOTALL)
-        result = re.sub(r'>\s+<', '><', result)
-        result = re.sub(r'\s+', ' ', result)
-        app._minified_cache = {'hash': _src_hash, 'data': result}
-        print(f"[PREWARM] HTML minified in {_t.time()-_t3:.1f}s")
-    except Exception as e:
-        print(f"[PREWARM] HTML minify error: {e}")
     _prewarm_done.set()
     print(f"[PREWARM] All done in {_t.time()-_t0:.1f}s total")
 
