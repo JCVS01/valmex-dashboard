@@ -3,11 +3,13 @@ import re
 import time
 import secrets
 import requests
+import threading
 import numpy as np
 import pandas as pd
 import yfinance as yf
 import xml.etree.ElementTree as ET
 from datetime import date, timedelta, datetime
+from concurrent.futures import ThreadPoolExecutor
 from flask import Flask, send_file, request, jsonify, redirect, url_for, session, send_from_directory, make_response
 import json
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -1813,6 +1815,10 @@ def _fetch_factor_series():
     return factors
 
 
+# ── Cache for compute_factor_betas ──
+_betas_cache = {}   # hash(bt_dict) -> result dict
+_betas_cache_ts = 0
+
 def compute_factor_betas(bt_portafolio_dict):
     """Aladdin-style factor risk engine with:
     - Elastic Net (L1+L2) with cross-validation for automatic factor selection
@@ -1825,6 +1831,21 @@ def compute_factor_betas(bt_portafolio_dict):
     """
     if not bt_portafolio_dict or len(bt_portafolio_dict) < 60:
         return {}
+
+    # ── Cache: hash portfolio series → reuse betas for same portfolio (6h) ──
+    global _betas_cache, _betas_cache_ts
+    import hashlib
+    _now = time.time()
+    if _now - _betas_cache_ts > 21600:  # 6h
+        _betas_cache = {}
+        _betas_cache_ts = _now
+    _sorted_keys = sorted(bt_portafolio_dict.keys())
+    _hash_input = "|".join(f"{k}:{bt_portafolio_dict[k]:.6f}" for k in _sorted_keys[-60:])
+    _cache_key = hashlib.md5(_hash_input.encode()).hexdigest()
+    if _cache_key in _betas_cache:
+        print(f"[BETAS] cache HIT ({_cache_key[:8]})")
+        return _betas_cache[_cache_key]
+    print(f"[BETAS] cache MISS ({_cache_key[:8]}), computing...")
 
     try:
         factors = _fetch_factor_series()
@@ -2218,6 +2239,7 @@ def compute_factor_betas(bt_portafolio_dict):
         for skey, impact in scenarios.items():
             print(f"  {skey:>20s}: {impact*100:+.4f}%")
 
+        _betas_cache[_cache_key] = betas
         return betas
 
     except Exception as e:
@@ -3146,10 +3168,12 @@ def set_security_headers(response):
     response.headers['X-Frame-Options'] = 'SAMEORIGIN'
     response.headers['X-XSS-Protection'] = '1; mode=block'
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
+    response.headers['X-Permitted-Cross-Domain-Policies'] = 'none'
     response.headers['Permissions-Policy'] = 'geolocation=(), camera=(), microphone=(), usb=(), bluetooth=()'
     response.headers['Content-Security-Policy'] = (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://html2canvas.hertzen.com; "
+        "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://html2canvas.hertzen.com; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; "
         "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
         "img-src 'self' data: blob:; "
@@ -3161,47 +3185,55 @@ def set_security_headers(response):
     response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, private'
     response.headers['Pragma'] = 'no-cache'
-    # Minify + obfuscate HTML + JS to make source code unreadable
+    # Minify + obfuscate HTML + JS to make source code unreadable (CACHED)
     if response.content_type and 'text/html' in response.content_type:
         try:
-            import re as _re
-            import base64 as _b64
             original = response.get_data(as_text=True)
-            result = original
-            # 1. Minify + base64-encode inline JS inside <script> tags
-            def _obfuscate_script(m):
-                tag_open = m.group(1)
-                js_code = m.group(2)
-                tag_close = m.group(3)
-                if not js_code.strip():
-                    return m.group(0)
-                # Skip scripts with src= (external CDN scripts)
-                if 'src=' in tag_open:
-                    return m.group(0)
-                try:
-                    minified = _simple_js_minify(js_code)
-                    encoded = _b64.b64encode(minified.encode('utf-8')).decode('ascii')
-                    return '<script>eval(decodeURIComponent(escape(atob("' + encoded + '"))))</script>'
-                except Exception:
-                    return m.group(0)
-            result = _re.sub(
-                r'(<script[^>]*>)(.*?)(</script>)',
-                _obfuscate_script, result, flags=_re.DOTALL)
-            # 2. Minify HTML structure (pure Python, no external deps)
-            result = _re.sub(r'<!--(?!\[).*?-->', '', result, flags=_re.DOTALL)
-            result = _re.sub(r'>\s+<', '><', result)
-            result = _re.sub(r'\s+', ' ', result)
-            response.set_data(result)
+            import hashlib as _hl
+            _src_hash = _hl.md5(original.encode()).hexdigest()
+            if hasattr(app, '_minified_cache') and app._minified_cache.get('hash') == _src_hash:
+                response.set_data(app._minified_cache['data'])
+            else:
+                import re as _re
+                import base64 as _b64
+                result = original
+                def _minify_script(m):
+                    tag_open = m.group(1)
+                    js_code = m.group(2)
+                    if not js_code.strip():
+                        return m.group(0)
+                    if 'src=' in tag_open:
+                        return m.group(0)
+                    try:
+                        return '<script>' + _simple_js_minify(js_code) + '</script>'
+                    except Exception:
+                        return m.group(0)
+                result = _re.sub(
+                    r'(<script[^>]*>)(.*?)(</script>)',
+                    _minify_script, result, flags=_re.DOTALL)
+                result = _re.sub(r'<!--(?!\[).*?-->', '', result, flags=_re.DOTALL)
+                result = _re.sub(r'>\s+<', '><', result)
+                result = _re.sub(r'\s+', ' ', result)
+                app._minified_cache = {'hash': _src_hash, 'data': result}
+                response.set_data(result)
         except Exception:
-            pass  # serve unminified if minification fails
+            pass
     return response
 
 _login_attempts = {}
 _LOGIN_MAX_ATTEMPTS = 5
 _LOGIN_WINDOW = 300
+_login_cleanup_ts = 0
 
 def _check_login_rate_limit(ip):
+    global _login_cleanup_ts
     now = time.time()
+    # Cleanup stale entries
+    if now - _login_cleanup_ts > 600:
+        stale = [k for k, (_, t) in _login_attempts.items() if now - t > _LOGIN_WINDOW * 2]
+        for k in stale:
+            del _login_attempts[k]
+        _login_cleanup_ts = now
     if ip in _login_attempts:
         count, first = _login_attempts[ip]
         if now - first > _LOGIN_WINDOW:
@@ -3214,14 +3246,22 @@ def _check_login_rate_limit(ip):
     _login_attempts[ip] = (1, now)
     return True
 
-# ── Global API rate limiting ──
+# ── Global API rate limiting (with periodic cleanup) ──
 _api_calls = {}
 _API_MAX_RPM = 120  # max requests per minute per IP
 _API_WINDOW  = 60
+_api_cleanup_ts = 0
 
 def _check_api_rate_limit():
-    ip = request.remote_addr or "unknown"
+    global _api_cleanup_ts
+    ip = request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or request.remote_addr or "unknown"
     now = time.time()
+    # Periodic cleanup: purge stale entries every 10 min to prevent memory leak
+    if now - _api_cleanup_ts > 600:
+        stale = [k for k, (_, t) in _api_calls.items() if now - t > _API_WINDOW * 2]
+        for k in stale:
+            del _api_calls[k]
+        _api_cleanup_ts = now
     if ip in _api_calls:
         calls, first = _api_calls[ip]
         if now - first > _API_WINDOW:
@@ -3307,17 +3347,24 @@ def login():
         u    = data.get("usuario", "").strip().lower()
         p    = data.get("password", "").strip()
         user = USERS.get(u)
-        if user and check_password_hash(user["password"], p):
+        # Constant-time: always run hash check to prevent username enumeration
+        _dummy_hash = "scrypt:32768:8:1$x$" + "0" * 128
+        pw_valid = check_password_hash(user["password"] if user else _dummy_hash, p)
+        if user and pw_valid:
             session.clear()
             session["usuario"] = u
             session.permanent = True
+            print(f"[AUDIT] LOGIN_OK user={u} ip={ip}", flush=True)
             return jsonify({"ok":True,"nombre":user["nombre"],"iniciales":user["iniciales"],"rol":user["rol"]})
+        print(f"[AUDIT] LOGIN_FAIL user={u} ip={ip}", flush=True)
         return jsonify({"ok": False}), 401
     return send_file(os.path.join(BASE, "login.html"))
 
 @app.route("/logout")
 def logout():
+    u = session.get("usuario", "?")
     session.clear()
+    print(f"[AUDIT] LOGOUT user={u} ip={request.remote_addr}", flush=True)
     return redirect(url_for("login"))
 
 @app.route("/me")
@@ -3352,6 +3399,7 @@ def change_password():
     new_hash = generate_password_hash(new_pass)
     USERS[u]["password"] = new_hash
     _save_password_override(u, new_hash)
+    print(f"[AUDIT] PASSWORD_CHANGED user={u} ip={ip}", flush=True)
     session.clear()
     session["usuario"] = u
     session.permanent = True
@@ -3365,6 +3413,8 @@ def pc_pdf():
 
 @app.route("/VALMEX.png")
 def valmex_logo():
+    if "usuario" not in session:
+        return redirect(url_for("login"))
     return send_from_directory(BASE, "VALMEX.png")
 
 @app.route("/VALMEX2.png")
@@ -3429,6 +3479,8 @@ def api_accion_validate():
     return jsonify({"ok": False, "error": f"'{db_key}' no encontrado en BMV/SIC. Verifica el ticker."}), 404
 
 
+_compute_semaphore = threading.Semaphore(3)  # Max 3 concurrent portfolio computations
+
 @app.route("/api/propuesta", methods=["POST"])
 def api_propuesta():
     if "usuario" not in session:
@@ -3449,6 +3501,8 @@ def api_propuesta():
             fondos_pct = {k: float(v) for k, v in raw.items() if float(v) > 0}
             if any(v > 100 or v < 0 for v in fondos_pct.values()):
                 return jsonify({"ok": False, "error": "Porcentaje fuera de rango"}), 400
+            if len(fondos_pct) > 25:
+                return jsonify({"ok": False, "error": "Máximo 25 fondos"}), 400
         except (ValueError, TypeError):
             return jsonify({"ok": False, "error": "Datos numéricos inválidos"}), 400
         repo_mxn = body.get("repo_mxn")
@@ -3456,13 +3510,36 @@ def api_propuesta():
         acciones_raw = body.get("acciones", [])
         if not fondos_pct and not repo_mxn and not repo_usd and not acciones_raw:
             return jsonify({"ok": False, "error": "Sin fondos con % > 0"}), 400
+        # Validate date range
+        bt_ini = body.get("bt_fecha_ini")
+        bt_fin = body.get("bt_fecha_fin")
+        if bt_ini and bt_fin:
+            try:
+                from datetime import date as _d
+                _di = _d.fromisoformat(str(bt_ini)[:10])
+                _df = _d.fromisoformat(str(bt_fin)[:10])
+                if (_df - _di).days > 7300:
+                    return jsonify({"ok": False, "error": "Rango máximo 20 años"}), 400
+                if _di > _df:
+                    return jsonify({"ok": False, "error": "Fecha inicio > fin"}), 400
+            except (ValueError, TypeError):
+                pass
 
-    return jsonify(calcular_portafolio(fondos_pct, tipo_cliente,
-                                        repo_mxn=body.get("repo_mxn"),
-                                        repo_usd=body.get("repo_usd"),
-                                        acciones=body.get("acciones", []),
-                                        bt_fecha_ini=body.get("bt_fecha_ini"),
-                                        bt_fecha_fin=body.get("bt_fecha_fin")))
+    if not _compute_semaphore.acquire(timeout=0.5):
+        return jsonify({"ok": False, "error": "Servidor ocupado, intenta de nuevo en unos segundos."}), 503
+
+    try:
+        return jsonify(calcular_portafolio(fondos_pct, tipo_cliente,
+                                            repo_mxn=body.get("repo_mxn"),
+                                            repo_usd=body.get("repo_usd"),
+                                            acciones=body.get("acciones", []),
+                                            bt_fecha_ini=body.get("bt_fecha_ini"),
+                                            bt_fecha_fin=body.get("bt_fecha_fin")))
+    except Exception as e:
+        print(f"[ERROR] api_propuesta: {e}")
+        return jsonify({"ok": False, "error": "Error interno en cálculo"}), 500
+    finally:
+        _compute_semaphore.release()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -3472,6 +3549,13 @@ BANXICO_TOKEN = os.environ.get("BANXICO_TOKEN", "") or "592b06934a31710cba9e9a6e
 BANXICO_BASE  = "https://www.banxico.org.mx/SieAPIRest/service/v1/series"
 FRED_API_KEY  = os.environ.get("FRED_API_KEY", "") or "1a6dadbec2267dd21b3ad5d6447ed711"
 FRED_BASE     = "https://api.stlouisfed.org/fred/series/observations"
+# Warn if using hardcoded fallback keys (should be set via env vars in production)
+if not os.environ.get("BANXICO_TOKEN"):
+    print("[SECURITY] WARNING: Using fallback Banxico token — set BANXICO_TOKEN env var in production")
+if not os.environ.get("FRED_API_KEY"):
+    print("[SECURITY] WARNING: Using fallback FRED key — set FRED_API_KEY env var in production")
+if not os.environ.get("MS_ACCESS"):
+    print("[SECURITY] WARNING: Using fallback Morningstar access — set MS_ACCESS env var in production")
 
 SERIE_TIIE28  = "SF43783"
 SERIE_USDMXN  = "SF43718"
@@ -3482,7 +3566,12 @@ SERIE_USD_REPO = "SOFR"
 _hist_cache = {}; _hist_cache_ts = 0
 
 
+_banxico_rango_cache = {}  # (serie, ini, fin) -> result, daily
+
 def _banxico_serie_rango(serie_id, fecha_ini, fecha_fin):
+    _bk = (serie_id, fecha_ini, fecha_fin)
+    if _bk in _banxico_rango_cache:
+        return _banxico_rango_cache[_bk]
     try:
         url  = f"{BANXICO_BASE}/{serie_id}/datos/{fecha_ini}/{fecha_fin}"
         hdrs = {"Bmx-Token": BANXICO_TOKEN, "Accept": "application/json"}
@@ -3495,6 +3584,7 @@ def _banxico_serie_rango(serie_id, fecha_ini, fecha_fin):
                 result.append({"fecha": d["fecha"], "valor": float(d["dato"].replace(",", "."))})
             except Exception:
                 pass
+        _banxico_rango_cache[_bk] = result
         return result
     except Exception as e:
         print(f"[BANXICO HIST ERROR] {serie_id}: {e}")
@@ -3620,6 +3710,7 @@ def get_banxico_dato(serie_id):
 
 # ── QUILT CHART (Rendimientos por Clase de Activo) ──────────────────────
 _quilt_cache = {"data": None, "ts": 0}
+_quilt_ms_ticker_cache = {}  # Persistent across calls (not local to _compute_quilt)
 
 def _compute_quilt():
     today = date.today()
@@ -3660,11 +3751,9 @@ def _compute_quilt():
 
     MS_NAV_TICKER_URL = "https://api.morningstar.com/service/mf/UnadjustedNAV/TICKER"
 
-    _ms_ticker_cache: dict = {}
-
     def ms_series(ticker):
         """Fetch daily NAV/price from Morningstar by TICKER symbol (cached daily)."""
-        cached = _ms_ticker_cache.get(ticker)
+        cached = _quilt_ms_ticker_cache.get(ticker)
         if cached and not _cache_expired(cached["ts"]):
             return cached["data"]
         try:
@@ -3682,7 +3771,7 @@ def _compute_quilt():
                     out[datetime.strptime(elem.get("d"), "%Y-%m-%d")] = float(elem.get("v"))
                 except: pass
             result = pd.Series(out).sort_index()
-            _ms_ticker_cache[ticker] = {"ts": time.time(), "data": result}
+            _quilt_ms_ticker_cache[ticker] = {"ts": time.time(), "data": result}
             print(f"[QUILT MS] {ticker}: {len(out)} prices")
             return result
         except Exception as e:
@@ -3691,7 +3780,13 @@ def _compute_quilt():
 
     def ye(s, y):
         sub = s[s.index.year == y]
-        return float(sub.iloc[-1]) if len(sub) > 0 else None
+        if len(sub) == 0:
+            return None
+        val = sub.iloc[-1]
+        # Handle yfinance MultiIndex columns returning Series instead of scalar
+        if isinstance(val, pd.Series):
+            val = val.iloc[0]
+        return float(val)
 
     def ev(s, y):
         return ye(s, y)
@@ -3717,6 +3812,9 @@ def _compute_quilt():
             if isinstance(df.columns, pd.MultiIndex):
                 df.columns = df.columns.get_level_values(0)
             s = df["Close"]
+            # Ensure flat Series (yfinance may return DataFrame with single column)
+            if isinstance(s, pd.DataFrame):
+                s = s.iloc[:, 0]
             print(f"[QUILT] {ticker}: {len(s)} prices")
             return s
         except Exception as e:
@@ -3893,8 +3991,8 @@ def api_quilt():
         _quilt_cache["ts"] = now
         return jsonify(data)
     except Exception as e:
-        import traceback; traceback.print_exc()
-        return jsonify({"ok": False, "error": str(e)}), 500
+        print(f"[ERROR] api_quilt: {e}")
+        return jsonify({"ok": False, "error": "Error al calcular datos históricos"}), 500
 
 
 # ── QUILT FONDOS VALMEX (Top 10 por año) ──────────────────────────────
@@ -4097,8 +4195,8 @@ def api_quilt_fondos():
         _quilt_fondos_cache["ts"] = now
         return jsonify(data)
     except Exception as e:
-        import traceback; traceback.print_exc()
-        return jsonify({"ok": False, "error": str(e)}), 500
+        print(f"[ERROR] api_quilt_fondos: {e}")
+        return jsonify({"ok": False, "error": "Error al calcular datos de fondos"}), 500
 
 
 _BRAND_PALETTE = {
@@ -4217,23 +4315,23 @@ def diag_repo():
     try:
         hoy = date.today(); ini = (hoy - timedelta(days=10)).isoformat(); fin = hoy.isoformat()
         raw = _banxico_serie_rango(SERIE_TIIE28, ini, fin)
-        resultado["banxico"] = {"ok": len(raw) > 0, "token_set": bool(BANXICO_TOKEN), "registros": len(raw), "ultimo": raw[-1] if raw else None}
+        resultado["banxico"] = {"ok": len(raw) > 0, "registros": len(raw), "ultimo": raw[-1] if raw else None}
     except Exception as e:
-        resultado["banxico"] = {"ok": False, "error": str(e)}
+        resultado["banxico"] = {"ok": False, "error": "Error de conexión"}
     try:
         hoy = date.today()
         params = {"series_id": "DFF", "observation_start": (hoy-timedelta(days=10)).isoformat(),
                   "observation_end": hoy.isoformat(), "api_key": FRED_API_KEY, "file_type": "json"}
         r = requests.get(FRED_BASE, params=params, timeout=10)
         obs = r.json().get("observations", [])
-        resultado["fred"] = {"ok": len(obs) > 0, "key_set": bool(FRED_API_KEY), "status": r.status_code, "registros": len(obs), "ultimo": obs[-1] if obs else None}
+        resultado["fred"] = {"ok": len(obs) > 0, "registros": len(obs), "ultimo": obs[-1] if obs else None}
     except Exception as e:
-        resultado["fred"] = {"ok": False, "error": str(e)}
+        resultado["fred"] = {"ok": False, "error": "Error de conexión"}
     try:
         rend_mxn = get_repo_rendimientos(7.0, False); rend_usd = get_repo_rendimientos(4.0, True)
         resultado["rendimientos_mxn"] = rend_mxn; resultado["rendimientos_usd"] = rend_usd
     except Exception as e:
-        resultado["rendimientos"] = {"error": str(e)}
+        resultado["rendimientos"] = {"error": "Error de cálculo"}
     return jsonify(resultado)
 
 
@@ -4242,6 +4340,9 @@ def diag_nav():
     """Diagnóstico Morningstar NAV API — prueba fetch de precios históricos."""
     if "usuario" not in session:
         return jsonify({"ok": False, "error": "No autenticado"}), 401
+    user_data = USERS.get(session.get("usuario", ""))
+    if not user_data or user_data.get("rol") != "admin":
+        return jsonify({"ok": False, "error": "No autorizado"}), 403
     try:
         isin = "MXP800501001"  # VXGUBCP A
         navs = get_ms_nav(isin, start="2026-02-01", end=date.today().isoformat())
@@ -4255,7 +4356,8 @@ def diag_nav():
             "bt_sample": bt[-3:] if bt else [],
         })
     except Exception as e:
-        return jsonify({"ok": False, "error": str(e)})
+        print(f"[ERROR] diag-nav: {e}")
+        return jsonify({"ok": False, "error": "Error en diagnóstico NAV"})
 
 
 @app.route("/api/diag-yf")
@@ -4400,13 +4502,44 @@ def api_creditos_db():
         r.raise_for_status()
         return jsonify({"ok": True, "data": r.json()})
     except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 500
+        print(f"[ERROR] creditos: {e}")
+        return jsonify({"ok": False, "error": "Error al consultar datos"}), 500
 
+
+def _prewarm_quilts():
+    """Pre-compute quilt caches at startup so first user request is instant."""
+    import time as _t
+    _t0 = _t.time()
+    try:
+        print("[PREWARM] Computing quilt (asset classes)...")
+        data = _compute_quilt()
+        _quilt_cache["data"] = data
+        _quilt_cache["ts"] = _t.time()
+        print(f"[PREWARM] Quilt done in {_t.time()-_t0:.1f}s")
+    except Exception as e:
+        print(f"[PREWARM] Quilt error: {e}")
+    try:
+        _t1 = _t.time()
+        print("[PREWARM] Computing quilt fondos...")
+        data2 = _compute_quilt_fondos()
+        _quilt_fondos_cache["data"] = data2
+        _quilt_fondos_cache["ts"] = _t.time()
+        print(f"[PREWARM] Quilt fondos done in {_t.time()-_t1:.1f}s")
+    except Exception as e:
+        print(f"[PREWARM] Quilt fondos error: {e}")
+    try:
+        print("[PREWARM] Pre-warming factor series...")
+        _fetch_factor_series()
+        print(f"[PREWARM] All done in {_t.time()-_t0:.1f}s total")
+    except Exception as e:
+        print(f"[PREWARM] Factor series error: {e}")
+
+
+# ── Pre-warm caches at startup (works with both gunicorn and direct run) ──
+if DB_TOKEN:
+    threading.Thread(target=cargar_catalogo_emisoras, daemon=True).start()
+threading.Thread(target=_prewarm_quilts, daemon=True).start()
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    # Pre-cargar catálogo de emisoras al iniciar
-    if DB_TOKEN:
-        import threading
-        threading.Thread(target=cargar_catalogo_emisoras, daemon=True).start()
     app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
