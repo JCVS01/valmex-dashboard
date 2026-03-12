@@ -3710,6 +3710,7 @@ def get_banxico_dato(serie_id):
 # ── QUILT CHART (Rendimientos por Clase de Activo) ──────────────────────
 _quilt_cache = {"data": None, "ts": 0}
 _quilt_ms_ticker_cache = {}  # Persistent across calls (not local to _compute_quilt)
+_prewarm_done = threading.Event()  # Set when prewarm completes
 
 def _compute_quilt():
     today = date.today()
@@ -3981,13 +3982,15 @@ def _compute_quilt():
 def api_quilt():
     if "usuario" not in session:
         return jsonify({"ok": False, "error": "No autenticado"}), 401
-    now = time.time()
+    # Wait for prewarm if it hasn't finished yet (up to 90s)
+    if not _quilt_cache["data"]:
+        _prewarm_done.wait(timeout=90)
     if _quilt_cache["data"] and not _cache_expired(_quilt_cache["ts"]):
         return jsonify(_quilt_cache["data"])
     try:
         data = _compute_quilt()
         _quilt_cache["data"] = data
-        _quilt_cache["ts"] = now
+        _quilt_cache["ts"] = time.time()
         return jsonify(data)
     except Exception as e:
         print(f"[ERROR] api_quilt: {e}")
@@ -4185,13 +4188,15 @@ def _compute_quilt_fondos():
 def api_quilt_fondos():
     if "usuario" not in session:
         return jsonify({"ok": False, "error": "No autenticado"}), 401
-    now = time.time()
+    # Wait for prewarm if it hasn't finished yet (up to 90s)
+    if not _quilt_fondos_cache["data"]:
+        _prewarm_done.wait(timeout=90)
     if _quilt_fondos_cache["data"] and not _cache_expired(_quilt_fondos_cache["ts"]):
         return jsonify(_quilt_fondos_cache["data"])
     try:
         data = _compute_quilt_fondos()
         _quilt_fondos_cache["data"] = data
-        _quilt_fondos_cache["ts"] = now
+        _quilt_fondos_cache["ts"] = time.time()
         return jsonify(data)
     except Exception as e:
         print(f"[ERROR] api_quilt_fondos: {e}")
@@ -4548,6 +4553,7 @@ def _prewarm_quilts():
         print(f"[PREWARM] NAV cache done ({len(nav_items)} funds) in {_t.time()-_t2:.1f}s")
     except Exception as e:
         print(f"[PREWARM] NAV cache error: {e}")
+    _prewarm_done.set()
     print(f"[PREWARM] All done in {_t.time()-_t0:.1f}s total")
 
 
