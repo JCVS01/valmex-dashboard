@@ -184,12 +184,12 @@
 
     <div class="fg">
       <label>Usuario</label>
-      <input type="text" id="usuario" placeholder="Ej. jvilla" autocomplete="username">
+      <input type="text" id="usuario" placeholder="Ej. jvilla" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('password').focus()">
     </div>
 
     <div class="fg">
       <label>Contraseña</label>
-      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
 
     <button class="btn-login" id="btn-login" onclick="doLogin()">Iniciar sesión</button>
@@ -267,6 +267,7 @@
     const usuario  = document.getElementById('usuario').value.trim();
     const password = document.getElementById('password').value.trim();
     const errEl    = document.getElementById('error-msg');
+    const btn      = document.getElementById('btn-login');
     errEl.classList.remove('visible');
 
     if (!usuario || !password) {
@@ -274,6 +275,10 @@
       errEl.classList.add('visible');
       return;
     }
+
+    btn.disabled = true;
+    btn.textContent = 'Ingresando...';
+    btn.style.opacity = '0.7';
 
     try {
       const res = await fetch('/login', {
@@ -283,15 +288,22 @@
       });
 
       if (res.ok) {
+        btn.textContent = 'Redirigiendo...';
         window.location.href = '/';
       } else {
         const data = await res.json().catch(() => ({}));
         errEl.textContent = data.error || 'Usuario o contraseña incorrectos';
         errEl.classList.add('visible');
+        btn.disabled = false;
+        btn.textContent = 'Iniciar sesión';
+        btn.style.opacity = '1';
       }
     } catch(e) {
       errEl.textContent = 'Error de conexión, intenta de nuevo';
       errEl.classList.add('visible');
+      btn.disabled = false;
+      btn.textContent = 'Iniciar sesión';
+      btn.style.opacity = '1';
     }
   }
 
