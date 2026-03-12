@@ -3221,7 +3221,7 @@ def set_security_headers(response):
     return response
 
 _login_attempts = {}
-_LOGIN_MAX_ATTEMPTS = 5
+_LOGIN_MAX_ATTEMPTS = 10
 _LOGIN_WINDOW = 300
 _login_cleanup_ts = 0
 
@@ -3340,7 +3340,7 @@ def _valid_ticker(t: str) -> bool:
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        ip = request.remote_addr or "unknown"
+        ip = request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or request.remote_addr or "unknown"
         if not _check_login_rate_limit(ip):
             return jsonify({"ok": False, "error": "Demasiados intentos. Espera 5 minutos."}), 429
         data = request.get_json(force=True)
