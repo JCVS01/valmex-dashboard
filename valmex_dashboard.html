@@ -8,11 +8,12 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webkit-text-size-adjust:100%;text-size-adjust:100%;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;}
+input,textarea,select{-webkit-user-select:text;-moz-user-select:text;-ms-user-select:text;user-select:text;}
 :root{--navy:#00205C;--sky:#41BBC9;--blue:#3DA5E0;--silver:#D3DDE6;--gray:#5B6670;--white:#fff;--bg:#FFFFFF;}
 
 /* ── Toast notification (modal para warn/err) ── */
@@ -104,7 +105,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
 .prop-dash-title{grid-column:1/-1;}
 .prop-rule-full{grid-column:1/-1;height:2px;background:var(--navy);border-radius:2px;margin-bottom:2px;}
 .prop-row1{display:contents;}
-.card-comp{grid-column:span 1;height:306px;}
+.card-comp{grid-column:span 1;height:306px;} .card-comp>.ph{background:var(--sky);}
 .card-rend{grid-column:span 1;height:306px;}
 .card-deuda{grid-column:span 1;height:306px;}
 .card-back{grid-column:span 3;height:306px;}
@@ -225,6 +226,30 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
 .cmp-expo-bar{height:16px;border-radius:3px;min-width:2px;transition:width .3s;}
 .cmp-expo-bar.a{background:var(--navy);}.cmp-expo-bar.b{background:var(--sky);}
 .cmp-expo-pct{width:55px;text-align:right;font-size:10px;font-weight:600;color:var(--gray);flex-shrink:0;}
+/* ── RV Overweight/Underweight vs ACWI ── */
+.expo-rv-card{border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;}
+.expo-rv-card-hdr{background:#F8FAFC;color:var(--navy);font-size:11px;font-weight:700;padding:8px 14px;text-transform:uppercase;letter-spacing:.5px;font-family:'Montserrat',sans-serif;border-bottom:2px solid #CBD5E1;display:flex;justify-content:space-between;align-items:center;}
+.expo-rv-row{display:flex;align-items:center;padding:4px 14px;border-bottom:1px solid #F1F5F9;font-size:12px;font-family:'Montserrat',sans-serif;}
+.expo-rv-row:last-child{border-bottom:none;}
+.expo-rv-row:nth-child(even){background:#FAFBFC;}
+.expo-rv-label{width:110px;font-weight:600;color:var(--navy);flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px;}
+.expo-rv-bmk{width:40px;text-align:right;font-size:10px;font-weight:500;color:#94A3B8;flex-shrink:0;margin-right:8px;}
+.expo-rv-bars{flex:1;display:flex;flex-direction:column;gap:2px;position:relative;}
+.expo-rv-center-line{position:absolute;left:50%;top:0;bottom:0;width:1px;background:#CBD5E1;z-index:1;}
+.expo-rv-bar-row{display:flex;align-items:center;height:5px;}
+.expo-rv-bar-half{flex:1;height:5px;position:relative;overflow:hidden;}
+.expo-rv-bar-half.left{display:flex;justify-content:flex-end;}
+.expo-rv-bar-half.right{display:flex;justify-content:flex-start;}
+.expo-rv-bar{height:5px;border-radius:2px;min-width:0;transition:width .3s;}
+.expo-rv-val{font-size:10px;font-weight:600;font-variant-numeric:tabular-nums;}
+.expo-rv-val.pos{color:#059669;}.expo-rv-val.neg{color:#DC2626;}
+/* ── Deuda Stacked Bars ── */
+.expo-deuda-hdr{font-size:13px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px;font-family:'Montserrat',sans-serif;margin-bottom:8px;padding-bottom:4px;border-bottom:2px solid var(--navy);}
+.expo-deuda-row{display:flex;align-items:center;margin-bottom:6px;font-family:'Montserrat',sans-serif;}
+.expo-deuda-label{width:120px;font-size:13px;font-weight:600;color:var(--navy);flex-shrink:0;}
+.expo-deuda-bar{flex:1;height:22px;display:flex;border-radius:4px;overflow:hidden;background:#F1F5F9;}
+.expo-deuda-seg{height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;}
+.expo-deuda-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;font-size:13px;font-family:'Montserrat',sans-serif;color:#00205C;font-weight:600;}
 /* ── QUILT CHART ── */
 .quilt-desc{font-size:14px;color:var(--gray);line-height:1.6;margin-bottom:14px;font-family:'Montserrat',sans-serif;}
 .quilt-note{font-size:11px;color:var(--gray);line-height:1.5;margin-top:20px;font-family:'Montserrat',sans-serif;}
@@ -269,13 +294,20 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
 .cmp2-grid-top{display:grid;grid-template-columns:1fr 2fr;gap:16px;margin:0 20px;}
 .cmp2-grid-mid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:0 20px;}
 .cmp2-tbl{width:100%;border-collapse:collapse;font-family:'Montserrat',sans-serif;font-size:13px;}
-.cmp2-tbl th{background:#F8FAFC;color:var(--navy);font-weight:700;padding:10px 14px;text-align:left;border-bottom:2px solid #CBD5E1;font-size:11px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
-.cmp2-tbl td{padding:9px 14px;border-bottom:1px solid #F1F5F9;color:#00205C;font-weight:500;}
+.cmp2-tbl th{background:#F8FAFC;color:var(--navy);font-weight:700;padding:8px 10px;text-align:left;border-bottom:2px solid #CBD5E1;font-size:12px;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;}
+.cmp2-tbl{table-layout:auto;}
+.cmp2-tbl td{padding:7px 10px;border-bottom:1px solid #F1F5F9;color:#00205C;font-weight:500;white-space:nowrap;}
 .cmp2-tbl tr:nth-child(even){background:#FAFBFC;}
 .cmp2-tbl tr:hover{background:#F0F4FF;}
 .cmp2-tbl .r{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;}
 .cmp2-tbl .pos{color:#059669;font-weight:700;}.cmp2-tbl .neg{color:#DC2626;font-weight:700;}
 .cmp2-footer{padding:16px 24px 12px;background:transparent;border-top:1px solid #E2E8F0;margin:0 20px;}
+.cmp2-vf-btn{padding:8px 18px;border:2px solid #00205C;background:#fff;color:#00205C;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;font-family:'Montserrat',sans-serif;letter-spacing:.3px;}
+.cmp2-vf-btn:first-child{border-radius:8px 0 0 8px;}
+.cmp2-vf-btn:last-child{border-radius:0 8px 8px 0;}
+.cmp2-vf-btn:not(:first-child){border-left:none;}
+.cmp2-vf-btn.active{background:#00205C;color:#fff;}
+.cmp2-vf-btn:hover:not(.active){background:#F1F5F9;}
 .cmp2-footer p{font-size:10px;color:#94A3B8;line-height:1.5;margin:0;font-family:'Montserrat',sans-serif;}
 @media(max-width:600px) and (orientation:portrait){
   .cmp2-grid-top,.cmp2-grid-mid{grid-template-columns:1fr!important;}
@@ -579,8 +611,58 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
 /* ── RESPONSIVE: prop-dash-scaler containment ── */
 .prop-dash-scaler{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;}
 </style>
+<script>
+// ── Security: anti-inspect, anti-copy ──
+(function(){
+  // Disable right-click context menu
+  document.addEventListener('contextmenu',function(e){e.preventDefault();return false;});
+  // Disable keyboard shortcuts for DevTools
+  document.addEventListener('keydown',function(e){
+    // F12
+    if(e.key==='F12'){e.preventDefault();return false;}
+    // Ctrl+Shift+I / Cmd+Opt+I (Inspector)
+    if((e.ctrlKey||e.metaKey)&&e.shiftKey&&e.key==='I'){e.preventDefault();return false;}
+    // Ctrl+Shift+J / Cmd+Opt+J (Console)
+    if((e.ctrlKey||e.metaKey)&&e.shiftKey&&e.key==='J'){e.preventDefault();return false;}
+    // Ctrl+Shift+C / Cmd+Opt+C (Element picker)
+    if((e.ctrlKey||e.metaKey)&&e.shiftKey&&e.key==='C'){e.preventDefault();return false;}
+    // Ctrl+U / Cmd+U (View Source)
+    if((e.ctrlKey||e.metaKey)&&e.key==='u'){e.preventDefault();return false;}
+    if((e.ctrlKey||e.metaKey)&&e.key==='U'){e.preventDefault();return false;}
+    // Ctrl+S / Cmd+S (Save page)
+    if((e.ctrlKey||e.metaKey)&&e.key==='s'){e.preventDefault();return false;}
+    if((e.ctrlKey||e.metaKey)&&e.key==='S'){e.preventDefault();return false;}
+  });
+  // Disable text selection and drag
+  document.addEventListener('selectstart',function(e){
+    if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
+    e.preventDefault();
+  });
+  document.addEventListener('dragstart',function(e){e.preventDefault();});
+  // Console warning
+  console.log('%c⚠️ ALTO','font-size:48px;color:red;font-weight:bold;');
+  console.log('%cEste es un sistema privado de VALMEX Asset Management.\nEl acceso no autorizado será perseguido conforme a la ley.','font-size:16px;color:#00205C;');
+  // DevTools detection via debugger timing
+  var _dt=false;
+  setInterval(function(){
+    var t0=performance.now();
+    debugger;
+    if(performance.now()-t0>100&&!_dt){
+      _dt=true;
+      document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:Montserrat,sans-serif;color:#00205C;font-size:24px;text-align:center;padding:40px;">⚠️ Herramientas de desarrollo detectadas.<br>Sesión terminada por seguridad.</div>';
+      fetch('/logout');
+    }
+  },2000);
+})();
+</script>
 </head>
-<body>
+<body style="visibility:hidden;">
+<noscript>
+<div style="position:fixed;top:0;left:0;width:100%;height:100%;background:#00205C;z-index:999999;display:flex;align-items:center;justify-content:center;color:#fff;font-family:Montserrat,sans-serif;font-size:20px;text-align:center;padding:40px;">
+JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita JavaScript en tu navegador.
+</div>
+</noscript>
+<script>document.body.style.visibility='visible';</script>
 
 <!-- TOPBAR -->
 <header class="topbar">
@@ -934,6 +1016,13 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
       </div>
     </div>
 
+    <!-- View mode filter -->
+    <div id="cmp2-view-filter" style="display:flex;justify-content:center;gap:0;margin:10px 20px 0;font-family:'Montserrat',sans-serif;">
+      <button class="cmp2-vf-btn active" data-mode="3way" onclick="setCmp2ViewMode('3way')">Actual vs Modelo vs Propuesta</button>
+      <button class="cmp2-vf-btn" data-mode="avb" onclick="setCmp2ViewMode('avb')">Actual vs Modelo</button>
+      <button class="cmp2-vf-btn" data-mode="avc" onclick="setCmp2ViewMode('avc')">Actual vs Propuesta</button>
+    </div>
+
     <!-- ═══ CMP2: QUILT CHART: Rendimientos por Clase de Activo ═══ -->
     <div class="prop-dash-scaler" id="cmp2-quilt-activos-scaler" style="margin-bottom:20px;">
       <div style="background:#fff;width:100%;">
@@ -1085,17 +1174,17 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
         <div id="cmp2-bt-legend" style="display:flex;flex-wrap:nowrap;gap:16px;justify-content:center;align-items:center;min-height:28px;"></div>
       </div>
 
-      <!-- ═══ RENDIMIENTOS: 3 KPI cards (1/3 each) ═══ -->
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:0 20px;">
-        <div class="cmp2-panel" style="display:flex;flex-direction:column;">
+      <!-- ═══ RENDIMIENTOS: KPI cards ═══ -->
+      <div id="cmp2-rend-grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:0 20px;">
+        <div class="cmp2-panel" style="display:flex;flex-direction:column;" id="cmp2-rend-card-a">
           <div class="cmp2-panel-hdr" style="background:#00205C;" id="cmp2-rend-hdr-a">P. Actual</div>
           <div class="cmp2-panel-body" style="padding:12px 16px;" id="cmp2-rend-body-a"></div>
         </div>
-        <div class="cmp2-panel" style="display:flex;flex-direction:column;">
+        <div class="cmp2-panel" style="display:flex;flex-direction:column;" id="cmp2-rend-card-b">
           <div class="cmp2-panel-hdr" style="background:#00205C;" id="cmp2-rend-hdr-b">P. Modelo</div>
           <div class="cmp2-panel-body" style="padding:12px 16px;" id="cmp2-rend-body-b"></div>
         </div>
-        <div class="cmp2-panel" style="display:flex;flex-direction:column;">
+        <div class="cmp2-panel" style="display:flex;flex-direction:column;" id="cmp2-rend-card-c">
           <div class="cmp2-panel-hdr" style="background:#00205C;" id="cmp2-rend-hdr-c">P. Propuesta</div>
           <div class="cmp2-panel-body" style="padding:12px 16px;" id="cmp2-rend-body-c"></div>
         </div>
@@ -1106,7 +1195,7 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
         <div class="cmp2-panel-hdr">Composici&oacute;n</div>
         <div class="cmp2-panel-body" style="padding:0;overflow-x:auto;">
           <table class="cmp2-tbl" style="font-size:13px;">
-            <thead><tr><th>Fondo</th><th>Serie</th><th>Clase de Activo</th><th class="r" id="cmp2-h-th-a">P. Actual</th><th class="r" id="cmp2-h-th-b">P. Modelo</th><th class="r" id="cmp2-h-th-c">P. Propuesta</th><th class="r">MTD</th><th class="r">6 Meses</th><th class="r">YTD</th><th class="r">12M</th><th class="r">24M</th></tr></thead>
+            <thead><tr><th>Fondo</th><th>Serie</th><th>Descripci&oacute;n</th><th class="r" id="cmp2-h-th-a">P. Actual</th><th class="r" id="cmp2-h-th-b">P. Modelo</th><th class="r" id="cmp2-h-th-c">P. Propuesta</th><th class="r">MTD</th><th class="r">6 Meses</th><th class="r">YTD</th><th class="r">12M</th><th class="r">24M</th></tr></thead>
             <tbody id="cmp2-holdings-tbody"></tbody>
           </table>
           <p style="font-size:10px;color:#64748B;padding:8px 16px 10px;margin:0;font-family:'Montserrat',sans-serif;line-height:1.5;font-style:italic;">Deuda: rendimientos &lt;1 a&ntilde;o anualizados, &gt;1 a&ntilde;o efectivos. Renta variable, acciones, ETFs e &iacute;ndices: rendimientos efectivos en todos los periodos.</p>
@@ -1172,21 +1261,42 @@ body{font-family:'Montserrat',sans-serif;background:#FFFFFF;color:#1A2540;-webki
       <div id="cmp2-page3" style="display:flex;flex-direction:column;gap:12px;">
 
       <!-- ═══ Características (conditional) ═══ -->
-      <div class="cmp2-panel" id="cmp2-chars-panel" style="margin:0 20px;display:none;">
-        <div class="cmp2-panel-hdr">Caracter&iacute;sticas</div>
-        <div class="cmp2-panel-body" style="padding:0;overflow-x:auto;">
-          <table class="cmp2-tbl">
-            <thead><tr><th>Caracter&iacute;stica</th><th class="r" id="cmp2-ch-th-a">P. Actual</th><th class="r" id="cmp2-ch-th-b">P. Modelo</th><th class="r" id="cmp2-ch-th-c">P. Propuesta</th></tr></thead>
-            <tbody id="cmp2-chars-tbody"></tbody>
-          </table>
+      <div class="cmp2-panel" id="cmp2-chars-panel" style="margin:0 20px;display:none;"></div>
+
+      <!-- ═══ Deuda Drilldown: MXN + USD side by side ═══ -->
+      <div id="cmp2-deuda-expo-panel" style="margin:0 20px;display:none;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+          <div id="cmp2-deuda-mxn-card"></div>
+          <div id="cmp2-deuda-usd-card"></div>
         </div>
       </div>
 
-      <!-- ═══ Exposición (conditional) ═══ -->
-      <div class="cmp2-panel" id="cmp2-expo-panel" style="margin:0 20px;display:none;">
-        <div class="cmp2-panel-hdr" id="cmp2-expo-hdr">Exposici&oacute;n</div>
-        <div class="cmp2-panel-body" id="cmp2-expo-sec">
-          <div class="cmp-expo-grid" id="cmp2-expo-grid"></div>
+      <!-- ═══ RV Exposure vs ACWI ═══ -->
+      <div class="cmp2-panel" id="cmp2-rv-expo-panel" style="margin:0 20px;display:none;">
+        <div class="cmp2-panel-hdr">Exposici&oacute;n Renta Variable vs ACWI</div>
+        <div class="cmp2-panel-body" style="padding:10px 0 0 0;">
+          <div id="cmp2-rv-legend" style="display:flex;justify-content:center;gap:20px;margin-bottom:10px;font-family:'Montserrat',sans-serif;font-size:13px;color:#00205C;"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" id="cmp2-rv-expo-grid">
+            <div id="cmp2-rv-geo-card"></div>
+            <div id="cmp2-rv-sec-card"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ MOVIMIENTOS ═══ -->
+      <div class="cmp2-panel" style="margin:0 20px;" id="cmp2-movimientos-panel">
+        <div class="cmp2-panel-hdr">Movimientos</div>
+        <div class="cmp2-panel-body" style="padding:0;">
+          <table class="cmp2-tbl">
+            <thead><tr>
+              <th>Instrumento</th><th>Descripci&oacute;n</th>
+              <th class="r">% Actual</th><th class="r">Monto Actual</th>
+              <th class="r" id="cmp2-mov-th-dest">% Propuesta</th><th class="r" id="cmp2-mov-th-dest2">Monto Propuesta</th>
+              <th class="r">Dif %</th><th class="r">Dif Monto</th>
+            </tr></thead>
+            <tbody id="cmp2-mov-tbody"></tbody>
+            <tfoot id="cmp2-mov-tfoot"></tfoot>
+          </table>
         </div>
       </div>
 
@@ -2210,27 +2320,23 @@ charts.comp = new Chart(document.getElementById('c-comp'),{
   options:{
     indexAxis:'y',responsive:true,maintainAspectRatio:false,
     plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.raw+'%'},backgroundColor:'#00205C',titleFont:{size:10},bodyFont:{size:10},padding:8,cornerRadius:6}},
-    layout:{padding:{right:70,left:8,top:4,bottom:4}},
+    layout:{padding:{right:0,left:4,top:4,bottom:4}},
     scales:{
       x:{display:false,grid:{display:false}},
-      y:{grid:{display:false},ticks:{font:{size:12,weight:'700',family:'Montserrat'},color:'#00205C'},border:{display:false},afterFit(scale){scale.width=95;}}
+      y:{grid:{display:false},ticks:{font:{size:12,weight:'700',family:'Montserrat'},color:'#00205C'},border:{display:false},afterFit(scale){scale.width=75;}}
     }
   },
   plugins:[{id:'pct',afterDatasetsDraw(chart){
-    const {ctx,scales:{x,y},chartArea}=chart; ctx.save();
+    const {ctx,scales:{x}}=chart; ctx.save();
     chart.data.datasets[0].data.forEach((val,i)=>{
       const bar=chart.getDatasetMeta(0).data[i];
       const barRight=x.getPixelForValue(val);
-      const barLeft=x.getPixelForValue(0);
-      const barWidth=barRight-barLeft;
       const label=val.toFixed(2)+'%';
       ctx.font='700 13px Montserrat,sans-serif';
       ctx.textBaseline='middle';
       const textW=ctx.measureText(label).width;
       const spaceOutside=chart.width-barRight;
-      if(barWidth > textW+12){
-        ctx.fillStyle='#FFFFFF';ctx.textAlign='right';ctx.fillText(label, barRight-6, bar.y);
-      } else if(spaceOutside > textW+12){
+      if(spaceOutside > textW+10){
         ctx.fillStyle='#00205C';ctx.textAlign='left';ctx.fillText(label, barRight+6, bar.y);
       } else {
         ctx.fillStyle='#FFFFFF';ctx.textAlign='right';ctx.fillText(label, barRight-6, bar.y);
@@ -2502,6 +2608,16 @@ function computeRiskMetrics(bt, rfOverride) {
 let _cmp2Inited = false, _cmp2Loaded = false;
 const cmp2Charts = {};
 const CMP2_COLORS = ['#00205C','#41BBC9','#3DA5E0'];
+let _cmp2ViewMode = '3way'; // '3way' | 'avb' | 'avc'
+let _cmp2DataA = null, _cmp2DataB = null, _cmp2DataC = null;
+
+function setCmp2ViewMode(mode) {
+  _cmp2ViewMode = mode;
+  document.querySelectorAll('.cmp2-vf-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  if (_cmp2DataA || _cmp2DataB || _cmp2DataC) {
+    aplicarDatosCmp2(_cmp2DataA, _cmp2DataB, _cmp2DataC);
+  }
+}
 
 function initCmp2Charts() {
   if (_cmp2Inited) return;
@@ -2521,7 +2637,7 @@ function initCmp2Charts() {
       layout:{padding:{right:60,top:18}},
       scales:{x:{grid:{display:false},ticks:{font:{size:13,family:'Montserrat'},color:'#00205C',maxTicksLimit:8,maxRotation:0,autoSkip:true,callback:_btTickFmt},border:{display:false}},
         y:{grid:{display:false},ticks:{font:{size:13,family:'Montserrat'},color:'#00205C'},border:{display:false}}}},
-    plugins:[{id:'endLabels2',afterDatasetsDraw(chart){const{ctx}=chart;ctx.save();const pts=chart.data.datasets.map((ds,i)=>{const meta=chart.getDatasetMeta(i);const lp=meta.data[meta.data.length-1];if(!lp||!ds.data.length)return null;return{x:lp.x,y:lp.y,val:ds.data[ds.data.length-1],color:ds.borderColor};}).filter(Boolean);
+    plugins:[{id:'endLabels2',afterDatasetsDraw(chart){const{ctx}=chart;ctx.save();const pts=chart.data.datasets.map((ds,i)=>{const meta=chart.getDatasetMeta(i);if(meta.hidden||ds.hidden)return null;const lp=meta.data[meta.data.length-1];if(!lp||!ds.data.length)return null;return{x:lp.x,y:lp.y,val:ds.data[ds.data.length-1],color:ds.borderColor};}).filter(Boolean);
       // Spread overlapping labels
       pts.sort((a,b)=>a.y-b.y);for(let i=1;i<pts.length;i++){if(pts[i].y-pts[i-1].y<16)pts[i].y=pts[i-1].y+16;}
       pts.forEach(p=>{ctx.fillStyle=p.color;ctx.font='bold 14px Montserrat,sans-serif';ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(p.val,p.x+6,p.y);});ctx.restore();}}]
@@ -2536,7 +2652,7 @@ function initCmp2Charts() {
       {label:'P. Propuesta',data:[],backgroundColor:CMP2_COLORS[2],borderRadius:4,barPercentage:.92,categoryPercentage:.88}
     ]},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:28}},
-      plugins:{legend:{position:'bottom',labels:{boxWidth:14,boxHeight:14,font:{size:13,family:'Montserrat',weight:'700'},padding:16,usePointStyle:true,pointStyle:'rectRounded',color:'#00205C'}},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:14,boxHeight:14,font:{size:13,family:'Montserrat',weight:'700'},padding:16,usePointStyle:true,pointStyle:'rectRounded',color:'#00205C',filter:(item,data)=>!data.datasets[item.datasetIndex].hidden}},
         tooltip:{callbacks:{label:ctx=>' '+ctx.dataset.label+': '+(ctx.raw*100).toFixed(2)+'%'},backgroundColor:'#00205C',titleFont:{size:13},bodyFont:{size:13},padding:10,cornerRadius:6},
         datalabels:false},
       scales:{x:{ticks:{font:{size:13,family:'Montserrat',weight:'600'},color:'#00205C',maxRotation:0,minRotation:0,autoSkip:false},grid:{display:false},border:{display:false}},
@@ -2544,7 +2660,7 @@ function initCmp2Charts() {
     plugins:[{id:'sensLabels',afterDatasetsDraw(chart){
       const{ctx}=chart;ctx.save();const placed=[];
       chart.data.datasets.forEach((ds,di)=>{
-        const meta=chart.getDatasetMeta(di);if(!meta||!meta.data)return;
+        const meta=chart.getDatasetMeta(di);if(!meta||meta.hidden||ds.hidden||!meta.data)return;
         meta.data.forEach((bar,i)=>{
           const v=ds.data[i];if(v==null||Math.abs(v)<0.0001)return;
           const lbl=(v*100).toFixed(2)+'%';
@@ -2567,7 +2683,7 @@ function initCmp2Charts() {
       {label:'P. Propuesta',data:[],backgroundColor:CMP2_COLORS[2],borderRadius:4,barPercentage:.92,categoryPercentage:.88}
     ]},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:28}},
-      plugins:{legend:{position:'bottom',labels:{boxWidth:14,boxHeight:14,font:{size:13,family:'Montserrat',weight:'700'},padding:16,usePointStyle:true,pointStyle:'rectRounded',color:'#00205C'}},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:14,boxHeight:14,font:{size:13,family:'Montserrat',weight:'700'},padding:16,usePointStyle:true,pointStyle:'rectRounded',color:'#00205C',filter:(item,data)=>!data.datasets[item.datasetIndex].hidden}},
         tooltip:{callbacks:{label:ctx=>' '+ctx.dataset.label+': '+(ctx.raw*100).toFixed(2)+'%'},backgroundColor:'#00205C',titleFont:{size:13},bodyFont:{size:13},padding:10,cornerRadius:6},
         datalabels:false},
       scales:{x:{ticks:{font:{size:13,family:'Montserrat',weight:'600'},color:'#00205C',maxRotation:0,minRotation:0,autoSkip:false},grid:{display:false},border:{display:false}},
@@ -2575,7 +2691,7 @@ function initCmp2Charts() {
     plugins:[{id:'scenLabels',afterDatasetsDraw(chart){
       const{ctx}=chart;ctx.save();const placed=[];
       chart.data.datasets.forEach((ds,di)=>{
-        const meta=chart.getDatasetMeta(di);if(!meta||!meta.data)return;
+        const meta=chart.getDatasetMeta(di);if(!meta||meta.hidden||ds.hidden||!meta.data)return;
         meta.data.forEach((bar,i)=>{
           const v=ds.data[i];if(v==null||Math.abs(v)<0.0001)return;
           const lbl=(v*100).toFixed(2)+'%';
@@ -2598,7 +2714,7 @@ function initCmp2Charts() {
       {label:'P. Propuesta',data:[],backgroundColor:CMP2_COLORS[2],borderColor:CMP2_COLORS[2],pointRadius:10,pointHoverRadius:12}
     ]},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22,right:22}},
-      plugins:{legend:{position:'bottom',labels:{boxWidth:14,boxHeight:14,font:{size:11,family:'Montserrat',weight:'700'},padding:14,usePointStyle:true,pointStyle:'rectRounded',color:'#00205C'}},
+      plugins:{legend:{position:'bottom',labels:{boxWidth:14,boxHeight:14,font:{size:11,family:'Montserrat',weight:'700'},padding:14,usePointStyle:true,pointStyle:'rectRounded',color:'#00205C',filter:(item,data)=>!data.datasets[item.datasetIndex].hidden}},
         tooltip:{callbacks:{label:ctx=>' '+ctx.dataset.label+': Rend. '+(ctx.parsed.y*100).toFixed(2)+'%, Vol. '+(ctx.parsed.x*100).toFixed(2)+'%'},backgroundColor:'#00205C',padding:8,cornerRadius:6}},
       scales:{x:{title:{display:true,text:'Volatilidad Anualizada',font:{size:11,weight:'700',family:'Montserrat'},color:'#00205C'},ticks:{callback:v=>(v*100).toFixed(2)+'%',font:{size:10,family:'Montserrat'},color:'#00205C'},grid:{color:'rgba(0,32,92,0.06)'},border:{display:false}},
         y:{title:{display:true,text:'Rendimiento Anualizado',font:{size:11,weight:'700',family:'Montserrat'},color:'#00205C'},ticks:{callback:v=>(v*100).toFixed(2)+'%',font:{size:10,family:'Montserrat'},color:'#00205C'},grid:{color:'rgba(0,32,92,0.06)'},border:{display:false}}}},
@@ -2610,7 +2726,7 @@ function initCmp2Charts() {
       const items=[];
       chart.data.datasets.forEach((ds,i)=>{
         const meta=chart.getDatasetMeta(i);
-        if(!meta.visible||!meta.data.length) return;
+        if(!meta.visible||meta.hidden||ds.hidden||!meta.data.length) return;
         const pt=meta.data[0];
         const w=ctx.measureText(ds.label).width;
         items.push({label:ds.label,color:ds.borderColor,px:pt.x,py:pt.y,w,h:H});
@@ -2654,6 +2770,13 @@ function initCmp2Charts() {
 }
 
 function aplicarDatosCmp2(dataA, dataB, dataC) {
+  // Cache for mode switching without re-fetch
+  _cmp2DataA = dataA; _cmp2DataB = dataB; _cmp2DataC = dataC;
+  const mode = _cmp2ViewMode;
+  const is3way = mode === '3way';
+  const showB = mode !== 'avc';
+  const showC = mode !== 'avb';
+
   const fmtR = v => (v == null) ? '\u2014' : (v >= 0 ? '+' : '') + v.toFixed(2) + ' %';
   const fmtPct = v => v != null ? (v * 100).toFixed(2) + ' %' : '\u2014';
   const fmtNum = v => v != null ? v.toFixed(2) : '\u2014';
@@ -2663,6 +2786,7 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
   const perfilLabel = perfilSel ? perfilSel.options[perfilSel.selectedIndex].text : 'Perfil';
   const _cmp2LblB = 'Portafolio ' + perfilVal;
   const lblA = 'Portafolio Actual', lblB = _cmp2LblB, lblC = 'Portafolio Propuesta';
+  const lblAshort = 'P. Actual', lblBshort = lblB.replace('Portafolio','P.'), lblCshort = 'P. Propuesta';
 
   // Title
   const cmpMain = document.getElementById('cmp2-title-main');
@@ -2673,7 +2797,11 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
   const sub = document.getElementById('cmp2-title-sub');
   if (sub) sub.innerHTML = `Asignación Estratégica de los Portafolios`;
   const toolbarLbl = document.getElementById('cmp2-toolbar-labels');
-  if (toolbarLbl) toolbarLbl.innerHTML = `A: Portafolio Actual &nbsp;|&nbsp; B: ${_cmp2LblB} &nbsp;|&nbsp; C: Portafolio Propuesta`;
+  if (toolbarLbl) {
+    if (is3way) toolbarLbl.innerHTML = `A: ${lblA} &nbsp;|&nbsp; B: ${_cmp2LblB} &nbsp;|&nbsp; C: ${lblC}`;
+    else if (mode === 'avb') toolbarLbl.innerHTML = `A: ${lblA} &nbsp;|&nbsp; B: ${_cmp2LblB}`;
+    else toolbarLbl.innerHTML = `A: ${lblA} &nbsp;|&nbsp; C: ${lblC}`;
+  }
 
   // Fecha actualizacion
   const fechaEl = document.getElementById('cmp2-fecha-actualizacion');
@@ -2682,15 +2810,37 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
     fechaEl.textContent = src?.fecha_actualizacion || new Date().toLocaleDateString('es-MX');
   }
 
-  // Headers
+  // Headers — set text for all, then hide/show B/C
   const setT = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
-  ['cmp2-ov-th-a','cmp2-h-th-a','cmp2-r-th-a','cmp2-st-th-a','cmp2-ch-th-a','cmp2-rend-hdr-a','cmp2-sc-th-a'].forEach(id => setT(id, lblA));
-  ['cmp2-ov-th-b','cmp2-h-th-b','cmp2-r-th-b','cmp2-st-th-b','cmp2-ch-th-b','cmp2-rend-hdr-b','cmp2-sc-th-b'].forEach(id => setT(id, lblB));
-  ['cmp2-ov-th-c','cmp2-h-th-c','cmp2-r-th-c','cmp2-st-th-c','cmp2-ch-th-c','cmp2-rend-hdr-c','cmp2-sc-th-c'].forEach(id => setT(id, lblC));
+  const setV = (id, vis) => { const el = document.getElementById(id); if (el) el.style.display = vis ? '' : 'none'; };
+  ['cmp2-ov-th-a','cmp2-h-th-a','cmp2-r-th-a','cmp2-ch-th-a','cmp2-rend-hdr-a'].forEach(id => setT(id, lblA));
+  ['cmp2-ov-th-b','cmp2-h-th-b','cmp2-r-th-b','cmp2-ch-th-b','cmp2-rend-hdr-b'].forEach(id => setT(id, lblB));
+  ['cmp2-ov-th-c','cmp2-h-th-c','cmp2-r-th-c','cmp2-ch-th-c','cmp2-rend-hdr-c'].forEach(id => setT(id, lblC));
+  ['cmp2-st-th-a','cmp2-sc-th-a'].forEach(id => setT(id, lblAshort));
+  ['cmp2-st-th-b','cmp2-sc-th-b'].forEach(id => setT(id, lblBshort));
+  ['cmp2-st-th-c','cmp2-sc-th-c'].forEach(id => setT(id, lblCshort));
+  // Hide/show header columns for B and C
+  ['cmp2-h-th-b','cmp2-st-th-b','cmp2-sc-th-b'].forEach(id => setV(id, showB));
+  ['cmp2-h-th-c','cmp2-st-th-c','cmp2-sc-th-c'].forEach(id => setV(id, showC));
 
-  // Chart labels
-  [cmp2Charts.perf, cmp2Charts.scatter, cmp2Charts.sensitivity, cmp2Charts.scenarios].forEach(c => {
-    if (c) { c.data.datasets[0].label = lblA; c.data.datasets[1].label = lblB; c.data.datasets[2].label = lblC; }
+  // Rendimientos cards: show/hide + adjust grid
+  setV('cmp2-rend-card-b', showB);
+  setV('cmp2-rend-card-c', showC);
+  const rendGrid = document.getElementById('cmp2-rend-grid');
+  if (rendGrid) rendGrid.style.gridTemplateColumns = is3way ? '1fr 1fr 1fr' : '1fr 1fr';
+
+  // Risk contrib grid columns
+  const rcGrid = document.getElementById('cmp2-risk-contrib-grid');
+  if (rcGrid) rcGrid.style.gridTemplateColumns = is3way ? 'repeat(3,1fr)' : 'repeat(2,1fr)';
+
+  // Chart labels + dataset visibility (line/scatter use hidden flag; bar charts rebuilt below)
+  [cmp2Charts.perf, cmp2Charts.scatter].forEach(c => {
+    if (!c) return;
+    c.data.datasets[0].label = lblAshort;
+    c.data.datasets[1].label = lblBshort;
+    c.data.datasets[2].label = lblCshort;
+    c.data.datasets[1].hidden = !showB;
+    c.data.datasets[2].hidden = !showC;
   });
 
   // ── Composición table + Clase de Activo stacked bars ──
@@ -2710,9 +2860,10 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
     const AC_COLORS = {'Reporto':'#00205C','Deuda':'#3DA5E0','Renta Variable':'#41BBC9','Ciclo de Vida':'#5B6670','Índice':'#3F559E','Acciones':'#FECB46','ETF':'#7CC677'};
     const assetBars = document.getElementById('cmp2-asset-bars');
     if (assetBars) {
-      const datas = [dataA, dataB, dataC];
-      const lbls = [lblA, lblB, lblC];
-      const barColors = [CMP2_COLORS[0], CMP2_COLORS[1], CMP2_COLORS[2]];
+      const _allDatas = [dataA, dataB, dataC], _allLbls = [lblA, lblB, lblC], _allShowFlags = [true, showB, showC];
+      const datas = _allDatas.filter((_, i) => _allShowFlags[i]);
+      const lbls = _allLbls.filter((_, i) => _allShowFlags[i]);
+      const barColors = CMP2_COLORS.filter((_, i) => _allShowFlags[i]);
       const allClasses = new Set();
       datas.forEach(d => { (d?.clase_activos?.labels||[]).forEach(l => allClasses.add(l)); });
       const AC_ORDER = ['Reporto','Deuda','Renta Variable','Ciclo de Vida','Índice','Acciones','Acción',"ETF's",'ETF'];
@@ -2735,18 +2886,18 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
           if (iA !== -1) return -1; if (iB !== -1) return 1;
           return 0;
         });
-        // Largest remainder method — display values sum exactly 100
+        // Largest remainder method — display values sum exactly 100.0 (1 decimal)
         const rawSum = segs.reduce((s,x) => s + x.val, 0);
         if (rawSum > 0 && segs.length > 0) {
-          const displayVals = segs.map(s => ({...s, dispRaw: s.val / rawSum * 100}));
+          const displayVals = segs.map(s => ({...s, dispRaw: s.val / rawSum * 1000}));
           const floored = displayVals.map(d => Math.floor(d.dispRaw));
-          let remainder = 100 - floored.reduce((s,v) => s + v, 0);
+          let remainder = 1000 - floored.reduce((s,v) => s + v, 0);
           const remainders = displayVals.map((d, idx) => ({idx, r: d.dispRaw - floored[idx]}));
           remainders.sort((a,b) => b.r - a.r);
           for (let ri = 0; ri < remainder && ri < remainders.length; ri++) floored[remainders[ri].idx]++;
-          segs.forEach((s, idx) => { s.dispVal = floored[idx]; });
+          segs.forEach((s, idx) => { s.dispVal = (floored[idx] / 10).toFixed(1); });
         } else {
-          segs.forEach(s => { s.dispVal = 0; });
+          segs.forEach(s => { s.dispVal = '0.0'; });
         }
         html += `<div style="display:flex;flex-direction:column;gap:6px;">`;
         html += `<span style="font-size:13px;font-weight:800;color:#00205C;font-family:'Montserrat',sans-serif;text-transform:uppercase;letter-spacing:0.5px;">${lbls[i]}</span>`;
@@ -2799,6 +2950,7 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
         return 0;
       });
       assetBars.innerHTML = html;
+      assetBars.style.justifyContent = is3way ? '' : 'center';
       // Render AC legend in shared row
       const acLeg = document.getElementById('cmp2-ac-legend');
       if (acLeg) {
@@ -2814,7 +2966,9 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
   // ── Holdings ──
   {
     const FUND_ORDER = ['Reporto MXN','Reporto USD','VXREPO1','VXGUBCP','VLMXETF','VXUDIMP','VXDEUDA','VXGUBLP','VXCOBER','VXTBILL','VLMXDME','VALMXA','VALMX28','VALMX20','VALMXVL','VALMXES','VLMXTEC','VLMXESG','VALMXHC','VXINFRA','Fondos Ciclo de Vida','Acciones',"ETF's"];
-    const comps = [dataA?.composicion||[], dataB?.composicion||[], dataC?.composicion||[]];
+    const _hAllComps = [dataA?.composicion||[], dataB?.composicion||[], dataC?.composicion||[]];
+    const _hShowFlags = [true, showB, showC];
+    const comps = _hAllComps.filter((_, i) => _hShowFlags[i]);
     const mps = comps.map(c => { const m={}; c.forEach(f => { m[f.fondo]=f; }); return m; });
     const allFunds = new Set(comps.flat().map(f=>f.fondo));
     const DEUDA_SET = new Set(['VXREPO1','VXGUBCP','VXUDIMP','VXDEUDA','VXGUBLP','VLMXETF','VXTBILL','VXCOBER','VLMXDME']);
@@ -2863,6 +3017,25 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
       if (iA !== -1) return -1; if (iB !== -1) return 1;
       return a.localeCompare(b);
     });
+    const FUND_DESC = {
+      'Reporto MXN':'Reporto MXN','Reporto USD':'Reporto USD',
+      'VXREPO1':'Reporto Gubernamental',
+      'VXGUBCP':'Deuda Gubernamental CP','VLMXETF':'Fondo Fiscalmente Eficiente',
+      'VXUDIMP':'Deuda Cobertura Inflacionaria','VXDEUDA':'Deuda Nominal y Real MXN',
+      'VXGUBLP':'Deuda Gubernamental LP',
+      'VXCOBER':'Cobertura Tipo de Cambio USD/MXN','VXTBILL':'Treasury Bills USD',
+      'VLMXDME':'Deuda Global',
+      'VALMXA':'Deuda y RV Dinámico','VALMX28':'RV Global',
+      'VALMX20':'RV Local','VALMXVL':'RV Value',
+      'VALMXES':'RV España','VLMXTEC':'RV Sector Tecnológico',
+      'VLMXESG':'RV ESG','VALMXHC':'RV Sector Salud',
+      'VXINFRA':'RV Infraestructura',
+      'Fondos Ciclo de Vida':'RV Ciclo de Vida',
+      'VLMXP24':'RV Ciclo de Vida','VLMXP31':'RV Ciclo de Vida',
+      'VLMXP38':'RV Ciclo de Vida','VLMXP45':'RV Ciclo de Vida',
+      'VLMXP52':'RV Ciclo de Vida','VLMXP59':'RV Ciclo de Vida',
+      'VLMXJUB':'RV Ciclo de Vida','VLMXLPE':'RV Ciclo de Vida'
+    };
     const tbody = document.getElementById('cmp2-holdings-tbody');
     if (tbody) {
       tbody.innerHTML = '';
@@ -2900,8 +3073,9 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
         if (fund.startsWith('Reporto ') && claseActivo === '—') { claseActivo = 'Reporto'; serie = '—'; }
         // Reporto funds
         if (REPORTO_SET.has(fund)) { claseActivo = 'Reporto'; serie = '—'; }
+        const desc = FUND_DESC[fund] || claseActivo;
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td style="font-weight:700;color:var(--navy);font-size:13px;">${fund}</td><td style="font-size:13px;">${serie}</td><td style="font-size:13px;">${claseActivo}</td>${pcts.map(p => `<td class="r" style="font-size:13px;">${p > 0 ? p.toFixed(2) + '%' : '\u2014'}</td>`).join('')}<td class="${clsR(v_r1m)}" style="font-size:13px;">${fmtR(v_r1m)}</td><td class="${clsR(v_r6m)}" style="font-size:13px;">${fmtR(v_r6m)}</td><td class="${clsR(v_ytd)}" style="font-size:13px;">${fmtR(v_ytd)}</td><td class="${clsR(v_r1y)}" style="font-size:13px;">${fmtR(v_r1y)}</td><td class="${clsR(v_r2y)}" style="font-size:13px;">${fmtR(v_r2y)}</td>`;
+        tr.innerHTML = `<td style="font-weight:700;color:var(--navy);font-size:13px;">${fund}</td><td style="font-size:12px;">${serie}</td><td style="font-size:12px;">${desc}</td>${pcts.map(p => `<td class="r" style="font-size:12px;">${p > 0 ? p.toFixed(2) + '%' : '\u2014'}</td>`).join('')}<td class="${clsR(v_r1m)}" style="font-size:12px;">${fmtR(v_r1m)}</td><td class="${clsR(v_r6m)}" style="font-size:12px;">${fmtR(v_r6m)}</td><td class="${clsR(v_ytd)}" style="font-size:12px;">${fmtR(v_ytd)}</td><td class="${clsR(v_r1y)}" style="font-size:12px;">${fmtR(v_r1y)}</td><td class="${clsR(v_r2y)}" style="font-size:12px;">${fmtR(v_r2y)}</td>`;
         tbody.appendChild(tr);
       });
     }
@@ -2969,10 +3143,10 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
     const allVals = maps.flatMap(m => Object.values(m)).filter(v => v != null);
     if (allVals.length) cmp2Charts.perf.options.scales.y.min = Math.floor(Math.min(...allVals) * 0.95);
     cmp2Charts.perf.update('none');
-    // Render BT legend in shared row
+    // Render BT legend in shared row (only visible datasets)
     const btLeg = document.getElementById('cmp2-bt-legend');
     if (btLeg) {
-      btLeg.innerHTML = cmp2Charts.perf.data.datasets.map(d =>
+      btLeg.innerHTML = cmp2Charts.perf.data.datasets.filter(d => !d.hidden).map(d =>
         `<div style="display:flex;align-items:center;gap:6px;"><div style="width:14px;height:14px;border-radius:3px;background:${d.borderColor};flex-shrink:0;"></div><span style="font-size:13px;font-weight:600;color:#00205C;font-family:'Montserrat',sans-serif;white-space:nowrap;">${d.label}</span></div>`
       ).join('');
     }
@@ -2991,9 +3165,9 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
       ['Mejor Mes', ...risks.map(r => r?.bestMonth), fmtPct, 'pos'],
       ['Peor Mes', ...risks.map(r => r?.worstMonth), fmtPct, 'neg'],
       ['Mejor Semestre', ...risks.map(r => r?.bestSem), fmtPct, 'pos'],
-      ['Peor Semestre', ...risks.map(r => r?.worstSem), fmtPct, 'neg'],
+      ['Peor Semestre', ...risks.map(r => r?.worstSem), fmtPct, 'alwaysRed'],
       ['% Meses Positivos', ...risks.map(r => r?.pctPositive), fmtPct, 'pos'],
-      ['% Meses Negativos', ...risks.map(r => r?.pctPositive != null ? 1 - r.pctPositive : null), fmtPct, 'neg'],
+      ['% Meses Negativos', ...risks.map(r => r?.pctPositive != null ? 1 - r.pctPositive : null), fmtPct, 'alwaysRed'],
       ['Max. Drawdown', ...risks.map(r => r?.maxDD), fmtPct, 'neg'],
     ];
     const tbody = document.getElementById('cmp2-stats-tbody');
@@ -3003,23 +3177,26 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
         if (v == null) return 'color:#00205C';
         if (sign === 'neutral') return 'color:#00205C';
         if (sign === 'pos') return v >= 0 ? 'color:#0D9488' : 'color:#DC2626';
+        if (sign === 'alwaysRed') return 'color:#DC2626';
         if (sign === 'neg') return v < 0 ? 'color:#DC2626' : 'color:#0D9488';
         return 'color:#00205C';
       };
       metrics.forEach(row => {
         const [label, a, b, c, fmt, sign] = row;
         const tr = document.createElement('tr');
-        tr.innerHTML = `<td style="font-weight:600;">${label}</td>`
-          + `<td class="r" style="${colorVal(a,sign)};font-weight:600;">${fmt(a)}</td>`
-          + `<td class="r" style="${colorVal(b,sign)};font-weight:600;">${fmt(b)}</td>`
-          + `<td class="r" style="${colorVal(c,sign)};font-weight:600;">${fmt(c)}</td>`;
+        let tdHtml = `<td style="font-weight:600;">${label}</td>`
+          + `<td class="r" style="${colorVal(a,sign)};font-weight:600;">${fmt(a)}</td>`;
+        if (showB) tdHtml += `<td class="r" style="${colorVal(b,sign)};font-weight:600;">${fmt(b)}</td>`;
+        if (showC) tdHtml += `<td class="r" style="${colorVal(c,sign)};font-weight:600;">${fmt(c)}</td>`;
+        tr.innerHTML = tdHtml;
         tbody.appendChild(tr);
       });
       // Footnote for Sharpe
       const fnRow = document.createElement('tr');
       const rfVal = dataA?.rf_annual ?? dataB?.rf_annual ?? dataC?.rf_annual;
       const rfPct = rfVal != null ? (rfVal * 100).toFixed(2) + '%' : 'N/A';
-      fnRow.innerHTML = `<td colspan="4" style="font-size:10px;color:#64748B;padding-top:6px;font-style:italic;">*Rf = CETES 28d promedio del per\u00edodo (${rfPct} anual)</td>`;
+      const _statsCols = 1 + 1 + (showB ? 1 : 0) + (showC ? 1 : 0);
+      fnRow.innerHTML = `<td colspan="${_statsCols}" style="font-size:10px;color:#64748B;padding-top:6px;font-style:italic;">*Rf = CETES 28d promedio del per\u00edodo (${rfPct} anual)</td>`;
       tbody.appendChild(fnRow);
       // Update footer Rf display too
       const rfSpan = document.getElementById('cmp2-rf-display');
@@ -3094,21 +3271,25 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
       ['Oro -10%',                   f => f?.goldDown],
       ['VIX +10%',                   f => f?.vixSpike != null ? f.vixSpike * (10/50) : null],
     ];
-    const activeSens = sensScenarios.filter(([, fn]) => fi.some(f => f && Math.abs(fn(f)||0) > 0.0001));
+    const _sensVis = [true, showB, showC];
+    const _visFi = fi.filter((_, i) => _sensVis[i]);
+    const activeSens = sensScenarios.filter(([, fn]) => _visFi.some(f => f && Math.abs(fn(f)||0) > 0.0001));
     // Split long labels into 2 lines for readability
     function splitLabel(s){const w=s.split(' ');if(w.length<=2)return s;const m=Math.ceil(w.length/2);return[w.slice(0,m).join(' '),w.slice(m).join(' ')];}
     if (cmp2Charts.sensitivity) {
       cmp2Charts.sensitivity.data.labels = activeSens.map(([l]) => splitLabel(l));
-      [lblA, lblB, lblC].forEach((lbl, i) => { cmp2Charts.sensitivity.data.datasets[i].label = lbl; });
-      fi.forEach((f, i) => {
-        cmp2Charts.sensitivity.data.datasets[i].data = activeSens.map(([, fn]) => f ? (fn(f) ?? 0) : 0);
-      });
+      const _sLbls = [lblA, lblB, lblC].filter((_, i) => _sensVis[i]);
+      const _sClrs = CMP2_COLORS.filter((_, i) => _sensVis[i]);
+      cmp2Charts.sensitivity.data.datasets = _sLbls.map((lbl, j) => ({
+        label: lbl, data: activeSens.map(([, fn]) => _visFi[j] ? (fn(_visFi[j]) ?? 0) : 0),
+        backgroundColor: _sClrs[j], borderRadius: 4, barPercentage: .92, categoryPercentage: .88
+      }));
       cmp2Charts.sensitivity.update();
     }
     // Show R² in sensitivity footer
     const r2El = document.getElementById('cmp2-r2-display');
     if (r2El) {
-      const allB = [dataA, dataB, dataC].map(d => d?.betas || {});
+      const allB = [dataA, dataB, dataC].filter((_, i) => _sensVis[i]).map(d => d?.betas || {});
       const r2vals = allB.filter(b => b.r_squared != null).map(b => b.r_squared);
       const adjR2vals = allB.filter(b => b.adj_r_squared != null).map(b => b.adj_r_squared);
       const nvals = allB.filter(b => b.n_months != null).map(b => b.n_months);
@@ -3142,12 +3323,17 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
       ['Recuperaci\u00f3n Bancaria 2023', i => hs[i]?.bankRecovery],
       ['Crisis Arancelaria 2025', i => hs[i]?.tariffCrisis],
     ];
-    const active = scenarios.filter(([, fn]) => [0, 1, 2].some(i => fn(i) != null));
+    const _scVis = [true, showB, showC];
+    const _scIdx = [0, 1, 2].filter(i => _scVis[i]);
+    const active = scenarios.filter(([, fn]) => _scIdx.some(i => fn(i) != null));
     if (cmp2Charts.scenarios) {
       cmp2Charts.scenarios.data.labels = active.map(([l]) => {if(Array.isArray(l))return l;const w=l.split(' ');if(w.length<=2)return l;const m=Math.ceil(w.length/2);return[w.slice(0,m).join(' '),w.slice(m).join(' ')];});
-      [0, 1, 2].forEach(i => {
-        cmp2Charts.scenarios.data.datasets[i].data = active.map(([, fn]) => fn(i) ?? 0);
-      });
+      const _scClrs = CMP2_COLORS.filter((_, i) => _scVis[i]);
+      const _scLbls = [lblAshort, lblBshort, lblCshort].filter((_, i) => _scVis[i]);
+      cmp2Charts.scenarios.data.datasets = _scLbls.map((lbl, j) => ({
+        label: lbl, data: active.map(([, fn]) => fn(_scIdx[j]) ?? 0),
+        backgroundColor: _scClrs[j], borderRadius: 4, barPercentage: .92, categoryPercentage: .88
+      }));
       // Dynamic height based on number of scenarios
       const canvas = cmp2Charts.scenarios.canvas;
       if (canvas?.parentElement) canvas.parentElement.style.height = Math.max(280, active.length * 50 + 60) + 'px';
@@ -3160,16 +3346,22 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
   {
     const grid = document.getElementById('cmp2-risk-contrib-grid');
     const panel = document.getElementById('cmp2-risk-contrib-panel');
-    const allFRC = [dataA, dataB, dataC].map(d => d?.fund_risk_contrib || {});
-    const allLT = [dataA, dataB, dataC].map(d => d?.fund_lookthrough || {});
+    const _rcAllDatas = [dataA, dataB, dataC];
+    const _rcShowFlags = [true, showB, showC];
+    const _rcAllLbls = [lblA, lblB, lblC];
+    const _rcDatas = _rcAllDatas.filter((_, i) => _rcShowFlags[i]);
+    const _rcLbls = _rcAllLbls.filter((_, i) => _rcShowFlags[i]);
+    const _rcColors = CMP2_COLORS.filter((_, i) => _rcShowFlags[i]);
+    const allFRC = _rcDatas.map(d => d?.fund_risk_contrib || {});
+    const allLT = _rcDatas.map(d => d?.fund_lookthrough || {});
     const anyData = allFRC.some(frc => Object.keys(frc).length > 0) || allLT.some(lt => Object.keys(lt).length > 0);
     if (panel) panel.style.display = anyData ? '' : 'none';
     if (grid && anyData) {
       grid.innerHTML = '';
-      const colors = CMP2_COLORS;
+      const colors = _rcColors;
       const driverColors = {fx:'#F59E0B',sp500:'#3B82F6',ipc:'#10B981',bono_m10:'#8B5CF6',ust_10y:'#6366F1',ust_10y_short:'#818CF8',tiie_28d:'#EC4899',vix:'#EF4444',oil:'#78716C',gold:'#D97706',em_spread:'#14B8A6',mx_breakeven:'#F43F5E'};
       const driverLabels = {fx:'FX (USD/MXN)',sp500:'S&P 500',ipc:'IPC',bono_m10:'Bono M10',ust_10y:'UST 10Y',ust_10y_short:'UST CP',tiie_28d:'TIIE',vix:'VIX',oil:'Petroleo',gold:'Oro',em_spread:'EM Spread',mx_breakeven:'Breakeven MX'};
-      [lblA, lblB, lblC].forEach((lbl, idx) => {
+      _rcLbls.forEach((lbl, idx) => {
         const frc = allFRC[idx];
         const lt = allLT[idx];
         // Merge: use lookthrough fund list sorted by Euler contribution
@@ -3183,8 +3375,8 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
           const uid = 'rc-'+idx+'-'+name.replace(/[^a-zA-Z0-9]/g,'');
           const w = Math.abs(eulerPct * 100);
           const barColor = eulerPct >= -0.005 ? colors[idx] : '#DC2626';
-          const weightTxt = info ? `${info.weight.toFixed(1)}%` : '';
-          const metaTxt = info ? `${info.ccy} | Dur ${info.duration}` : '';
+          const weightTxt = info ? `${info.weight.toFixed(2)}%` : '';
+          const metaTxt = info ? `${info.ccy} | Dur ${Number(info.duration).toFixed(2)}` : '';
           // Fund row with Euler bar + clickable
           html += `<div style="margin-bottom:5px;border:1px solid #E2E8F0;border-radius:6px;overflow:hidden;">`;
           html += `<div onclick="var el=document.getElementById('${uid}');if(el)el.style.display=el.style.display==='none'?'block':'none'" style="padding:7px 12px;cursor:pointer;background:#fff;border-left:3px solid ${barColor};">`;
@@ -3230,6 +3422,104 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
     }
   }
 
+  // ── Movimientos table ──
+  {
+    const monto = getMonto();
+    const movTbody = document.getElementById('cmp2-mov-tbody');
+    const movTfoot = document.getElementById('cmp2-mov-tfoot');
+    const movPanel = document.getElementById('cmp2-movimientos-panel');
+    // Decide destination based on view mode
+    const compA = dataA?.composicion || [];
+    let compDest, destLabel;
+    if (mode === 'avb') {
+      compDest = dataB?.composicion || [];
+      destLabel = _cmp2LblB.replace('Portafolio ','P. ');
+    } else if (mode === 'avc') {
+      compDest = dataC?.composicion || [];
+      destLabel = 'Propuesta';
+    } else {
+      // 3way: propuesta if available, else modelo
+      compDest = (dataC?.composicion && dataC.composicion.length) ? dataC.composicion : (dataB?.composicion || []);
+      destLabel = (dataC?.composicion && dataC.composicion.length) ? 'Propuesta' : _cmp2LblB.replace('Portafolio ','P. ');
+    }
+    setT('cmp2-mov-th-dest', '% ' + destLabel);
+    setT('cmp2-mov-th-dest2', 'Monto ' + destLabel);
+    const mapA = {}; compA.forEach(f => { mapA[f.fondo] = f.pct || 0; });
+    const mapD = {}; compDest.forEach(f => { mapD[f.fondo] = f.pct || 0; });
+    const allM = new Set([...Object.keys(mapA), ...Object.keys(mapD)]);
+    const FUND_ORDER_M = ['Reporto MXN','Reporto USD','VXREPO1','VXGUBCP','VLMXETF','VXUDIMP','VXDEUDA','VXGUBLP','VXCOBER','VXTBILL','VLMXDME','VALMXA','VALMX28','VALMX20','VALMXVL','VALMXES','VLMXTEC','VLMXESG','VALMXHC','VXINFRA'];
+    const sortedM = [...allM].sort((a,b) => {
+      const iA = FUND_ORDER_M.indexOf(a), iB = FUND_ORDER_M.indexOf(b);
+      if (iA !== -1 && iB !== -1) return iA - iB;
+      if (iA !== -1) return -1; if (iB !== -1) return 1;
+      return a.localeCompare(b);
+    });
+    const FUND_DESC_M = {
+      'Reporto MXN':'Reporto MXN','Reporto USD':'Reporto USD',
+      'VXREPO1':'Reporto Gubernamental',
+      'VXGUBCP':'Deuda Gubernamental CP','VLMXETF':'Fondo Fiscalmente Eficiente',
+      'VXUDIMP':'Deuda Cobertura Inflacionaria','VXDEUDA':'Deuda Nominal y Real MXN',
+      'VXGUBLP':'Deuda Gubernamental LP',
+      'VXCOBER':'Cobertura Tipo de Cambio USD/MXN','VXTBILL':'Treasury Bills USD',
+      'VLMXDME':'Deuda Global',
+      'VALMXA':'Deuda y RV Din\u00e1mico','VALMX28':'RV Global',
+      'VALMX20':'RV Local','VALMXVL':'RV Value',
+      'VALMXES':'RV Espa\u00f1a','VLMXTEC':'RV Sector Tecnol\u00f3gico',
+      'VLMXESG':'RV ESG','VALMXHC':'RV Sector Salud',
+      'VXINFRA':'RV Infraestructura',
+      'Fondos Ciclo de Vida':'RV Ciclo de Vida'
+    };
+    if (movPanel) movPanel.style.display = (allM.size && monto > 0) ? '' : 'none';
+    if (movTbody && monto > 0) {
+      movTbody.innerHTML = '';
+      let sumPctA = 0, sumMonA = 0, sumPctD = 0, sumMonD = 0, sumDifPct = 0, sumDifMon = 0;
+      // Normalize percentages so each side sums to exactly 100%
+      const rawA = sortedM.map(f => mapA[f] || 0);
+      const rawD = sortedM.map(f => mapD[f] || 0);
+      const sumRawA = rawA.reduce((a,b) => a+b, 0);
+      const sumRawD = rawD.reduce((a,b) => a+b, 0);
+      const normA = sumRawA > 0 ? rawA.map(v => +(v * 100 / sumRawA).toFixed(2)) : rawA;
+      const normD = sumRawD > 0 ? rawD.map(v => +(v * 100 / sumRawD).toFixed(2)) : rawD;
+      // Adjust largest entry to absorb rounding residual
+      if (sumRawA > 0) { const s = normA.reduce((a,b)=>a+b,0); const mx = normA.indexOf(Math.max(...normA)); normA[mx] = +(normA[mx] + (100 - s)).toFixed(2); }
+      if (sumRawD > 0) { const s = normD.reduce((a,b)=>a+b,0); const mx = normD.indexOf(Math.max(...normD)); normD[mx] = +(normD[mx] + (100 - s)).toFixed(2); }
+      // Compute rows with normalized percentages
+      const rows = sortedM.map((fund, i) => {
+        const pA = normA[i];
+        const pD = normD[i];
+        const monA = +(monto * pA / 100).toFixed(2);
+        const monD = +(monto * pD / 100).toFixed(2);
+        const difP = +(pD - pA).toFixed(2);
+        const difM = +(monD - monA).toFixed(2);
+        return { fund, pA, pD, monA, monD, difP: difP === 0 ? 0 : difP, difM: difM === 0 ? 0 : difM };
+      });
+      rows.forEach(r => {
+        sumPctA += r.pA; sumMonA += r.monA;
+        sumPctD += r.pD; sumMonD += r.monD;
+        sumDifPct += r.difP; sumDifMon += r.difM;
+        const desc = FUND_DESC_M[r.fund] || '';
+        const fmtM = v => v === 0 ? '$0.00' : '$' + v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+        const clsDif = v => v > 0.005 ? 'r pos' : v < -0.005 ? 'r neg' : 'r';
+        const fmtDifP = v => Math.abs(v) < 0.005 ? '\u2014' : (v > 0 ? '+' : '') + v.toFixed(2) + '%';
+        const fmtDifM = v => Math.abs(v) < 0.005 ? '\u2014' : (v > 0 ? '+' : '') + fmtM(v);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td style="font-weight:700;color:var(--navy);font-size:12px;">${r.fund}</td><td style="font-size:11px;color:#64748B;">${desc}</td><td class="r" style="font-size:12px;">${r.pA > 0 ? r.pA.toFixed(2)+'%' : '\u2014'}</td><td class="r" style="font-size:12px;">${r.pA > 0 ? fmtM(r.monA) : '\u2014'}</td><td class="r" style="font-size:12px;">${r.pD > 0 ? r.pD.toFixed(2)+'%' : '\u2014'}</td><td class="r" style="font-size:12px;">${r.pD > 0 ? fmtM(r.monD) : '\u2014'}</td><td class="${clsDif(r.difP)}" style="font-size:12px;">${fmtDifP(r.difP)}</td><td class="${clsDif(r.difM)}" style="font-size:12px;">${fmtDifM(r.difM)}</td>`;
+        movTbody.appendChild(tr);
+      });
+      // Totals row — compute diffs from totals (not sum of diffs) to avoid rounding drift
+      if (movTfoot) {
+        const fmtM = v => '$' + v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+        const tPctA = +sumPctA.toFixed(2), tPctD = +sumPctD.toFixed(2);
+        const tMonA = +sumMonA.toFixed(2), tMonD = +sumMonD.toFixed(2);
+        const tDifPct = +(tPctD - tPctA).toFixed(2);
+        const tDifMon = +(tMonD - tMonA).toFixed(2);
+        const fmtTDifP = Math.abs(tDifPct) < 0.005 ? '\u2014' : tDifPct.toFixed(2) + '%';
+        const fmtTDifM = Math.abs(tDifMon) < 0.005 ? '\u2014' : fmtM(tDifMon);
+        movTfoot.innerHTML = `<tr style="font-weight:800;border-top:2px solid #CBD5E1;"><td style="font-size:12px;color:var(--navy);">TOTAL</td><td></td><td class="r" style="font-size:12px;">${tPctA.toFixed(2)}%</td><td class="r" style="font-size:12px;">${fmtM(tMonA)}</td><td class="r" style="font-size:12px;">${tPctD.toFixed(2)}%</td><td class="r" style="font-size:12px;">${fmtM(tMonD)}</td><td class="r" style="font-size:12px;">${fmtTDifP}</td><td class="r" style="font-size:12px;">${fmtTDifM}</td></tr>`;
+      }
+    }
+  }
+
   // Scatter
   if (cmp2Charts.scatter) {
     risks.forEach((r, i) => { cmp2Charts.scatter.data.datasets[i].data = r ? [{x:r.annVol,y:r.annRet}] : []; });
@@ -3260,62 +3550,203 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
       if (acs.some(m=>(m[cls]||0)>0)) chars.push(['% '+cls, ...acs.map(m=>(m[cls]||0).toFixed(1)+' %')]);
     });
     const charsPanel = document.getElementById('cmp2-chars-panel');
-    const tbody = document.getElementById('cmp2-chars-tbody');
-    if (tbody) {
-      tbody.innerHTML = '';
-      if (chars.length > 0) {
-        if (charsPanel) charsPanel.style.display = '';
-        chars.forEach(([label, a, b, c]) => {
-          const tr = document.createElement('tr');
-          tr.innerHTML = `<td style="font-weight:600;">${label}</td><td class="r">${a}</td><td class="r">${b}</td><td class="r">${c}</td>`;
-          tbody.appendChild(tr);
-        });
-      } else {
-        if (charsPanel) charsPanel.style.display = 'none';
-      }
-    }
+    if (charsPanel) charsPanel.style.display = 'none';
   }
 
-  // ── Exposure ──
+  // ── Exposure: RV vs ACWI + Deuda ──
   {
-    const anyRV = [dataA,dataB,dataC].some(d=>d?.has_rv);
-    const anyDeuda = [dataA,dataB,dataC].some(d=>d?.has_deuda);
-    const expoPanel = document.getElementById('cmp2-expo-panel');
-    const expoGrid = document.getElementById('cmp2-expo-grid');
-    if (!anyRV && !anyDeuda) {
-      if (expoPanel) expoPanel.style.display = 'none';
-    } else {
-      if (expoPanel) expoPanel.style.display = '';
-      if (expoGrid) expoGrid.innerHTML = '';
-      function buildExpo3(title, allLabelsArr, allValsArr) {
-        const union = []; const seen = new Set();
-        allLabelsArr.flat().forEach(l => { if (!seen.has(l)) { seen.add(l); union.push(l); } });
-        if (!union.length) return;
-        const ms = allLabelsArr.map((lbls,idx) => { const m={}; lbls.forEach((l,i)=>{m[l]=(allValsArr[idx]||[])[i]||0;}); return m; });
-        const card = document.createElement('div');
-        card.className = 'cmp-expo-card';
-        let html = `<div class="cmp-expo-hdr">${title}</div>`;
-        union.forEach(label => {
-          const vals = ms.map(m => m[label]||0);
-          html += `<div style="display:flex;align-items:center;padding:6px 16px;border-bottom:1px solid #F1F3F5;font-size:13px;font-family:'Montserrat',sans-serif;">
-            <div style="width:130px;font-weight:600;color:var(--navy);flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;" title="${label}">${label}</div>
-            <div style="flex:1;display:flex;gap:4px;align-items:center;">
-              ${vals.map((v,i) => `<div style="flex:1;height:16px;position:relative;"><div style="height:16px;border-radius:3px;background:${CMP2_COLORS[i]};width:${Math.max(v,0.5).toFixed(1)}%;min-width:2px;"></div></div>`).join('')}
-            </div>
-            <div style="width:90px;text-align:right;font-size:10px;font-weight:600;color:var(--gray);flex-shrink:0;">${vals.map(v=>v.toFixed(1)).join(' / ')}</div>
-          </div>`;
+    const _exAllDatas = [dataA,dataB,dataC];
+    const _exShowFlags = [true, showB, showC];
+    const _exDatas = _exAllDatas.filter((_, i) => _exShowFlags[i]);
+    const _exColors = CMP2_COLORS.filter((_, i) => _exShowFlags[i]);
+    const _exPNames = ['P. Actual','P. Modelo','P. Propuesta'].filter((_, i) => _exShowFlags[i]);
+    const _exShortNames = ['Actual','Modelo','Propuesta'].filter((_, i) => _exShowFlags[i]);
+
+    const anyRV = _exDatas.some(d=>d?.has_rv);
+    const anyDeuda = _exDatas.some(d=>d?.has_deuda);
+
+    // ── RV: Overweight/Underweight vs ACWI ──
+    const rvPanel = document.getElementById('cmp2-rv-expo-panel');
+    if (anyRV && rvPanel) {
+      const acwi = dataA?.acwi_benchmark || dataB?.acwi_benchmark || dataC?.acwi_benchmark;
+      if (acwi?.geo?.labels?.length || acwi?.sectores?.labels?.length) {
+        rvPanel.style.display = '';
+        // Legend
+        const legend = document.getElementById('cmp2-rv-legend');
+        if (legend) {
+          const rvPcts = _exDatas.map(d => d?.pct_rv);
+          legend.innerHTML = _exColors.map((c,i) => {
+            const pct = ` (${(rvPcts[i] || 0).toFixed(1)}%)`;
+            return `<span style="color:#00205C;font-weight:700;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${c};margin-right:5px;vertical-align:middle;"></span>${_exPNames[i]}${pct}</span>`;
+          }).join('') + `<span style="color:#00205C;font-weight:700;margin-left:12px;">Benchmark: MSCI ACWI</span>`;
+        }
+
+        function buildRvExpo(title, pLabelsArr, pValsArr, bmkLabelsVals, container, datasetsRaw) {
+          const bmk = {}; (bmkLabelsVals.labels||[]).forEach((l,i) => { bmk[l] = (bmkLabelsVals.values||[])[i]||0; });
+          const allLabels = new Set();
+          pLabelsArr.flat().forEach(l => allLabels.add(l));
+          Object.keys(bmk).forEach(l => allLabels.add(l));
+          const pMaps = pLabelsArr.map((lbls,idx) => { const m={}; lbls.forEach((l,i)=>{m[l]=(pValsArr[idx]||[])[i]||0;}); return m; });
+          const sorted = [...allLabels].sort((a,b) => (bmk[b]||0) - (bmk[a]||0));
+          const pNames = _exShortNames;
+          // Max absolute diff PER COLUMN for independent heat map scaling
+          const colMaxDiff = pMaps.map(m => {
+            let mx = 1;
+            sorted.forEach(l => { mx = Math.max(mx, Math.abs((m[l]||0) - (bmk[l]||0))); });
+            return mx;
+          });
+
+          function heatBg(diff, colIdx) {
+            const intensity = Math.min(Math.abs(diff) / colMaxDiff[colIdx], 1);
+            const alpha = (0.12 + intensity * 0.40).toFixed(2);
+            return diff > 0.05 ? `rgba(5,150,105,${alpha})` : diff < -0.05 ? `rgba(220,38,38,${alpha})` : 'transparent';
+          }
+          function heatColor(diff) {
+            return diff > 0.05 ? '#065F46' : diff < -0.05 ? '#991B1B' : '#64748B';
+          }
+
+          const cs = 'font-size:13px;';
+          const sepBorder = 'border-right:3px solid #CBD5E1;';
+          let html = `<table style="width:100%;border-collapse:collapse;font-family:'Montserrat',sans-serif;border:1px solid #E2E8F0;border-radius:8px;overflow:hidden;table-layout:fixed;">`;
+          html += `<colgroup><col style="width:auto;"><col style="width:60px;">`;
+          pNames.forEach(() => { html += `<col style="width:60px;"><col style="width:58px;">`; });
+          html += `</colgroup><thead>`;
+          html += `<tr><th colspan="${2 + pNames.length * 2}" style="background:#00205C;color:#fff;padding:10px 14px;text-align:left;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;">${title}</th></tr>`;
+          html += `<tr style="background:#F1F5F9;border-bottom:2px solid #CBD5E1;">`;
+          html += `<th style="text-align:left;padding:7px 10px;${cs}font-weight:700;color:#00205C;"></th>`;
+          html += `<th style="text-align:center;padding:7px 4px;${cs}font-weight:800;color:#00205C;background:#E2E8F0;${sepBorder}">ACWI</th>`;
+          pNames.forEach((n,i) => {
+            const isLastCol = i === pNames.length - 1;
+            html += `<th style="text-align:center;padding:7px 4px;${cs}font-weight:700;color:${_exColors[i]};">${n}</th>`;
+            html += `<th style="text-align:center;padding:7px 4px;${cs}font-weight:600;color:#64748B;${isLastCol ? '' : sepBorder}">+/−</th>`;
+          });
+          html += `</tr></thead><tbody>`;
+
+          sorted.forEach((label, ri) => {
+            const b = bmk[label]||0;
+            const stripe = ri % 2 === 0 ? '#fff' : '#FAFCFE';
+            const isLast = ri === sorted.length - 1;
+            html += `<tr style="${isLast ? '' : 'border-bottom:1px solid #E2E8F0;'}background:${stripe};">`;
+            html += `<td style="padding:6px 10px;font-weight:600;color:#00205C;${cs}white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${label}">${label}</td>`;
+            html += `<td style="padding:6px 4px;text-align:center;color:#00205C;font-weight:800;${cs}background:#E2E8F0;${sepBorder}">${b.toFixed(1)}%</td>`;
+            pMaps.forEach((m, i) => {
+              const isLastCol = i === pNames.length - 1;
+              const sep = isLastCol ? '' : sepBorder;
+              const hasPortfolio = datasetsRaw[i]?.has_rv;
+              if (!hasPortfolio) {
+                // Portfolio has no RV data at all
+                html += `<td style="padding:6px 4px;text-align:center;font-weight:600;color:#94A3B8;${cs}">–</td>`;
+                html += `<td style="padding:6px 4px;text-align:center;font-weight:600;color:#94A3B8;${sep}">–</td>`;
+              } else {
+                const v = m[label] || 0;
+                const diff = v - b;
+                const sign = diff >= 0 ? '+' : '';
+                html += `<td style="padding:6px 4px;text-align:center;font-weight:600;color:#00205C;${cs}">${v.toFixed(1)}%</td>`;
+                if (v === 0) {
+                  html += `<td style="padding:6px 4px;text-align:center;font-weight:600;color:#94A3B8;${sep}">–</td>`;
+                } else {
+                  html += `<td style="padding:6px 4px;text-align:center;font-weight:700;${cs}color:${heatColor(diff)};background:${heatBg(diff,i)};${sep}">${sign}${diff.toFixed(1)}%</td>`;
+                }
+              }
+            });
+            html += `</tr>`;
+          });
+          html += `</tbody></table>`;
+          container.innerHTML = html;
+        }
+
+        const geoCard = document.getElementById('cmp2-rv-geo-card');
+        if (geoCard && acwi.geo) {
+          buildRvExpo('Exposici\u00f3n Geogr\u00e1fica',
+            _exDatas.map(d=>d?.geo?.labels||[]),
+            _exDatas.map(d=>d?.geo?.values||[]),
+            acwi.geo, geoCard, _exDatas);
+        }
+        const secCard = document.getElementById('cmp2-rv-sec-card');
+        if (secCard && acwi.sectores) {
+          buildRvExpo('Exposici\u00f3n Sectorial',
+            _exDatas.map(d=>d?.sectores?.labels||[]),
+            _exDatas.map(d=>d?.sectores?.values||[]),
+            acwi.sectores, secCard, _exDatas);
+          // Fix header label for sectors
+          const hdr = secCard.querySelector('.expo-rv-row .expo-rv-label');
+          if (hdr) hdr.textContent = 'Sector';
+        }
+      } else if (rvPanel) { rvPanel.style.display = 'none'; }
+    } else if (rvPanel) { rvPanel.style.display = 'none'; }
+
+    // ── Deuda: Stacked bars by type ──
+    const deudaPanel = document.getElementById('cmp2-deuda-expo-panel');
+    if (anyDeuda && deudaPanel) {
+      deudaPanel.style.display = '';
+      const pNames = _exShortNames;
+      const datasets = _exDatas;
+      const cs = 'font-size:13px;';
+      const sepBorder = 'border-right:3px solid #CBD5E1;';
+
+      function buildDeudaTable(title, ccyKey, container) {
+        if (!container) return;
+        const hasCcy = datasets.some(d => d?.deuda?.[`has_${ccyKey}`]);
+        if (!hasCcy) { container.innerHTML = ''; return; }
+
+        // Collect all fund names across portfolios
+        const allFunds = new Set();
+        datasets.forEach(d => (d?.deuda?.[`fondos_${ccyKey}`]||[]).forEach(f => allFunds.add(f.fondo)));
+        const fundMaps = datasets.map(d => {
+          const m = {};
+          (d?.deuda?.[`fondos_${ccyKey}`]||[]).forEach(f => { m[f.fondo] = f.pct; });
+          return m;
         });
-        card.innerHTML = html;
-        expoGrid.appendChild(card);
+        const sorted = [...allFunds].sort((a,b) => {
+          const maxA = Math.max(...fundMaps.map(m=>m[a]||0));
+          const maxB = Math.max(...fundMaps.map(m=>m[b]||0));
+          return maxB - maxA;
+        });
+
+        let html = `<table style="width:100%;border-collapse:collapse;font-family:'Montserrat',sans-serif;border:1px solid #E2E8F0;border-radius:8px;overflow:hidden;">`;
+        html += `<thead>`;
+        html += `<tr><th colspan="${1 + pNames.length}" style="background:#00205C;color:#fff;padding:10px 14px;text-align:left;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;">${title}</th></tr>`;
+        // Summary row: Duration / YTM / Credit
+        const summaryRows = [
+          {label:'Duración', key:`dur_${ccyKey}`, fmt:v=>v.toFixed(2)+' años'},
+          {label:'YTM', key:`ytm_${ccyKey}`, fmt:v=>v.toFixed(2)+'%'},
+          {label:'Calificación', key:`cred_${ccyKey}`, fmt:v=>v},
+          {label:'% del Portafolio', key:`pct_${ccyKey}`, fmt:v=>v.toFixed(1)+'%'},
+        ];
+        html += `<tr style="background:#F1F5F9;border-bottom:2px solid #CBD5E1;">`;
+        html += `<th style="text-align:left;padding:7px 10px;${cs}font-weight:700;color:#00205C;"></th>`;
+        pNames.forEach((n,i) => {
+          const isLast = i === pNames.length - 1;
+          html += `<th style="text-align:center;padding:7px 4px;${cs}font-weight:700;color:${_exColors[i]};${isLast ? '' : sepBorder}">${n}</th>`;
+        });
+        html += `</tr></thead><tbody>`;
+
+        summaryRows.forEach((row, ri) => {
+          const stripe = ri % 2 === 0 ? '#fff' : '#FAFCFE';
+          html += `<tr style="border-bottom:1px solid #E2E8F0;background:${stripe};">`;
+          html += `<td style="padding:6px 10px;font-weight:700;color:#00205C;${cs}">${row.label}</td>`;
+          datasets.forEach((d, i) => {
+            const isLast = i === pNames.length - 1;
+            const sep = isLast ? '' : sepBorder;
+            const hasCcyP = d?.deuda?.[`has_${ccyKey}`];
+            if (!hasCcyP) {
+              html += `<td style="padding:6px 4px;text-align:center;font-weight:600;color:#94A3B8;${cs}${sep}">–</td>`;
+            } else {
+              const v = d.deuda[row.key];
+              const display = (v === 0 || v === '—' || v === null || v === undefined) ? '–' : row.fmt(v);
+              html += `<td style="padding:6px 4px;text-align:center;font-weight:600;color:${display === '–' ? '#94A3B8' : '#00205C'};${cs}${sep}">${display}</td>`;
+            }
+          });
+          html += `</tr>`;
+        });
+
+        html += `</tbody></table>`;
+        container.innerHTML = html;
       }
-      if (anyRV) {
-        buildExpo3('Exposici\u00f3n Geogr\u00e1fica', [dataA,dataB,dataC].map(d=>d?.geo?.labels||[]), [dataA,dataB,dataC].map(d=>d?.geo?.values||[]));
-        buildExpo3('Exposici\u00f3n Sectorial', [dataA,dataB,dataC].map(d=>d?.sectores?.labels||[]), [dataA,dataB,dataC].map(d=>d?.sectores?.values||[]));
-      }
-      if (anyDeuda) {
-        buildExpo3('Tipo de Deuda', [dataA,dataB,dataC].map(d=>d?.supersectores?.labels||[]), [dataA,dataB,dataC].map(d=>d?.supersectores?.values||[]));
-      }
-    }
+
+      buildDeudaTable('Deuda MXN', 'mxn', document.getElementById('cmp2-deuda-mxn-card'));
+      buildDeudaTable('Deuda USD', 'usd', document.getElementById('cmp2-deuda-usd-card'));
+    } else if (deudaPanel) { deudaPanel.style.display = 'none'; }
   }
 }
 
@@ -3350,17 +3781,24 @@ async function cargarComparativa2() {
 // ── QUILT CHART (Rendimientos por Clase de Activo) ──
 let _quiltLoaded = false;
 let _quiltData = null;
-async function loadQuiltChart() {
+async function loadQuiltChart(retries) {
   if (_quiltLoaded) return;
+  retries = retries || 0;
   try {
     const resp = await fetch('/api/quilt');
     const data = await resp.json();
+    if (data.loading && retries < 6) {
+      document.getElementById('quilt-table-wrap').innerHTML = '<p style="color:#5B6670;text-align:center;padding:20px;">Precargando datos de mercado... (puede tardar unos segundos en la primera visita)</p>';
+      setTimeout(() => loadQuiltChart(retries + 1), 5000);
+      return;
+    }
     if (!data.ok) { document.getElementById('quilt-table-wrap').innerHTML = '<p style="color:#DC2626;text-align:center;padding:20px;">Error: ' + (data.error||'') + '</p>'; return; }
     _quiltData = data;
     renderQuiltChart(data);
     _quiltLoaded = true;
   } catch(e) {
     console.error('Quilt error:', e);
+    if (retries < 6) { setTimeout(() => loadQuiltChart(retries + 1), 5000); return; }
     document.getElementById('quilt-table-wrap').innerHTML = '<p style="color:#DC2626;text-align:center;padding:20px;">Error cargando datos de mercado</p>';
   }
 }
@@ -3463,17 +3901,24 @@ function renderQuiltChart(data, wrapId, noteId) {
 // ── QUILT FONDOS VALMEX ──
 let _quiltFondosLoaded = false;
 let _quiltFondosData = null;
-async function loadQuiltFondos() {
+async function loadQuiltFondos(retries) {
   if (_quiltFondosLoaded) return;
+  retries = retries || 0;
   try {
     const resp = await fetch('/api/quilt_fondos');
     const data = await resp.json();
+    if (data.loading && retries < 6) {
+      document.getElementById('quilt-fondos-wrap').innerHTML = '<p style="color:#5B6670;text-align:center;padding:20px;">Precargando datos de fondos... (puede tardar unos segundos en la primera visita)</p>';
+      setTimeout(() => loadQuiltFondos(retries + 1), 5000);
+      return;
+    }
     if (!data.ok) { document.getElementById('quilt-fondos-wrap').innerHTML = '<p style="color:#DC2626;text-align:center;padding:20px;">Error: ' + (data.error||'') + '</p>'; return; }
     _quiltFondosData = data;
     renderQuiltFondos(data);
     _quiltFondosLoaded = true;
   } catch(e) {
     console.error('Quilt fondos error:', e);
+    if (retries < 6) { setTimeout(() => loadQuiltFondos(retries + 1), 5000); return; }
     document.getElementById('quilt-fondos-wrap').innerHTML = '<p style="color:#DC2626;text-align:center;padding:20px;">Error cargando rendimientos de fondos</p>';
   }
 }
@@ -3594,7 +4039,13 @@ function renderPerfiles(data, prefix, chartStore) {
   const allFunds = new Set();
   perfiles.forEach(p => Object.keys(p.funds).forEach(f => allFunds.add(f)));
 
-  const PIE_PAL = ['#00205C','#3DA5E0','#41BBC9','#7CC677','#5B6670','#FECB46'];
+  const FUND_COLORS = {
+    'VXGUBCP': '#00205C', 'VXDEUDA': '#75A1DE', 'VXUDIMP': '#5B6670',
+    'VXGUBLP': '#2E7D5B', 'VXTBILL': '#FECB46', 'VALMX28': '#3DA5E0',
+    'VALMX20': '#BFDD7E'
+  };
+  // Merge API colors if available
+  if (colors) Object.assign(FUND_COLORS, colors);
   const ids = [prefix+'pie-p0',prefix+'pie-p1',prefix+'pie-p2',prefix+'pie-p3',prefix+'pie-p4'];
   perfiles.forEach((p, idx) => {
     const canvas = document.getElementById(ids[idx]);
@@ -3602,7 +4053,7 @@ function renderPerfiles(data, prefix, chartStore) {
     const funds = Object.entries(p.funds).sort((a,b) => b[1] - a[1]);
     const labels = funds.map(f => f[0]);
     const values = funds.map(f => f[1]);
-    const bgColors = funds.map((f, i) => PIE_PAL[i] || '#EC626E');
+    const bgColors = funds.map(f => FUND_COLORS[f[0]] || '#AAAAAA');
 
     chartStore[idx] = new Chart(canvas, {
       type: 'pie',
@@ -3653,13 +4104,13 @@ function renderPerfiles(data, prefix, chartStore) {
     });
   });
 
-  // Legend — use all unique funds sorted by total weight across all profiles
+  // Legend — fixed fund order, colors by fund name
   const legendWrap = document.getElementById(prefix + 'perfiles-legend');
   if (legendWrap) {
     const sortedFunds = ['VXGUBCP','VXUDIMP','VXDEUDA','VXGUBLP','VXTBILL','VALMX28','VALMX20'];
     let lh = '';
-    sortedFunds.forEach((f, i) => {
-      const c = PIE_PAL[i] || '#EC626E';
+    sortedFunds.forEach(f => {
+      const c = FUND_COLORS[f] || '#AAAAAA';
       lh += '<div style="display:flex;align-items:center;gap:4px;">';
       lh += '<div style="width:12px;height:12px;border-radius:2px;background:' + c + ';flex-shrink:0;"></div>';
       lh += '<span style="font-family:Montserrat,sans-serif;font-size:13px;font-weight:700;color:var(--navy);">' + f + '</span>';
@@ -3675,33 +4126,25 @@ const _cmp2PerfilCharts = {};
 async function loadCmp2Quilts() {
   if (_cmp2QuiltsLoaded) return;
   const errStyle = 'color:#DC2626;text-align:center;padding:20px;font-family:Montserrat,sans-serif;font-size:13px;';
-  if (!_quiltData) {
-    try {
-      const r = await fetch('/api/quilt');
-      const d = await r.json();
-      if (d.ok) _quiltData = d;
-      else document.getElementById('cmp2-quilt-table-wrap').innerHTML = '<p style="'+errStyle+'">Error: '+(d.error||'No se pudieron cargar datos de mercado')+'</p>';
-    } catch(e) {
-      console.error('CMP2 quilt error:', e);
-      document.getElementById('cmp2-quilt-table-wrap').innerHTML = '<p style="'+errStyle+'">Error de conexión al cargar datos de mercado</p>';
-    }
+  // Fetch all three endpoints in parallel
+  const [qRes, qfRes, pRes] = await Promise.allSettled([
+    !_quiltData ? fetch('/api/quilt').then(r => r.json()) : Promise.resolve(null),
+    !_quiltFondosData ? fetch('/api/quilt_fondos').then(r => r.json()) : Promise.resolve(null),
+    !_perfilesData ? fetch('/api/perfiles').then(r => r.json()) : Promise.resolve(null),
+  ]);
+  if (qRes.status === 'fulfilled' && qRes.value?.ok) _quiltData = qRes.value;
+  else if (qRes.status === 'rejected' || (qRes.value && !qRes.value.ok)) {
+    const msg = qRes.status === 'rejected' ? 'Error de conexión' : (qRes.value?.error || 'Error desconocido');
+    document.getElementById('cmp2-quilt-table-wrap').innerHTML = '<p style="'+errStyle+'">'+msg+'</p>';
   }
+  if (qfRes.status === 'fulfilled' && qfRes.value?.ok) _quiltFondosData = qfRes.value;
+  else if (qfRes.status === 'rejected' || (qfRes.value && !qfRes.value.ok)) {
+    const msg = qfRes.status === 'rejected' ? 'Error de conexión' : (qfRes.value?.error || 'Error desconocido');
+    document.getElementById('cmp2-quilt-fondos-wrap').innerHTML = '<p style="'+errStyle+'">'+msg+'</p>';
+  }
+  if (pRes.status === 'fulfilled' && pRes.value?.ok) _perfilesData = pRes.value;
   if (_quiltData) renderQuiltChart(_quiltData, 'cmp2-quilt-table-wrap', 'cmp2-quilt-note');
-  if (!_quiltFondosData) {
-    try {
-      const r = await fetch('/api/quilt_fondos');
-      const d = await r.json();
-      if (d.ok) _quiltFondosData = d;
-      else document.getElementById('cmp2-quilt-fondos-wrap').innerHTML = '<p style="'+errStyle+'">Error: '+(d.error||'No se pudieron cargar rendimientos de fondos')+'</p>';
-    } catch(e) {
-      console.error('CMP2 quilt fondos error:', e);
-      document.getElementById('cmp2-quilt-fondos-wrap').innerHTML = '<p style="'+errStyle+'">Error de conexión al cargar rendimientos de fondos</p>';
-    }
-  }
   if (_quiltFondosData) renderQuiltFondos(_quiltFondosData, 'cmp2-quilt-fondos-wrap', 'cmp2-quilt-fondos-note');
-  if (!_perfilesData) {
-    try { const r = await fetch('/api/perfiles'); const d = await r.json(); if (d.ok) _perfilesData = d; } catch(e) {}
-  }
   if (_perfilesData) renderPerfiles(_perfilesData, 'cmp2-', _cmp2PerfilCharts);
   if (_quiltData && _quiltFondosData && _perfilesData) _cmp2QuiltsLoaded = true;
 }
@@ -3783,7 +4226,7 @@ document.getElementById('btn-pdf').addEventListener('click', async () => {
   const y = Math.min(mt, ph - imgH - mb);
   pdf.addImage(cv.toDataURL('image/jpeg', 0.92), 'JPEG', mx, Math.max(mt, y), usableW, imgH);
   const contrato = document.getElementById('cfg-contrato')?.value?.trim() || '';
-  const propName = contrato ? `Comparativa ${contrato} - VALMEX.pdf` : 'Comparativa - VALMEX.pdf';
+  const propName = contrato ? `Estrategia de Inversión - ${contrato}.pdf` : 'Estrategia de Inversión - VALMEX.pdf';
   pdf.save(propName);
 });
 
@@ -3898,7 +4341,7 @@ document.getElementById('btn-pdf-cmp2').addEventListener('click', async () => {
     return `
     ${selector}{width:${QW}px!important;min-width:${QW}px!important;height:${targetQH}px!important;padding:0!important;margin:0!important;overflow:hidden!important;}
     ${selector} > div{height:100%!important;display:flex!important;flex-direction:column!important;}
-    ${selector} .cmp-header-bar{padding:14px 20px 12px!important;flex-shrink:0!important;height:105px!important;box-sizing:border-box!important;}
+    ${selector} .cmp-header-bar{padding:14px 24px 12px!important;flex-shrink:0!important;height:105px!important;box-sizing:border-box!important;}
     ${selector} .cmp-header-bar img{height:75px!important;}
     ${selector} .cmp-main-title{font-size:32px!important;color:#00205C!important;}
     ${selector} .cmp-sub-title{font-size:18px!important;}
@@ -3951,7 +4394,7 @@ document.getElementById('btn-pdf-cmp2').addEventListener('click', async () => {
       const perfilesStyle = document.createElement('style'); perfilesStyle.id='pdf-perfiles-override';
       perfilesStyle.textContent = `
         #cmp2-slide-perfiles{width:${QW}px!important;min-width:${QW}px!important;height:${targetQH}px!important;padding:0!important;margin:0!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;}
-        #cmp2-slide-perfiles .cmp-header-bar{padding:14px 20px 12px!important;flex-shrink:0!important;height:105px!important;box-sizing:border-box!important;}
+        #cmp2-slide-perfiles .cmp-header-bar{padding:14px 24px 12px!important;flex-shrink:0!important;height:105px!important;box-sizing:border-box!important;}
         #cmp2-slide-perfiles .cmp-header-bar img{height:75px!important;}
         #cmp2-slide-perfiles .cmp-main-title{font-size:32px!important;color:#00205C!important;}
         #cmp2-slide-perfiles .cmp-sub-title{font-size:18px!important;}
@@ -3990,54 +4433,52 @@ document.getElementById('btn-pdf-cmp2').addEventListener('click', async () => {
   // ════════════════════════════════════════════════════════════════════
   if (inclP1) {
     const targetH = Math.round(W * (215.9 / 279.4));
-    const origP2 = page2.style.display, origP3 = page3.style.display;
-    page2.style.display = 'none'; page3.style.display = 'none';
+
+    // Inject header into page1 (same pattern as pages 2-4)
+    const removeHdr1 = injectHeader(page1, 'Composición y Desempeño', 'Asignación Estratégica de los Portafolios');
 
     // Auto-adjust spacing: expand when few rows, compact when many
     const compactStyle = document.createElement('style'); compactStyle.id = 'pdf-cmp2-compact';
     const nRows = document.querySelectorAll('#cmp2-holdings-tbody tr').length;
     const extra = Math.max(0, nRows - 12);
-    let css = '';
+    let css = `
+      #cmp2-page1{width:${W}px!important;height:${targetH}px!important;overflow:hidden!important;box-sizing:border-box!important;display:flex!important;flex-direction:column!important;}
+      #cmp2-page1 .pdf-hdr-clone{flex-shrink:0!important;}
+      #cmp2-page1 .cmp-header-bar.pdf-hdr-clone{padding:14px 24px 12px!important;height:${hdrH - 2}px!important;box-sizing:border-box!important;}
+      #cmp2-page1 .cmp-header-bar.pdf-hdr-clone img{height:75px!important;}
+      #cmp2-page1 .cmp-header-bar.pdf-hdr-clone .cmp-main-title{font-size:32px!important;color:#00205C!important;}
+      #cmp2-page1 .cmp-header-bar.pdf-hdr-clone .cmp-sub-title{font-size:18px!important;}
+    `;
     if (nRows < 12) {
-      // Expand rows + gaps to fill page (fewer rows = more padding)
       const deficit = 12 - nRows;
       const pad = Math.min(20, 9 + Math.floor(deficit * 2));
       const gap = Math.min(18, 12 + deficit);
-      css = `#cmp2-page1{gap:${gap}px!important;}
+      css += `#cmp2-page1{gap:${gap}px!important;}
         #cmp2-holdings-tbody td{padding:${pad}px 14px!important;}
         #cmp2-holdings-thead th{padding:${Math.min(14, 10 + Math.floor(deficit/2))}px 14px!important;}`;
     } else if (extra <= 2) {
-      // 13-14 rows: just reduce gap + slight td padding trim
       const gap = extra === 1 ? 8 : 5;
       const pad = extra === 1 ? 8 : 7;
-      css = `#cmp2-page1{gap:${gap}px!important;}
+      css += `#cmp2-page1{gap:${gap}px!important;}
         #cmp2-holdings-tbody td{padding:${pad}px 10px!important;}`;
     } else if (extra <= 5) {
-      // 15-17 rows: tighter gap + td compacting
       const pad = Math.max(4, 9 - extra);
-      css = `#cmp2-page1{gap:3px!important;}
+      css += `#cmp2-page1{gap:3px!important;}
         #cmp2-holdings-tbody td{padding:${pad}px 8px!important;}`;
     } else {
-      // 18+ rows: maximum compacting
-      css = `#cmp2-page1{gap:2px!important;}
+      css += `#cmp2-page1{gap:2px!important;}
         #cmp2-holdings-tbody td{padding:3px 6px!important;font-size:11px!important;}`;
     }
     compactStyle.textContent = css;
     document.head.appendChild(compactStyle);
 
-    // Temporarily change header subtitle for this page
-    const subEl = document.getElementById('cmp2-title-sub');
-    const origSub = subEl?.textContent;
-    if (subEl) subEl.textContent = 'Asignación Estratégica de los Portafolios'; // already the default
-
-    dash.style.height = targetH + 'px'; dash.style.overflow = 'hidden';
-    void dash.offsetWidth;
+    page1.style.width = W + 'px';
+    void page1.offsetWidth;
     await new Promise(r => setTimeout(r, 300));
-    const cv = await html2canvas(dash, {scale:2, useCORS:true, backgroundColor:'#fff', logging:false, scrollX:0, scrollY:0, width:W, height:targetH});
-    page2.style.display = origP2; page3.style.display = origP3;
-    dash.style.height = ''; dash.style.overflow = '';
+    const cv = await html2canvas(page1, {scale:2, useCORS:true, backgroundColor:'#fff', logging:false, scrollX:0, scrollY:0, width:W, height:targetH});
     compactStyle.remove();
-    if (subEl) subEl.textContent = origSub;
+    removeHdr1();
+    page1.style.width = '';
 
     if (!firstPage) pdf.addPage('letter', 'landscape');
     firstPage = false;
@@ -4156,28 +4597,36 @@ document.getElementById('btn-pdf-cmp2').addEventListener('click', async () => {
   // ════════════════════════════════════════════════════════════════════
   // PDF PAGE 4: Características + Exposición (Drilldown RV y Deuda)
   // ════════════════════════════════════════════════════════════════════
-  const hasP3Data = document.getElementById('cmp2-expo-panel')?.style.display !== 'none'
-    || document.getElementById('cmp2-chars-panel')?.style.display !== 'none';
+  const hasP3Data = document.getElementById('cmp2-rv-expo-panel')?.style.display !== 'none'
+    || document.getElementById('cmp2-deuda-expo-panel')?.style.display !== 'none';
   if (inclP3 && hasP3Data) {
-    const tH4 = Math.round(W * (215.9 / 279.4));
+    const targetH = Math.round(W * (215.9 / 279.4));
     const removeHdr4 = injectHeader(page3, 'Características y Exposición', 'Desglose de los Portafolios por Clase de Activo');
     const p3Style = document.createElement('style'); p3Style.id = 'pdf-p3-fit';
     p3Style.textContent = `
-      #cmp2-page3{width:${W}px!important;height:${tH4}px!important;overflow:hidden!important;box-sizing:border-box!important;display:flex!important;flex-direction:column!important;justify-content:space-between!important;}
+      #cmp2-page3{width:${W}px!important;height:${targetH}px!important;overflow:hidden!important;box-sizing:border-box!important;display:flex!important;flex-direction:column!important;gap:4px!important;justify-content:flex-start!important;}
       #cmp2-page3 .pdf-hdr-clone{flex-shrink:0!important;}
       #cmp2-page3 .cmp-header-bar.pdf-hdr-clone{padding:14px 24px 12px!important;height:${hdrH - 2}px!important;box-sizing:border-box!important;}
       #cmp2-page3 .cmp-header-bar.pdf-hdr-clone img{height:75px!important;}
       #cmp2-page3 .cmp-header-bar.pdf-hdr-clone .cmp-main-title{font-size:32px!important;color:#00205C!important;}
       #cmp2-page3 .cmp-header-bar.pdf-hdr-clone .cmp-sub-title{font-size:18px!important;}
-      #cmp2-page3 .cmp2-panel{flex:1!important;display:flex!important;flex-direction:column!important;}
-      #cmp2-page3 .cmp2-panel-body{flex:1!important;}
-      #cmp2-page3 .cmp-expo-grid{gap:16px!important;}
+      #cmp2-page3 #cmp2-deuda-expo-panel{margin:0 20px!important;flex-shrink:0!important;}
+      #cmp2-page3 #cmp2-rv-expo-panel{margin:0 20px!important;flex-shrink:0!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;}
+      #cmp2-page3 #cmp2-rv-expo-panel .cmp2-panel-body{flex-shrink:0!important;padding:10px 0 0 0!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;}
+      #cmp2-page3 #cmp2-rv-legend{flex-shrink:0!important;}
+      #cmp2-page3 #cmp2-rv-expo-grid{flex:1!important;}
+      #cmp2-page3 #cmp2-movimientos-panel{margin:0 20px!important;flex-shrink:0!important;}
+      #cmp2-page3 #cmp2-movimientos-panel .cmp2-panel-hdr{font-size:13px!important;padding:8px 16px!important;}
+      #cmp2-page3 #cmp2-movimientos-panel .cmp2-tbl th{font-size:13px!important;padding:7px 10px!important;}
+      #cmp2-page3 #cmp2-movimientos-panel .cmp2-tbl td{font-size:13px!important;padding:6px 10px!important;}
+      #cmp2-page3 .cmp2-footer{flex-shrink:0!important;padding:4px 20px!important;}
+      #cmp2-page3 .cmp2-footer p{font-size:10px!important;margin:0!important;padding:2px 0!important;}
     `;
     document.head.appendChild(p3Style);
     page3.style.width = W + 'px';
     void page3.offsetWidth;
     await new Promise(r => setTimeout(r, 300));
-    const cv = await html2canvas(page3, {scale:2, useCORS:true, backgroundColor:'#fff', logging:false, scrollX:0, scrollY:0, width:W, height:tH4});
+    const cv = await html2canvas(page3, {scale:2, useCORS:true, backgroundColor:'#fff', logging:false, scrollX:0, scrollY:0, width:W, height:targetH});
     p3Style.remove();
     removeHdr4();
     page3.style.width = '';
@@ -4210,17 +4659,19 @@ document.getElementById('btn-pdf-cmp2').addEventListener('click', async () => {
   if (scaler) scaler.scrollLeft = 0;
   // 7. Force layout reflow so containers report correct CSS widths
   void dash.offsetWidth;
-  // 8. Wait for browser paint, then let Chart.js 4 auto-resize to container
+  // 8. Re-apply view mode (restores rend grid, card visibility, risk contrib grid after PDF reset)
+  if (_cmp2DataA || _cmp2DataB || _cmp2DataC) aplicarDatosCmp2(_cmp2DataA, _cmp2DataB, _cmp2DataC);
+  // 9. Wait for browser paint, then let Chart.js 4 auto-resize to container
   await new Promise(r => requestAnimationFrame(() => setTimeout(r, 50)));
   Object.values(cmp2Charts).forEach(c => { if (c?.resize) c.resize(); });
-  // 9. Second pass after DOM fully settles
+  // 10. Second pass after DOM fully settles
   await new Promise(r => setTimeout(r, 400));
   Object.values(cmp2Charts).forEach(c => { if (c?.resize) c.resize(); });
   // 10. Restore scroll position
   window.scrollTo(savedScrollX, savedScrollY);
 
   const contrato2 = document.getElementById('cfg-contrato')?.value?.trim() || '';
-  const name2 = contrato2 ? `Comparativa 3-Way ${contrato2} - VALMEX.pdf` : 'Comparativa 3-Way - VALMEX.pdf';
+  const name2 = contrato2 ? `Inversión VALMEX - ${contrato2}.pdf` : 'Inversión VALMEX.pdf';
   pdf.save(name2);
 });
 
@@ -4601,11 +5052,12 @@ function aplicarDatos(data, valor) {
     });
     charts.comp.data.datasets[0].data = sorted.map(f => f.pct);
     charts.comp.data.datasets[0].backgroundColor = '#3DA5E0';
-    charts.comp.options.scales.x.max  = Math.max(...sorted.map(f => f.pct)) * 1.25;
+    const maxVal = Math.max(...sorted.map(f => f.pct));
+    charts.comp.options.scales.x.max  = maxVal * 1.18;  // 18% extra for outside labels
     // Barras: ajustar grosor según cantidad
     const n = sorted.length;
-    charts.comp.data.datasets[0].barPercentage    = n <= 3 ? 0.95 : n <= 5 ? 0.88 : n <= 10 ? 0.82 : 0.75;
-    charts.comp.data.datasets[0].categoryPercentage = n <= 3 ? 0.98 : n <= 5 ? 0.95 : n <= 10 ? 0.92 : 0.88;
+    charts.comp.data.datasets[0].barPercentage    = n <= 3 ? 0.98 : n <= 5 ? 0.95 : n <= 10 ? 0.90 : 0.85;
+    charts.comp.data.datasets[0].categoryPercentage = n <= 3 ? 0.99 : n <= 5 ? 0.98 : n <= 10 ? 0.95 : 0.92;
     charts.comp.update();
     setTimeout(() => { charts.comp.resize(); charts.comp.update('none'); }, 50);
   }

@@ -3,12 +3,14 @@ import re
 import time
 import secrets
 import requests
+import threading
 import numpy as np
 import pandas as pd
 import yfinance as yf
 import xml.etree.ElementTree as ET
 from datetime import date, timedelta, datetime
-from flask import Flask, send_file, request, jsonify, redirect, url_for, session, send_from_directory
+from concurrent.futures import ThreadPoolExecutor
+from flask import Flask, send_file, request, jsonify, redirect, url_for, session, send_from_directory, make_response
 import json
 from werkzeug.security import generate_password_hash, check_password_hash
 from scipy.stats import skew, kurtosis
@@ -39,6 +41,7 @@ def _cache_expired(ts: float) -> bool:
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=12)
 
@@ -187,7 +190,7 @@ VANGUARD_REGION_MAP = {
     "emerging markets":  "Asia - Emerging",
     "middle east":       "Middle East",
     "latin america":     "Latin America",
-    "united kingdom":    "United Kingdom",
+    "united kingdom":    "Europe - ex Euro",
     "other":             "Otros",
 }
 
@@ -503,9 +506,10 @@ SERIE_MAP = {
 
 _ms_cache = {}
 _ms_cache_ts = 0.0          # epoch timestamp of last fetch
-MS_URL    = "https://api.morningstar.com/v2/service/mf/hlk0d0zmiy1b898b/universeid/txcm88fa8x3vxapp"
-MS_ACCESS = "hwg0cty5re7araij32k035091f43wxd0"
-MS_NAV_URL = "https://api.morningstar.com/service/mf/UnadjustedNAV/ISIN"
+MS_URL    = os.environ.get("MS_URL", "https://api.morningstar.com/v2/service/mf/hlk0d0zmiy1b898b/universeid/txcm88fa8x3vxapp")
+MS_ACCESS = os.environ.get("MS_ACCESS", "hwg0cty5re7araij32k035091f43wxd0")
+MS_NAV_URL = os.environ.get("MS_NAV_URL", "https://api.morningstar.com/service/mf/UnadjustedNAV/ISIN")
+_ms_session = requests.Session()          # reuse TCP connections to Morningstar
 
 
 def load_ms_universe(force=False):
@@ -513,7 +517,7 @@ def load_ms_universe(force=False):
     if _ms_cache and not force and not _cache_expired(_ms_cache_ts):
         return _ms_cache
     try:
-        resp = requests.get(MS_URL, params={"accesscode": MS_ACCESS, "format": "JSON"}, timeout=25)
+        resp = _ms_session.get(MS_URL, params={"accesscode": MS_ACCESS, "format": "JSON"}, timeout=15)
         resp.raise_for_status()
         new_cache = {}
         for fund in resp.json().get("data", []):
@@ -547,10 +551,10 @@ def get_ms_nav(isin: str, start: str = "2000-01-01", end: str = None,
     if cached and not _cache_expired(cached["ts"]):
         return cached["data"]
     try:
-        r = requests.get(
+        r = _ms_session.get(
             f"{MS_NAV_URL}/{isin}",
             params={"startdate": start, "enddate": end, "accesscode": MS_ACCESS},
-            timeout=25,
+            timeout=15,
         )
         r.raise_for_status()
         root = ET.fromstring(r.text)
@@ -1053,7 +1057,7 @@ COUNTRY_TO_REGION = {
     "united states": "United States", "canada": "Canada",
     "mexico": "Latin America", "brazil": "Latin America", "chile": "Latin America",
     "colombia": "Latin America", "peru": "Latin America", "argentina": "Latin America",
-    "united kingdom": "United Kingdom",
+    "united kingdom": "Europe - ex Euro",
     "germany": "Eurozone", "france": "Eurozone", "netherlands": "Eurozone",
     "spain": "Eurozone", "italy": "Eurozone", "belgium": "Eurozone",
     "austria": "Eurozone", "finland": "Eurozone", "ireland": "Eurozone",
@@ -1793,6 +1797,10 @@ def _fetch_factor_series():
     return factors
 
 
+# ── Cache for compute_factor_betas ──
+_betas_cache = {}   # hash(bt_dict) -> result dict
+_betas_cache_ts = 0
+
 def compute_factor_betas(bt_portafolio_dict):
     """Aladdin-style factor risk engine with:
     - Elastic Net (L1+L2) with cross-validation for automatic factor selection
@@ -1805,6 +1813,21 @@ def compute_factor_betas(bt_portafolio_dict):
     """
     if not bt_portafolio_dict or len(bt_portafolio_dict) < 60:
         return {}
+
+    # ── Cache: hash portfolio series → reuse betas for same portfolio (6h) ──
+    global _betas_cache, _betas_cache_ts
+    import hashlib
+    _now = time.time()
+    if _now - _betas_cache_ts > 21600:  # 6h
+        _betas_cache = {}
+        _betas_cache_ts = _now
+    _sorted_keys = sorted(bt_portafolio_dict.keys())
+    _hash_input = "|".join(f"{k}:{bt_portafolio_dict[k]:.6f}" for k in _sorted_keys[-60:])
+    _cache_key = hashlib.md5(_hash_input.encode()).hexdigest()
+    if _cache_key in _betas_cache:
+        print(f"[BETAS] cache HIT ({_cache_key[:8]})")
+        return _betas_cache[_cache_key]
+    print(f"[BETAS] cache MISS ({_cache_key[:8]}), computing...")
 
     try:
         factors = _fetch_factor_series()
@@ -2198,6 +2221,7 @@ def compute_factor_betas(bt_portafolio_dict):
         for skey, impact in scenarios.items():
             print(f"  {skey:>20s}: {impact*100:+.4f}%")
 
+        _betas_cache[_cache_key] = betas
         return betas
 
     except Exception as e:
@@ -2320,13 +2344,17 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
         _isin = ISIN_MAP.get(_f, {}).get(_s)
         if _isin:
             _prefetch_items.append((_isin, _f, _s))
-    if _prefetch_items:
-        from concurrent.futures import ThreadPoolExecutor
-        def _fetch_nav(args):
-            isin, f, s = args
-            get_ms_nav(isin, expect_fund=f, expect_serie=s)
-        with ThreadPoolExecutor(max_workers=15) as executor:
+    from concurrent.futures import ThreadPoolExecutor
+    # Pre-warm factor series cache + NAV cache in parallel
+    def _fetch_nav(args):
+        isin, f, s = args
+        get_ms_nav(isin, expect_fund=f, expect_serie=s)
+    with ThreadPoolExecutor(max_workers=12) as executor:
+        # Factor series: 15-30s uncached, runs alongside NAV fetches
+        _factor_future = executor.submit(_fetch_factor_series)
+        if _prefetch_items:
             list(executor.map(_fetch_nav, _prefetch_items))
+        _factor_future.result()  # ensure factor cache is warm
 
     for fondo, pct in fondos_pct.items():
         if pct <= 0:
@@ -2410,11 +2438,13 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
         if (is_rv or is_ciclo) and stock > 0:
             geo_raw = d.get("RE-RegionalExposure", [])
             GEO_EXCLUDE = {"emerging market", "developing country", "emerging markets", "developed countries", "developed country"}
+            GEO_MERGE = {"United Kingdom": "Europe - ex Euro"}
             if isinstance(geo_raw, list):
                 for item in geo_raw:
                     region = item.get("Region", "")
                     val    = safe_float(item.get("Value", 0))
                     if region and val > 0 and region.lower() not in GEO_EXCLUDE:
+                        region = GEO_MERGE.get(region, region)
                         geo_acc[region] = geo_acc.get(region, 0) + val * (stock * w / 100)
 
             sector_map = {
@@ -2649,11 +2679,14 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
             sec_acc[yfd["sector"]] = sec_acc.get(yfd["sector"], 0) + 100 * w
 
         # Geografía
+        _GEO_MERGE = {"United Kingdom": "Europe - ex Euro"}
         if yfd.get("geo"):
             for g, v in yfd["geo"].items():
+                g = _GEO_MERGE.get(g, g)
                 geo_acc[g] = geo_acc.get(g, 0) + v * w
         elif yfd.get("pais"):
-            geo_acc[yfd["pais"]] = geo_acc.get(yfd["pais"], 0) + 100 * w
+            p = _GEO_MERGE.get(yfd["pais"], yfd["pais"])
+            geo_acc[p] = geo_acc.get(p, 0) + 100 * w
 
         # Look-through for Acciones/ETFs
         _acc_is_usd = not ticker.endswith(".MX")
@@ -2731,7 +2764,7 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
         # For single stocks, check sector directly
         _acc_sector_single = (yfd.get("sector") or "").lower()
         _show_oil = _acc_energy > 10 or "energ" in _acc_sector_single
-        _show_gold = _acc_materials > 15 or "miner" in _acc_sector_single or "metal" in _acc_sector_single
+        _show_gold = _acc_materials > 15 or "miner" in _acc_sector_single or "metal" in _acc_sector_single or "basic material" in _acc_sector_single
         _acc_drivers = {
             "sp500": round(w * _acc_us / 100, 4) if _acc_us > 0 else 0,
             "ipc": round(w * _acc_mx / 100, 4) if _acc_mx > 0 else 0,
@@ -2773,7 +2806,7 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
 
     GEO_TRANSLATE = {
         "united states":"Estados Unidos","canada":"Canadá","latin america":"América Latina",
-        "united kingdom":"Reino Unido","eurozone":"Eurozona","europe - ex euro":"Europa ex-Euro",
+        "eurozone":"Eurozona","europe - ex euro":"Europa ex-Euro",
         "europe - emerging":"Europa Emergente","africa":"África","middle east":"Medio Oriente",
         "japan":"Japón","australasia":"Australasia","asia - developed":"Asia Desarrollada",
         "asia - emerging":"Asia Emergente","greater asia":"Gran Asia","greater europe":"Gran Europa",
@@ -3023,6 +3056,7 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
         "sectores":      filter_pct(sec_acc),
         "supersectores": filter_pct(supersec_acc),
         "has_rv":        stock_t + accion_t + etf_t + indice_t > 0,
+        "pct_rv":        round(stock_t + accion_t + etf_t + indice_t, 2),
         "has_deuda":     has_mxn or has_usd,
         "bt_repo":       sorted(
             [{"fecha": f, "valor": round(v, 4)} for f, v in bt_repo_filtered.items()],
@@ -3038,17 +3072,40 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
             "ytm_mxn":  round(ytm_mxn_num / bond_mxn_denom, 2) if has_mxn else 0,
             "cred_mxn": weighted_credit_rating(cred_mxn) if cred_mxn else "—",
             "pct_mxn":  round(bond_mxn_denom * 100, 2) if has_mxn else 0,
+            "fondos_mxn": sorted(
+                [{"fondo": f, "pct": round(lt["weight"], 2)} for f, lt in fund_lookthrough.items() if lt.get("tipo") == "deuda_mxn"],
+                key=lambda x: -x["pct"]
+            ),
             "has_usd":  has_usd,
             "dur_usd":  round(dur_usd_num / bond_usd_denom, 2) if has_usd else 0,
             "ytm_usd":  round(ytm_usd_num / bond_usd_denom, 2) if has_usd else 0,
             "cred_usd": weighted_credit_rating(cred_usd) if cred_usd else "—",
             "pct_usd":  round(bond_usd_denom * 100, 2) if has_usd else 0,
+            "fondos_usd": sorted(
+                [{"fondo": f, "pct": round(lt["weight"], 2)} for f, lt in fund_lookthrough.items() if lt.get("tipo") == "deuda_usd"],
+                key=lambda x: -x["pct"]
+            ),
         },
         "historical_scenarios": historical_scenarios,
         "fund_risk_contrib": fund_risk_contrib,
         "fund_lookthrough": fund_lookthrough,
         "risk_driver_matrix": risk_driver_matrix,
     }
+
+    # ACWI benchmark for overweight/underweight visualization
+    if stock_t + accion_t + etf_t + indice_t > 0:
+        try:
+            _acwi = get_etf_data("ACWI")
+            _acwi_geo = _acwi.get("geo", {})
+            _acwi_sec = _acwi.get("sec", {})
+            result["acwi_benchmark"] = {
+                "geo": filter_pct(_acwi_geo, min_pct=0.5, translate=GEO_TRANSLATE),
+                "sectores": filter_pct(_acwi_sec, min_pct=0.5),
+            }
+            print(f"[ACWI] geo={len(result['acwi_benchmark']['geo'].get('labels',[]))} sec={len(result['acwi_benchmark']['sectores'].get('labels',[]))}")
+        except Exception as e:
+            print(f"[ACWI] benchmark error: {e}")
+            result["acwi_benchmark"] = {}
 
     # Compute real factor betas from regression
     # Use bt_full (full history) for maximum data → most stable betas and covariance
@@ -3093,25 +3150,39 @@ def set_security_headers(response):
     response.headers['X-Frame-Options'] = 'SAMEORIGIN'
     response.headers['X-XSS-Protection'] = '1; mode=block'
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
-    response.headers['Permissions-Policy'] = 'geolocation=(), camera=(), microphone=()'
+    response.headers['Cross-Origin-Opener-Policy'] = 'same-origin'
+    response.headers['X-Permitted-Cross-Domain-Policies'] = 'none'
+    response.headers['Permissions-Policy'] = 'geolocation=(), camera=(), microphone=(), usb=(), bluetooth=()'
     response.headers['Content-Security-Policy'] = (
         "default-src 'self'; "
         "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://html2canvas.hertzen.com; "
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; "
-        "font-src 'self' https://fonts.gstatic.com; "
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; "
+        "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; "
         "img-src 'self' data: blob:; "
         "connect-src 'self'; "
+        "frame-ancestors 'self'; "
+        "base-uri 'self'; "
+        "form-action 'self';"
     )
-    if request.is_secure:
-        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, private'
+    response.headers['Pragma'] = 'no-cache'
     return response
 
 _login_attempts = {}
-_LOGIN_MAX_ATTEMPTS = 5
+_LOGIN_MAX_ATTEMPTS = 10
 _LOGIN_WINDOW = 300
+_login_cleanup_ts = 0
 
 def _check_login_rate_limit(ip):
+    global _login_cleanup_ts
     now = time.time()
+    # Cleanup stale entries
+    if now - _login_cleanup_ts > 600:
+        stale = [k for k, (_, t) in _login_attempts.items() if now - t > _LOGIN_WINDOW * 2]
+        for k in stale:
+            del _login_attempts[k]
+        _login_cleanup_ts = now
     if ip in _login_attempts:
         count, first = _login_attempts[ip]
         if now - first > _LOGIN_WINDOW:
@@ -3123,6 +3194,40 @@ def _check_login_rate_limit(ip):
         return True
     _login_attempts[ip] = (1, now)
     return True
+
+# ── Global API rate limiting (with periodic cleanup) ──
+_api_calls = {}
+_API_MAX_RPM = 120  # max requests per minute per IP
+_API_WINDOW  = 60
+_api_cleanup_ts = 0
+
+def _check_api_rate_limit():
+    global _api_cleanup_ts
+    ip = request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or request.remote_addr or "unknown"
+    now = time.time()
+    # Periodic cleanup: purge stale entries every 10 min to prevent memory leak
+    if now - _api_cleanup_ts > 600:
+        stale = [k for k, (_, t) in _api_calls.items() if now - t > _API_WINDOW * 2]
+        for k in stale:
+            del _api_calls[k]
+        _api_cleanup_ts = now
+    if ip in _api_calls:
+        calls, first = _api_calls[ip]
+        if now - first > _API_WINDOW:
+            _api_calls[ip] = (1, now)
+            return True
+        if calls >= _API_MAX_RPM:
+            return False
+        _api_calls[ip] = (calls + 1, first)
+        return True
+    _api_calls[ip] = (1, now)
+    return True
+
+@app.before_request
+def global_rate_limit():
+    if request.path.startswith('/api/'):
+        if not _check_api_rate_limit():
+            return jsonify({"error": "Rate limit exceeded"}), 429
 
 _TICKER_RE = re.compile(r'^[A-Za-z0-9.&Ññ^]{1,20}$')
 
@@ -3184,7 +3289,7 @@ def _valid_ticker(t: str) -> bool:
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        ip = request.remote_addr or "unknown"
+        ip = request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or request.remote_addr or "unknown"
         if not _check_login_rate_limit(ip):
             return jsonify({"ok": False, "error": "Demasiados intentos. Espera 5 minutos."}), 429
         data = request.get_json(force=True)
@@ -3195,13 +3300,17 @@ def login():
             session.clear()
             session["usuario"] = u
             session.permanent = True
+            print(f"[AUDIT] LOGIN_OK user={u} ip={ip}", flush=True)
             return jsonify({"ok":True,"nombre":user["nombre"],"iniciales":user["iniciales"],"rol":user["rol"]})
+        print(f"[AUDIT] LOGIN_FAIL user={u} ip={ip}", flush=True)
         return jsonify({"ok": False}), 401
     return send_file(os.path.join(BASE, "login.html"))
 
 @app.route("/logout")
 def logout():
+    u = session.get("usuario", "?")
     session.clear()
+    print(f"[AUDIT] LOGOUT user={u} ip={request.remote_addr}", flush=True)
     return redirect(url_for("login"))
 
 @app.route("/me")
@@ -3236,6 +3345,7 @@ def change_password():
     new_hash = generate_password_hash(new_pass)
     USERS[u]["password"] = new_hash
     _save_password_override(u, new_hash)
+    print(f"[AUDIT] PASSWORD_CHANGED user={u} ip={ip}", flush=True)
     session.clear()
     session["usuario"] = u
     session.permanent = True
@@ -3249,6 +3359,7 @@ def pc_pdf():
 
 @app.route("/VALMEX.png")
 def valmex_logo():
+    # No auth — needed by login page before user is authenticated
     return send_from_directory(BASE, "VALMEX.png")
 
 @app.route("/VALMEX2.png")
@@ -3261,7 +3372,9 @@ def valmex_logo2():
 def index():
     if "usuario" not in session:
         return redirect(url_for("login"))
-    return send_file(os.path.join(BASE, "valmex_dashboard.html"))
+    with open(os.path.join(BASE, "valmex_dashboard.html"), "r", encoding="utf-8") as f:
+        html = f.read()
+    return make_response(html)
 
 
 @app.route("/api/accion/validate", methods=["POST"])
@@ -3311,6 +3424,8 @@ def api_accion_validate():
     return jsonify({"ok": False, "error": f"'{db_key}' no encontrado en BMV/SIC. Verifica el ticker."}), 404
 
 
+_compute_semaphore = threading.Semaphore(3)  # Max 3 concurrent portfolio computations
+
 @app.route("/api/propuesta", methods=["POST"])
 def api_propuesta():
     if "usuario" not in session:
@@ -3331,6 +3446,8 @@ def api_propuesta():
             fondos_pct = {k: float(v) for k, v in raw.items() if float(v) > 0}
             if any(v > 100 or v < 0 for v in fondos_pct.values()):
                 return jsonify({"ok": False, "error": "Porcentaje fuera de rango"}), 400
+            if len(fondos_pct) > 25:
+                return jsonify({"ok": False, "error": "Máximo 25 fondos"}), 400
         except (ValueError, TypeError):
             return jsonify({"ok": False, "error": "Datos numéricos inválidos"}), 400
         repo_mxn = body.get("repo_mxn")
@@ -3338,13 +3455,36 @@ def api_propuesta():
         acciones_raw = body.get("acciones", [])
         if not fondos_pct and not repo_mxn and not repo_usd and not acciones_raw:
             return jsonify({"ok": False, "error": "Sin fondos con % > 0"}), 400
+        # Validate date range
+        bt_ini = body.get("bt_fecha_ini")
+        bt_fin = body.get("bt_fecha_fin")
+        if bt_ini and bt_fin:
+            try:
+                from datetime import date as _d
+                _di = _d.fromisoformat(str(bt_ini)[:10])
+                _df = _d.fromisoformat(str(bt_fin)[:10])
+                if (_df - _di).days > 7300:
+                    return jsonify({"ok": False, "error": "Rango máximo 20 años"}), 400
+                if _di > _df:
+                    return jsonify({"ok": False, "error": "Fecha inicio > fin"}), 400
+            except (ValueError, TypeError):
+                pass
 
-    return jsonify(calcular_portafolio(fondos_pct, tipo_cliente,
-                                        repo_mxn=body.get("repo_mxn"),
-                                        repo_usd=body.get("repo_usd"),
-                                        acciones=body.get("acciones", []),
-                                        bt_fecha_ini=body.get("bt_fecha_ini"),
-                                        bt_fecha_fin=body.get("bt_fecha_fin")))
+    if not _compute_semaphore.acquire(timeout=0.5):
+        return jsonify({"ok": False, "error": "Servidor ocupado, intenta de nuevo en unos segundos."}), 503
+
+    try:
+        return jsonify(calcular_portafolio(fondos_pct, tipo_cliente,
+                                            repo_mxn=body.get("repo_mxn"),
+                                            repo_usd=body.get("repo_usd"),
+                                            acciones=body.get("acciones", []),
+                                            bt_fecha_ini=body.get("bt_fecha_ini"),
+                                            bt_fecha_fin=body.get("bt_fecha_fin")))
+    except Exception as e:
+        print(f"[ERROR] api_propuesta: {e}")
+        return jsonify({"ok": False, "error": "Error interno en cálculo"}), 500
+    finally:
+        _compute_semaphore.release()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -3354,6 +3494,13 @@ BANXICO_TOKEN = os.environ.get("BANXICO_TOKEN", "") or "592b06934a31710cba9e9a6e
 BANXICO_BASE  = "https://www.banxico.org.mx/SieAPIRest/service/v1/series"
 FRED_API_KEY  = os.environ.get("FRED_API_KEY", "") or "1a6dadbec2267dd21b3ad5d6447ed711"
 FRED_BASE     = "https://api.stlouisfed.org/fred/series/observations"
+# Warn if using hardcoded fallback keys (should be set via env vars in production)
+if not os.environ.get("BANXICO_TOKEN"):
+    print("[SECURITY] WARNING: Using fallback Banxico token — set BANXICO_TOKEN env var in production")
+if not os.environ.get("FRED_API_KEY"):
+    print("[SECURITY] WARNING: Using fallback FRED key — set FRED_API_KEY env var in production")
+if not os.environ.get("MS_ACCESS"):
+    print("[SECURITY] WARNING: Using fallback Morningstar access — set MS_ACCESS env var in production")
 
 SERIE_TIIE28  = "SF43783"
 SERIE_USDMXN  = "SF43718"
@@ -3364,7 +3511,12 @@ SERIE_USD_REPO = "SOFR"
 _hist_cache = {}; _hist_cache_ts = 0
 
 
+_banxico_rango_cache = {}  # (serie, ini, fin) -> result, daily
+
 def _banxico_serie_rango(serie_id, fecha_ini, fecha_fin):
+    _bk = (serie_id, fecha_ini, fecha_fin)
+    if _bk in _banxico_rango_cache:
+        return _banxico_rango_cache[_bk]
     try:
         url  = f"{BANXICO_BASE}/{serie_id}/datos/{fecha_ini}/{fecha_fin}"
         hdrs = {"Bmx-Token": BANXICO_TOKEN, "Accept": "application/json"}
@@ -3377,6 +3529,7 @@ def _banxico_serie_rango(serie_id, fecha_ini, fecha_fin):
                 result.append({"fecha": d["fecha"], "valor": float(d["dato"].replace(",", "."))})
             except Exception:
                 pass
+        _banxico_rango_cache[_bk] = result
         return result
     except Exception as e:
         print(f"[BANXICO HIST ERROR] {serie_id}: {e}")
@@ -3502,6 +3655,8 @@ def get_banxico_dato(serie_id):
 
 # ── QUILT CHART (Rendimientos por Clase de Activo) ──────────────────────
 _quilt_cache = {"data": None, "ts": 0}
+_quilt_ms_ticker_cache = {}  # Persistent across calls (not local to _compute_quilt)
+_prewarm_done = threading.Event()  # Set when prewarm completes
 
 def _compute_quilt():
     today = date.today()
@@ -3511,7 +3666,7 @@ def _compute_quilt():
     def bx_series(serie):
         try:
             url = f"https://www.banxico.org.mx/SieAPIRest/service/v1/series/{serie}/datos/2015-12-01/{today.isoformat()}"
-            r = requests.get(url, headers={"Bmx-Token": BANXICO_TOKEN, "Accept": "application/json"}, timeout=30)
+            r = requests.get(url, headers={"Bmx-Token": BANXICO_TOKEN, "Accept": "application/json"}, timeout=15)
             r.raise_for_status()
             datos = r.json()["bmx"]["series"][0]["datos"]
             out = {}
@@ -3543,13 +3698,16 @@ def _compute_quilt():
     MS_NAV_TICKER_URL = "https://api.morningstar.com/service/mf/UnadjustedNAV/TICKER"
 
     def ms_series(ticker):
-        """Fetch daily NAV/price from Morningstar by TICKER symbol."""
+        """Fetch daily NAV/price from Morningstar by TICKER symbol (cached daily)."""
+        cached = _quilt_ms_ticker_cache.get(ticker)
+        if cached and not _cache_expired(cached["ts"]):
+            return cached["data"]
         try:
-            r = requests.get(
+            r = _ms_session.get(
                 f"{MS_NAV_TICKER_URL}/{ticker}",
                 params={"startdate": "2015-12-01", "enddate": today.isoformat(),
                         "accesscode": MS_ACCESS},
-                timeout=30,
+                timeout=15,
             )
             r.raise_for_status()
             root = ET.fromstring(r.text)
@@ -3558,15 +3716,23 @@ def _compute_quilt():
                 try:
                     out[datetime.strptime(elem.get("d"), "%Y-%m-%d")] = float(elem.get("v"))
                 except: pass
+            result = pd.Series(out).sort_index()
+            _quilt_ms_ticker_cache[ticker] = {"ts": time.time(), "data": result}
             print(f"[QUILT MS] {ticker}: {len(out)} prices")
-            return pd.Series(out).sort_index()
+            return result
         except Exception as e:
             print(f"[QUILT MS ERROR] {ticker}: {e}")
             return pd.Series(dtype=float)
 
     def ye(s, y):
         sub = s[s.index.year == y]
-        return float(sub.iloc[-1]) if len(sub) > 0 else None
+        if len(sub) == 0:
+            return None
+        val = sub.iloc[-1]
+        # Handle yfinance MultiIndex columns returning Series instead of scalar
+        if isinstance(val, pd.Series):
+            val = val.iloc[0]
+        return float(val)
 
     def ev(s, y):
         return ye(s, y)
@@ -3584,46 +3750,48 @@ def _compute_quilt():
             return round((eu * ef / (su * sf) - 1) * 100, 2)
         return None
 
-    # Fetch all data in parallel to avoid Heroku 30s timeout
-    from concurrent.futures import ThreadPoolExecutor, as_completed
-
-    def _fetch_yf(ticker):
+    # Fetch all data in parallel (Banxico, FRED, Morningstar, Yahoo Finance)
+    def _yf_series(ticker):
         try:
             df = yf.download(ticker, start="2015-12-01", end=today.isoformat(),
                              auto_adjust=True, progress=False)
             if isinstance(df.columns, pd.MultiIndex):
                 df.columns = df.columns.get_level_values(0)
             s = df["Close"]
+            # Ensure flat Series (yfinance may return DataFrame with single column)
+            if isinstance(s, pd.DataFrame):
+                s = s.iloc[:, 0]
             print(f"[QUILT] {ticker}: {len(s)} prices")
             return s
         except Exception as e:
             print(f"[QUILT] {ticker} error: {e}")
             return pd.Series(dtype=float)
 
-    with ThreadPoolExecutor(max_workers=11) as executor:
-        f_fx      = executor.submit(bx_series, "SF43718")
-        f_cetes   = executor.submit(bx_series, "SF43936")
-        f_inpc    = executor.submit(bx_series, "SP1")
-        f_tasa    = executor.submit(bx_series, "SF61745")
-        f_bond10y = executor.submit(fred_series, "IRLTLT01MXM156N")
-        f_naftrac = executor.submit(ms_series, "NAFTRAC")
-        f_eem     = executor.submit(ms_series, "EEM")
-        f_urth    = executor.submit(ms_series, "URTH")
-        f_bwx     = executor.submit(ms_series, "BWX")
-        f_gold    = executor.submit(_fetch_yf, "GC=F")
-        f_oil     = executor.submit(_fetch_yf, "CL=F")
-
-    fx      = f_fx.result()
-    cetes   = f_cetes.result()
-    inpc    = f_inpc.result()
-    tasa    = f_tasa.result()
-    bond10y = f_bond10y.result()
-    naftrac = f_naftrac.result()
-    eem     = f_eem.result()
-    urth    = f_urth.result()
-    bwx     = f_bwx.result()
-    gold    = f_gold.result()
-    oil     = f_oil.result()
+    with ThreadPoolExecutor(max_workers=14) as _pool:
+        _fx_f = _pool.submit(bx_series, "SF43718")
+        _cetes_f = _pool.submit(bx_series, "SF43936")
+        _inpc_f = _pool.submit(bx_series, "SP1")
+        _tasa_f = _pool.submit(bx_series, "SF61745")
+        _bond_f = _pool.submit(fred_series, "IRLTLT01MXM156N")
+        _naftrac_f = _pool.submit(ms_series, "NAFTRAC")
+        _eem_f = _pool.submit(ms_series, "EEM")
+        _urth_f = _pool.submit(ms_series, "URTH")
+        _bwx_f = _pool.submit(ms_series, "BWX")
+        _qqq_f = _pool.submit(ms_series, "QQQ")
+        _gold_f = _pool.submit(_yf_series, "GC=F")
+        _oil_f = _pool.submit(_yf_series, "CL=F")
+    fx = _fx_f.result()
+    cetes = _cetes_f.result()
+    inpc = _inpc_f.result()
+    tasa = _tasa_f.result()
+    bond10y = _bond_f.result()
+    naftrac = _naftrac_f.result()
+    eem = _eem_f.result()
+    urth = _urth_f.result()
+    bwx = _bwx_f.result()
+    qqq = _qqq_f.result()
+    gold = _gold_f.result()
+    oil = _oil_f.result()
 
     rets = {}
 
@@ -3667,8 +3835,7 @@ def _compute_quilt():
                 dlp[str(y)] = round((carry - DUR_LP * delta) * 100, 2)
     rets["Deuda Largo Plazo"] = dlp
 
-    # 8. Tecnología (QQQ — Invesco QQQ Trust, USD → MXN)
-    qqq = ms_series("QQQ")
+    # 8. Tecnología (QQQ — Invesco QQQ Trust, USD → MXN) — already fetched in parallel above
     rets["Tecnolog\u00eda"] = {str(y): v for y in years if (v := ar_mxn(qqq, fx, y)) is not None}
 
     # 9. Oro (Gold futures USD/oz → MXN)
@@ -3761,61 +3928,30 @@ def _compute_quilt():
 def api_quilt():
     if "usuario" not in session:
         return jsonify({"ok": False, "error": "No autenticado"}), 401
-    now = time.time()
+    # Return cached data immediately if available
     if _quilt_cache["data"] and not _cache_expired(_quilt_cache["ts"]):
         return jsonify(_quilt_cache["data"])
+    # Wait for prewarm (up to 25s — Render proxy kills at 30s)
+    if not _prewarm_done.is_set():
+        _prewarm_done.wait(timeout=25)
+        if _quilt_cache["data"]:
+            return jsonify(_quilt_cache["data"])
+        return jsonify({"ok": False, "loading": True, "error": "Datos cargando, reintenta en unos segundos"}), 202
+    # Prewarm finished but cache empty (prewarm failed) — try once
     try:
         data = _compute_quilt()
         _quilt_cache["data"] = data
-        _quilt_cache["ts"] = now
+        _quilt_cache["ts"] = time.time()
         return jsonify(data)
     except Exception as e:
-        import traceback; traceback.print_exc()
-        return jsonify({"ok": False, "error": str(e)}), 500
+        print(f"[ERROR] api_quilt: {e}")
+        return jsonify({"ok": False, "error": "Error al calcular datos históricos"}), 500
 
 
 # ── QUILT FONDOS VALMEX (Top 10 por año) ──────────────────────────────
 _quilt_fondos_cache = {"data": None, "ts": 0}
 
 # Exact same 10 colors from the asset class quilt, assigned to funds
-# ── Institutional color palette — grouped by fund family ──
-# Deuda MXN: azules claros / grises
-# Deuda USD: azules acero / slate
-# RV: teals / verdes oscuros
-# Ciclo de vida: navy-to-slate gradient
-_FUND_PALETTE = {
-    # ── Deuda MXN ──
-    "VXREPO1": "#8FAFC4",   # Silver-Navy (brand)
-    "VXGUBCP": "#34698A",   # Azul petróleo
-    "VXDEUDA": "#A49E8B",   # Beige (manual)
-    "VXUDIMP": "#7CC677",   # Verde (brand)
-    "VXGUBLP": "#00205C",   # Navy (brand)
-    "VLMXETF": "#CBC8C5",   # Gris plata (manual)
-    # ── Deuda USD ──
-    "VXTBILL": "#C7963D",   # Bronce
-    "VXCOBER": "#8B6B4A",   # Café tostado
-    "VLMXDME": "#6A5B7B",   # Violeta gris
-    # ── Renta Variable ──
-    "VALMXA":  "#41BBC9",   # Teal (brand)
-    "VALMX20": "#058B97",   # Teal oscuro (brand)
-    "VALMX28": "#A25EB5",   # Púrpura (brand)
-    "VALMXVL": "#2C9942",   # Verde oscuro (manual)
-    "VALMXES": "#80BC38",   # Verde medio (manual)
-    "VLMXTEC": "#3DA5E0",   # Azul brillante (brand)
-    "VLMXESG": "#2D8B6A",   # Verde jade
-    "VALMXHC": "#3A7A5C",   # Verde bosque
-    "VXINFRA": "#3D7A70",   # Teal apagado
-    # ── Ciclo de Vida ──
-    "VLMXJUB": "#0D3A7A",   # Navy oscuro (brand)
-    "VLMXP24": "#9B5A5A",   # Rosa viejo
-    "VLMXP31": "#D46B6B",   # Rojo pastel
-    "VLMXP38": "#EC626E",   # Coral (brand — Dólar)
-    "VLMXP45": "#E8A838",   # Dorado (brand — Oro)
-    "VLMXP52": "#A6D043",   # Verde lima (manual)
-    "VLMXP59": "#5D8AA8",   # Azul medio
-}
-_FUND_ORDER = list(_FUND_PALETTE.keys())
-
 def _compute_quilt_fondos():
     from concurrent.futures import ThreadPoolExecutor, as_completed
     today = date.today()
@@ -3836,7 +3972,7 @@ def _compute_quilt_fondos():
         data = get_ms_nav(isin, start="2015-12-01")
         return fondo, data
 
-    with ThreadPoolExecutor(max_workers=15) as executor:
+    with ThreadPoolExecutor(max_workers=12) as executor:
         futures = {executor.submit(fetch_fund, f, i): f for f, i in fondos.items()}
         for future in as_completed(futures):
             try:
@@ -4003,27 +4139,31 @@ def _compute_quilt_fondos():
 def api_quilt_fondos():
     if "usuario" not in session:
         return jsonify({"ok": False, "error": "No autenticado"}), 401
-    now = time.time()
     if _quilt_fondos_cache["data"] and not _cache_expired(_quilt_fondos_cache["ts"]):
         return jsonify(_quilt_fondos_cache["data"])
+    if not _prewarm_done.is_set():
+        _prewarm_done.wait(timeout=25)
+        if _quilt_fondos_cache["data"]:
+            return jsonify(_quilt_fondos_cache["data"])
+        return jsonify({"ok": False, "loading": True, "error": "Datos cargando, reintenta en unos segundos"}), 202
     try:
         data = _compute_quilt_fondos()
         _quilt_fondos_cache["data"] = data
-        _quilt_fondos_cache["ts"] = now
+        _quilt_fondos_cache["ts"] = time.time()
         return jsonify(data)
     except Exception as e:
-        import traceback; traceback.print_exc()
-        return jsonify({"ok": False, "error": str(e)}), 500
+        print(f"[ERROR] api_quilt_fondos: {e}")
+        return jsonify({"ok": False, "error": "Error al calcular datos de fondos"}), 500
 
 
 _BRAND_PALETTE = {
-    "VXGUBCP": "#00205C",   # Navy (1)
-    "VXDEUDA": "#3DA5E0",   # Blue (2)
-    "VXUDIMP": "#41BBC9",   # Sky (3)
-    "VXGUBLP": "#7CC677",   # Verde (4)
-    "VXTBILL": "#5B6670",   # Gray (5)
-    "VALMX28": "#27325C",   # Azul apoyo (6)
-    "VALMX20": "#EC626E",   # Coral (7)
+    "VXGUBCP": "#00205C",   # Navy (brand — Pantone 281 C)
+    "VXDEUDA": "#75A1DE",   # Silver-Blue (brand tint)
+    "VXUDIMP": "#5B6670",   # Gray (brand — Pantone 431 C)
+    "VXGUBLP": "#2E7D5B",   # Emerald Green (complementario)
+    "VXTBILL": "#FECB46",   # Gold (brand accent)
+    "VALMX28": "#3DA5E0",   # Blue (brand — Pantone 299 C)
+    "VALMX20": "#BFDD7E",   # Lime Green (brand accent RV)
 }
 
 @app.route("/api/perfiles")
@@ -4042,6 +4182,8 @@ def api_perfiles():
 def api_universo():
     """Clasificacion de fondos Valmex — datos LIVE de Morningstar API.
     Refresca diario (post 4pm NYSE) o con ?force=1."""
+    if "usuario" not in session:
+        return jsonify({"error": "No autorizado"}), 401
     force = request.args.get("force", "0") == "1"
     universe = load_ms_universe(force=force)
     seen = {}
@@ -4066,12 +4208,14 @@ def api_universo():
             tipo = "otro"
         # Geo
         geo = {}
+        _GEO_MERGE_ETF = {"United Kingdom": "Europe - ex Euro"}
         for item in (api.get("RE-RegionalExposure") or []):
             region = item.get("Region", "")
             val = float(item.get("Value", 0) or 0)
             if val > 0.5 and region.lower() not in ("emerging market", "developing country",
                     "developed country", "developed countries", "emerging markets"):
-                geo[region] = round(val, 2)
+                region = _GEO_MERGE_ETF.get(region, region)
+                geo[region] = geo.get(region, 0) + round(val, 2)
         # Sectors
         sec = {}
         for k, v in api.items():
@@ -4128,23 +4272,23 @@ def diag_repo():
     try:
         hoy = date.today(); ini = (hoy - timedelta(days=10)).isoformat(); fin = hoy.isoformat()
         raw = _banxico_serie_rango(SERIE_TIIE28, ini, fin)
-        resultado["banxico"] = {"ok": len(raw) > 0, "token_set": bool(BANXICO_TOKEN), "registros": len(raw), "ultimo": raw[-1] if raw else None}
+        resultado["banxico"] = {"ok": len(raw) > 0, "registros": len(raw), "ultimo": raw[-1] if raw else None}
     except Exception as e:
-        resultado["banxico"] = {"ok": False, "error": str(e)}
+        resultado["banxico"] = {"ok": False, "error": "Error de conexión"}
     try:
         hoy = date.today()
         params = {"series_id": "DFF", "observation_start": (hoy-timedelta(days=10)).isoformat(),
                   "observation_end": hoy.isoformat(), "api_key": FRED_API_KEY, "file_type": "json"}
         r = requests.get(FRED_BASE, params=params, timeout=10)
         obs = r.json().get("observations", [])
-        resultado["fred"] = {"ok": len(obs) > 0, "key_set": bool(FRED_API_KEY), "status": r.status_code, "registros": len(obs), "ultimo": obs[-1] if obs else None}
+        resultado["fred"] = {"ok": len(obs) > 0, "registros": len(obs), "ultimo": obs[-1] if obs else None}
     except Exception as e:
-        resultado["fred"] = {"ok": False, "error": str(e)}
+        resultado["fred"] = {"ok": False, "error": "Error de conexión"}
     try:
         rend_mxn = get_repo_rendimientos(7.0, False); rend_usd = get_repo_rendimientos(4.0, True)
         resultado["rendimientos_mxn"] = rend_mxn; resultado["rendimientos_usd"] = rend_usd
     except Exception as e:
-        resultado["rendimientos"] = {"error": str(e)}
+        resultado["rendimientos"] = {"error": "Error de cálculo"}
     return jsonify(resultado)
 
 
@@ -4153,6 +4297,9 @@ def diag_nav():
     """Diagnóstico Morningstar NAV API — prueba fetch de precios históricos."""
     if "usuario" not in session:
         return jsonify({"ok": False, "error": "No autenticado"}), 401
+    user_data = USERS.get(session.get("usuario", ""))
+    if not user_data or user_data.get("rol") != "admin":
+        return jsonify({"ok": False, "error": "No autorizado"}), 403
     try:
         isin = "MXP800501001"  # VXGUBCP A
         navs = get_ms_nav(isin, start="2026-02-01", end=date.today().isoformat())
@@ -4166,7 +4313,8 @@ def diag_nav():
             "bt_sample": bt[-3:] if bt else [],
         })
     except Exception as e:
-        return jsonify({"ok": False, "error": str(e)})
+        print(f"[ERROR] diag-nav: {e}")
+        return jsonify({"ok": False, "error": "Error en diagnóstico NAV"})
 
 
 @app.route("/api/diag-yf")
@@ -4311,13 +4459,66 @@ def api_creditos_db():
         r.raise_for_status()
         return jsonify({"ok": True, "data": r.json()})
     except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 500
+        print(f"[ERROR] creditos: {e}")
+        return jsonify({"ok": False, "error": "Error al consultar datos"}), 500
 
+
+def _prewarm_quilts():
+    """Pre-compute ALL caches at startup so first user request is instant."""
+    import time as _t
+    _t0 = _t.time()
+    for _attempt in range(3):
+        try:
+            print(f"[PREWARM] Computing quilt (asset classes)... attempt {_attempt+1}")
+            data = _compute_quilt()
+            _quilt_cache["data"] = data
+            _quilt_cache["ts"] = _t.time()
+            print(f"[PREWARM] Quilt done in {_t.time()-_t0:.1f}s")
+            break
+        except Exception as e:
+            print(f"[PREWARM] Quilt error (attempt {_attempt+1}): {e}")
+            if _attempt < 2:
+                _t.sleep(5)
+    try:
+        _t1 = _t.time()
+        print("[PREWARM] Computing quilt fondos...")
+        data2 = _compute_quilt_fondos()
+        _quilt_fondos_cache["data"] = data2
+        _quilt_fondos_cache["ts"] = _t.time()
+        print(f"[PREWARM] Quilt fondos done in {_t.time()-_t1:.1f}s")
+    except Exception as e:
+        print(f"[PREWARM] Quilt fondos error: {e}")
+    try:
+        print("[PREWARM] Pre-warming factor series...")
+        _fetch_factor_series()
+    except Exception as e:
+        print(f"[PREWARM] Factor series error: {e}")
+    # Pre-warm NAV cache for all Serie A funds (most commonly used)
+    try:
+        _t2 = _t.time()
+        print("[PREWARM] Pre-warming NAV cache (all Serie A)...")
+        nav_items = []
+        for fondo, series in ISIN_MAP.items():
+            isin = series.get("A")
+            if isin:
+                nav_items.append((isin, fondo, "A"))
+        def _fetch_nav(args):
+            isin, f, s = args
+            get_ms_nav(isin, expect_fund=f, expect_serie=s)
+        with ThreadPoolExecutor(max_workers=12) as executor:
+            list(executor.map(_fetch_nav, nav_items))
+        print(f"[PREWARM] NAV cache done ({len(nav_items)} funds) in {_t.time()-_t2:.1f}s")
+    except Exception as e:
+        print(f"[PREWARM] NAV cache error: {e}")
+    _prewarm_done.set()
+    print(f"[PREWARM] All done in {_t.time()-_t0:.1f}s total")
+
+
+# ── Pre-warm caches at startup (works with both gunicorn and direct run) ──
+if DB_TOKEN:
+    threading.Thread(target=cargar_catalogo_emisoras, daemon=True).start()
+threading.Thread(target=_prewarm_quilts, daemon=True).start()
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    # Pre-cargar catálogo de emisoras al iniciar
-    if DB_TOKEN:
-        import threading
-        threading.Thread(target=cargar_catalogo_emisoras, daemon=True).start()
     app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
