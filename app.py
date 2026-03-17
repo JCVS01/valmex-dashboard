@@ -3806,32 +3806,16 @@ def _compute_quilt():
         return None
 
     # Fetch all data in parallel (Banxico, FRED, Morningstar, Yahoo Finance)
-    def _yf_series(ticker):
-        try:
-            df = yf.download(ticker, start="2015-12-01", end=today.isoformat(),
-                             auto_adjust=True, progress=False)
-            if df is None or df.empty:
-                print(f"[QUILT] {ticker}: empty result (rate limited?)")
-                return pd.Series(dtype=float)
-            if isinstance(df.columns, pd.MultiIndex):
-                df.columns = df.columns.get_level_values(0)
-            s = df["Close"]
-            # Ensure flat Series (yfinance may return DataFrame with single column)
-            if isinstance(s, pd.DataFrame):
-                s = s.iloc[:, 0]
-            print(f"[QUILT] {ticker}: {len(s)} prices")
-            return s
-        except Exception as e:
-            print(f"[QUILT] {ticker} error: {e}")
-            return pd.Series(dtype=float)
-
-    # Fetch Banxico, FRED, Morningstar in main pool (reliable APIs)
-    _pool = ThreadPoolExecutor(max_workers=12)
+    # Fetch all data in parallel — Banxico, FRED, Morningstar only (no yfinance)
+    # Gold & Oil now use FRED instead of yfinance to avoid rate limiting on Render
+    _pool = ThreadPoolExecutor(max_workers=14)
     _fx_f = _pool.submit(bx_series, "SF43718")
     _cetes_f = _pool.submit(bx_series, "SF43936")
     _inpc_f = _pool.submit(bx_series, "SP1")
     _tasa_f = _pool.submit(bx_series, "SF61745")
     _bond_f = _pool.submit(fred_series, "IRLTLT01MXM156N")
+    _gold_f = _pool.submit(fred_series, "GOLDAMGBD228NLBM")  # Gold London PM Fix USD/oz
+    _oil_f = _pool.submit(fred_series, "DCOILWTICO")          # WTI Crude USD/bbl
     _naftrac_f = _pool.submit(ms_series, "NAFTRAC")
     _eem_f = _pool.submit(ms_series, "EEM")
     _urth_f = _pool.submit(ms_series, "URTH")
@@ -3842,30 +3826,14 @@ def _compute_quilt():
     inpc = _inpc_f.result(timeout=20)
     tasa = _tasa_f.result(timeout=20)
     bond10y = _bond_f.result(timeout=20)
+    gold = _gold_f.result(timeout=20)
+    oil = _oil_f.result(timeout=20)
     naftrac = _naftrac_f.result(timeout=20)
     eem = _eem_f.result(timeout=20)
     urth = _urth_f.result(timeout=20)
     bwx = _bwx_f.result(timeout=20)
     qqq = _qqq_f.result(timeout=20)
     _pool.shutdown(wait=False)
-    # yfinance in separate daemon pool — may hang on rate limiting, don't block
-    gold = pd.Series(dtype=float)
-    oil = pd.Series(dtype=float)
-    try:
-        _yf_pool = ThreadPoolExecutor(max_workers=2)
-        _gold_f = _yf_pool.submit(_yf_series, "GC=F")
-        _oil_f = _yf_pool.submit(_yf_series, "CL=F")
-        try:
-            gold = _gold_f.result(timeout=15)
-        except Exception:
-            print("[QUILT] Gold (GC=F) timed out — skipping")
-        try:
-            oil = _oil_f.result(timeout=15)
-        except Exception:
-            print("[QUILT] Oil (CL=F) timed out — skipping")
-        _yf_pool.shutdown(wait=False)
-    except Exception as e:
-        print(f"[QUILT] yfinance pool error: {e}")
 
     rets = {}
 
@@ -4031,24 +3999,12 @@ def api_diag_apis():
         results["morningstar"] = {"status": r.status_code, "time": round(_t.time()-t0, 2), "ok": r.ok}
     except Exception as e:
         results["morningstar"] = {"error": str(e), "ok": False}
-    # 4. Yahoo Finance (run in separate thread with timeout — may hang on rate limit)
-    def _yf_check():
-        import yfinance as _yf
-        t = _yf.Ticker("GC=F")
-        h = t.history(period="5d")
-        return len(h)
+    # 4. FRED Gold (replaced yfinance — was rate limited on Render)
     try:
         t0 = _t.time()
-        _yp = ThreadPoolExecutor(max_workers=1)
-        _yf_fut = _yp.submit(_yf_check)
-        try:
-            rows = _yf_fut.result(timeout=10)
-            results["yfinance"] = {"rows": rows, "time": round(_t.time()-t0, 2), "ok": rows > 0}
-        except Exception:
-            results["yfinance"] = {"error": "Timeout (10s) — likely rate limited", "time": round(_t.time()-t0, 2), "ok": False}
-        _yp.shutdown(wait=False)
-    except Exception as e:
-        results["yfinance"] = {"error": str(e), "ok": False}
+        r = requests.get(FRED_BASE, params={"series_id": "GOLDAMGBD228NLBM", "api_key": FRED_API_KEY,
+            "file_type": "json", "observation_start": "2025-01-01", "observation_end": "2025-01-31"}, timeout=10)
+        results["fred_gold"] = {"status": r.status_code, "time": round(_t.time()-t0, 2), "ok": r.ok}
     # Prewarm status
     results["prewarm_done"] = _prewarm_done.is_set()
     results["quilt_cached"] = _quilt_cache["data"] is not None
