@@ -4132,30 +4132,51 @@ function renderPerfiles(data, prefix, chartStore) {
 // ── CMP2: Quilt + Perfiles (reuse same data) ──
 let _cmp2QuiltsLoaded = false;
 const _cmp2PerfilCharts = {};
-async function loadCmp2Quilts() {
+async function loadCmp2Quilts(retryCount) {
   if (_cmp2QuiltsLoaded) return;
+  const attempt = retryCount || 0;
+  const maxRetries = 4;
   const errStyle = 'color:#DC2626;text-align:center;padding:20px;font-family:Montserrat,sans-serif;font-size:13px;';
+  const loadingStyle = 'color:var(--gray);text-align:center;padding:40px 0;font-family:Montserrat,sans-serif;font-size:13px;';
   // Fetch all three endpoints in parallel
   const [qRes, qfRes, pRes] = await Promise.allSettled([
-    !_quiltData ? fetch('/api/quilt').then(r => r.json()) : Promise.resolve(null),
-    !_quiltFondosData ? fetch('/api/quilt_fondos').then(r => r.json()) : Promise.resolve(null),
+    !_quiltData ? fetch('/api/quilt').then(r => ({status: r.status, data: r.status === 200 ? r.json() : r.json()})).then(async o => ({status: o.status, value: await o.data})) : Promise.resolve({status: 200, value: null}),
+    !_quiltFondosData ? fetch('/api/quilt_fondos').then(r => ({status: r.status, data: r.json()})).then(async o => ({status: o.status, value: await o.data})) : Promise.resolve({status: 200, value: null}),
     !_perfilesData ? fetch('/api/perfiles').then(r => r.json()) : Promise.resolve(null),
   ]);
-  if (qRes.status === 'fulfilled' && qRes.value?.ok) _quiltData = qRes.value;
-  else if (qRes.status === 'rejected' || (qRes.value && !qRes.value.ok)) {
-    const msg = qRes.status === 'rejected' ? 'Error de conexión' : (qRes.value?.error || 'Error desconocido');
+  // Check if any returned 202 (still loading) or 504 (timeout)
+  let needsRetry = false;
+  const qr = qRes.status === 'fulfilled' ? qRes.value : null;
+  const qfr = qfRes.status === 'fulfilled' ? qfRes.value : null;
+  if (qr && qr.value?.ok) _quiltData = qr.value;
+  else if (qr && (qr.status === 202 || qr.status === 504)) needsRetry = true;
+  else if (qRes.status === 'rejected' || (qr && qr.value && !qr.value.ok && qr.status >= 400 && qr.status !== 202 && qr.status !== 504)) {
+    const msg = qRes.status === 'rejected' ? 'Error de conexión' : (qr?.value?.error || 'Error desconocido');
     document.getElementById('cmp2-quilt-table-wrap').innerHTML = '<p style="'+errStyle+'">'+msg+'</p>';
   }
-  if (qfRes.status === 'fulfilled' && qfRes.value?.ok) _quiltFondosData = qfRes.value;
-  else if (qfRes.status === 'rejected' || (qfRes.value && !qfRes.value.ok)) {
-    const msg = qfRes.status === 'rejected' ? 'Error de conexión' : (qfRes.value?.error || 'Error desconocido');
+  if (qfr && qfr.value?.ok) _quiltFondosData = qfr.value;
+  else if (qfr && (qfr.status === 202 || qfr.status === 504)) needsRetry = true;
+  else if (qfRes.status === 'rejected' || (qfr && qfr.value && !qfr.value.ok && qfr.status >= 400 && qfr.status !== 202 && qfr.status !== 504)) {
+    const msg = qfRes.status === 'rejected' ? 'Error de conexión' : (qfr?.value?.error || 'Error desconocido');
     document.getElementById('cmp2-quilt-fondos-wrap').innerHTML = '<p style="'+errStyle+'">'+msg+'</p>';
   }
   if (pRes.status === 'fulfilled' && pRes.value?.ok) _perfilesData = pRes.value;
+  else if (pRes.status === 'fulfilled' && pRes.value && !pRes.value.ok) { /* ignore perfiles loading */ }
   if (_quiltData) renderQuiltChart(_quiltData, 'cmp2-quilt-table-wrap', 'cmp2-quilt-note');
   if (_quiltFondosData) renderQuiltFondos(_quiltFondosData, 'cmp2-quilt-fondos-wrap', 'cmp2-quilt-fondos-note');
   if (_perfilesData) renderPerfiles(_perfilesData, 'cmp2-', _cmp2PerfilCharts);
-  if (_quiltData && _quiltFondosData && _perfilesData) _cmp2QuiltsLoaded = true;
+  if (_quiltData && _quiltFondosData && _perfilesData) { _cmp2QuiltsLoaded = true; return; }
+  // Auto-retry if data is still loading
+  if (needsRetry && attempt < maxRetries) {
+    const delay = 10000; // 10s between retries
+    console.log(`[Quilts] Datos cargando, reintento ${attempt+1}/${maxRetries} en ${delay/1000}s...`);
+    if (!_quiltData) document.getElementById('cmp2-quilt-table-wrap').innerHTML = '<p style="'+loadingStyle+'">Cargando datos de mercado... (intento '+(attempt+2)+')</p>';
+    if (!_quiltFondosData) document.getElementById('cmp2-quilt-fondos-wrap').innerHTML = '<p style="'+loadingStyle+'">Cargando rendimientos de fondos... (intento '+(attempt+2)+')</p>';
+    setTimeout(() => loadCmp2Quilts(attempt + 1), delay);
+  } else if (!_quiltData && !_quiltFondosData && attempt >= maxRetries) {
+    if (!_quiltData) document.getElementById('cmp2-quilt-table-wrap').innerHTML = '<p style="'+errStyle+'">No se pudieron cargar los datos. Recarga la página.</p>';
+    if (!_quiltFondosData) document.getElementById('cmp2-quilt-fondos-wrap').innerHTML = '<p style="'+errStyle+'">No se pudieron cargar los datos. Recarga la página.</p>';
+  }
 }
 
 // PDF Export

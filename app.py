@@ -3947,6 +3947,54 @@ def _compute_quilt():
         "updated": datetime.now().strftime("%d/%m/%Y"),
     }
 
+@app.route("/api/diag-apis")
+def api_diag_apis():
+    """Quick health check for all external APIs used by quilt."""
+    if "usuario" not in session:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    import time as _t
+    results = {}
+    # 1. Banxico
+    try:
+        t0 = _t.time()
+        r = requests.get(
+            f"https://www.banxico.org.mx/SieAPIRest/service/v1/series/SF43718/datos/2025-01-01/2025-01-31",
+            headers={"Bmx-Token": BANXICO_TOKEN, "Accept": "application/json"}, timeout=10)
+        results["banxico"] = {"status": r.status_code, "time": round(_t.time()-t0, 2), "ok": r.ok}
+    except Exception as e:
+        results["banxico"] = {"error": str(e), "ok": False}
+    # 2. FRED
+    try:
+        t0 = _t.time()
+        r = requests.get(FRED_BASE, params={"series_id": "DGS10", "api_key": FRED_API_KEY,
+            "file_type": "json", "observation_start": "2025-01-01", "observation_end": "2025-01-31"}, timeout=10)
+        results["fred"] = {"status": r.status_code, "time": round(_t.time()-t0, 2), "ok": r.ok}
+    except Exception as e:
+        results["fred"] = {"error": str(e), "ok": False}
+    # 3. Morningstar
+    try:
+        t0 = _t.time()
+        r = _ms_session.get(
+            "https://api.morningstar.com/service/mf/UnadjustedNAV/TICKER/NAFTRAC",
+            params={"startdate": "2025-01-01", "enddate": "2025-01-31", "accesscode": MS_ACCESS}, timeout=10)
+        results["morningstar"] = {"status": r.status_code, "time": round(_t.time()-t0, 2), "ok": r.ok}
+    except Exception as e:
+        results["morningstar"] = {"error": str(e), "ok": False}
+    # 4. Yahoo Finance
+    try:
+        t0 = _t.time()
+        import yfinance as yf
+        t = yf.Ticker("GC=F")
+        h = t.history(period="5d")
+        results["yfinance"] = {"rows": len(h), "time": round(_t.time()-t0, 2), "ok": len(h) > 0}
+    except Exception as e:
+        results["yfinance"] = {"error": str(e), "ok": False}
+    # Prewarm status
+    results["prewarm_done"] = _prewarm_done.is_set()
+    results["quilt_cached"] = _quilt_cache["data"] is not None
+    results["quilt_fondos_cached"] = _quilt_fondos_cache["data"] is not None
+    return jsonify(results)
+
 @app.route("/api/quilt")
 def api_quilt():
     if "usuario" not in session:
@@ -3960,12 +4008,18 @@ def api_quilt():
         if _quilt_cache["data"]:
             return jsonify(_quilt_cache["data"])
         return jsonify({"ok": False, "loading": True, "error": "Datos cargando, reintenta en unos segundos"}), 202
-    # Prewarm finished but cache empty (prewarm failed) — try once
+    # Prewarm finished but cache empty (prewarm failed) — try once with timeout
+    from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
     try:
-        data = _compute_quilt()
+        with ThreadPoolExecutor(max_workers=1) as ex:
+            future = ex.submit(_compute_quilt)
+            data = future.result(timeout=25)
         _quilt_cache["data"] = data
         _quilt_cache["ts"] = time.time()
         return jsonify(data)
+    except FuturesTimeout:
+        print("[ERROR] api_quilt: _compute_quilt timed out (25s)")
+        return jsonify({"ok": False, "error": "Timeout calculando datos históricos, reintenta"}), 504
     except Exception as e:
         print(f"[ERROR] api_quilt: {e}")
         return jsonify({"ok": False, "error": "Error al calcular datos históricos"}), 500
@@ -4179,11 +4233,17 @@ def api_quilt_fondos():
         if _quilt_fondos_cache["data"]:
             return jsonify(_quilt_fondos_cache["data"])
         return jsonify({"ok": False, "loading": True, "error": "Datos cargando, reintenta en unos segundos"}), 202
+    from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
     try:
-        data = _compute_quilt_fondos()
+        with ThreadPoolExecutor(max_workers=1) as ex:
+            future = ex.submit(_compute_quilt_fondos)
+            data = future.result(timeout=25)
         _quilt_fondos_cache["data"] = data
         _quilt_fondos_cache["ts"] = time.time()
         return jsonify(data)
+    except FuturesTimeout:
+        print("[ERROR] api_quilt_fondos: _compute_quilt_fondos timed out (25s)")
+        return jsonify({"ok": False, "error": "Timeout calculando datos de fondos, reintenta"}), 504
     except Exception as e:
         print(f"[ERROR] api_quilt_fondos: {e}")
         return jsonify({"ok": False, "error": "Error al calcular datos de fondos"}), 500
