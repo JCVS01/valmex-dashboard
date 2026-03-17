@@ -1198,7 +1198,7 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
             <thead><tr><th>Fondo</th><th>Serie</th><th>Descripci&oacute;n</th><th class="r" id="cmp2-h-th-a">P. Actual</th><th class="r" id="cmp2-h-th-b">P. Modelo</th><th class="r" id="cmp2-h-th-c">P. Propuesta</th><th class="r">MTD</th><th class="r">6 Meses</th><th class="r">YTD</th><th class="r">12M</th><th class="r">24M</th></tr></thead>
             <tbody id="cmp2-holdings-tbody"></tbody>
           </table>
-          <p style="font-size:10px;color:#64748B;padding:8px 16px 10px;margin:0;font-family:'Montserrat',sans-serif;line-height:1.5;font-style:italic;">Rendimientos con plazo menor a un a&ntilde;o expresados en t&eacute;rminos efectivos. Rendimientos con plazo mayor o igual a un a&ntilde;o expresados en t&eacute;rminos anualizados.</p>
+          <p style="font-size:10px;color:#64748B;padding:8px 16px 10px;margin:0;font-family:'Montserrat',sans-serif;line-height:1.5;font-style:italic;">Deuda: rendimientos menores a un a&ntilde;o anualizados (base 360), mayores a un a&ntilde;o efectivos. Renta variable: rendimientos efectivos para cualquier periodo.</p>
         </div>
       </div>
 
@@ -2425,21 +2425,21 @@ requestAnimationFrame(()=>{
 // Shared utilities — Rendimientos & Risk Metrics
 // ══════════════════════════════════════════════════════════════════════════
 
-// ── Rendimientos desde backtesting (retorno real compuesto) ──
-// Convierte rendimiento efectivo a anualizado (CAGR) si el período >= 365 días.
-// r_decimal = rendimiento como decimal (0.05 = 5%). days = días calendario del período.
-// Retorna decimal. < 365 días: devuelve efectivo. >= 365 días: devuelve CAGR.
-function rendDisplay(r_decimal, days) {
+// ── Rendimientos — convención operadora ──
+// Deuda: <1 año anualizado simple (×360/días), ≥1 año efectivo acumulado
+// RV/Ciclo/otros: efectivo para cualquier periodo
+// isDeuda: true para fondos de deuda/reporto
+function rendDisplay(r_decimal, days, isDeuda) {
   if (r_decimal == null || days == null || days <= 0) return r_decimal;
-  if (days < 365) return r_decimal; // efectivo
-  return Math.pow(1 + r_decimal, 365 / days) - 1; // CAGR anualizado
+  if (isDeuda && days < 365) return r_decimal * 360 / days; // anualizado simple base 360
+  return r_decimal; // efectivo
 }
 
 // Igual pero para valores en porcentaje (5.0 = 5%)
-function rendDisplayPct(r_pct, days) {
+function rendDisplayPct(r_pct, days, isDeuda) {
   if (r_pct == null || days == null || days <= 0) return r_pct;
-  if (days < 365) return r_pct;
-  return (Math.pow(1 + r_pct / 100, 365 / days) - 1) * 100;
+  if (isDeuda && days < 365) return r_pct * 360 / days; // anualizado simple base 360
+  return r_pct; // efectivo
 }
 
 function calcRendFromBt(bt) {
@@ -3061,12 +3061,14 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
         const pcts = items.map(f => f ? f.pct : 0);
         const src = items.find(f=>f);
         const rawSerie = src?.serie || '—';
-        // Universal: < 1 año efectivo, >= 1 año anualizado (CAGR)
-        let v_r1m = rendDisplayPct(src?.r1m, src?.days_r1m || fallbackDaysMtd);
-        let v_r6m = rendDisplayPct(src?.r6m, src?.days_r6m || fallbackDays6m);
-        let v_ytd = rendDisplayPct(src?.ytd, src?.days_ytd || fallbackDaysYtd);
-        let v_r1y = rendDisplayPct(src?.r1y, src?.days_r1y || 365);
-        let v_r2y = rendDisplayPct(src?.r2y, src?.days_r2y || 730);
+        const isDeuda = src?.tipo_fondo === 'deuda' || DEUDA_SET.has(fund) || REPORTO_SET.has(fund) || fund.startsWith('Reporto ');
+        // Deuda: <1yr anualizado simple base 360, ≥1yr efectivo
+        // RV/otros: todo efectivo
+        let v_r1m = rendDisplayPct(src?.r1m, src?.days_r1m || fallbackDaysMtd, isDeuda);
+        let v_r6m = rendDisplayPct(src?.r6m, src?.days_r6m || fallbackDays6m, isDeuda);
+        let v_ytd = rendDisplayPct(src?.ytd, src?.days_ytd || fallbackDaysYtd, isDeuda);
+        let v_r1y = rendDisplayPct(src?.r1y, src?.days_r1y || 365, isDeuda);
+        let v_r2y = rendDisplayPct(src?.r2y, src?.days_r2y || 730, isDeuda);
         // Determine clase de activo — use rawSerie as hint for individual stocks/ETFs
         let claseActivo = getClaseActivo(fund, src?.tipo_fondo);
         let serie = rawSerie;
@@ -3108,7 +3110,7 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
       rows.forEach((row, ri) => {
         row.forEach((col, ci) => {
           const [label, key] = col;
-          const displayed = rendDisplay(r[key], r[key + '_days']);
+          const displayed = r[key]; // portafolio: siempre efectivo
           const v = displayed != null ? displayed * 100 : null;
           const color = v == null ? '#94A3B8' : v >= 0 ? '#047857' : '#DC2626';
           const borderB = ri < rows.length - 1 ? 'border-bottom:1px solid #F1F5F9;' : '';
@@ -5038,12 +5040,11 @@ function buildApiBody(valor) {
 
 function aplicarDatos(data, valor) {
 
-  // ── Rendimientos (desde backtesting real, igual que Comparativa 2) ──
-  // < 1 año: efectivo, >= 1 año: anualizado (CAGR)
+  // ── Rendimientos (desde backtesting real) — portafolio siempre efectivo ──
   const r = calcRendFromBt(data.bt_portafolio);
   const fmtR = v => (v == null) ? '—' : ((v * 100) >= 0 ? '+' : '') + (v * 100).toFixed(2) + '%';
   const ordenKeys = ['mtd','r3m','ytd','r1y','r2y','r3y'];
-  const orden = ordenKeys.map(k => rendDisplay(r[k], r[k + '_days']));
+  const orden = ordenKeys.map(k => r[k]); // portafolio: siempre efectivo
   document.querySelectorAll('#page-propuesta .rh-val').forEach((el, i) => {
     if (i < orden.length) {
       el.textContent = fmtR(orden[i]);
