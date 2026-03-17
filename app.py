@@ -18,6 +18,38 @@ from sklearn.linear_model import ElasticNetCV
 from sklearn.covariance import LedoitWolf
 
 BASE = os.path.dirname(os.path.abspath(__file__))
+_DISK_CACHE_DIR = os.path.join(BASE, ".cache")
+os.makedirs(_DISK_CACHE_DIR, exist_ok=True)
+
+
+def _disk_cache_save(name: str, data: dict):
+    """Save cache data to disk as JSON with timestamp."""
+    try:
+        path = os.path.join(_DISK_CACHE_DIR, f"{name}.json")
+        with open(path, "w") as f:
+            json.dump({"ts": time.time(), "data": data}, f)
+        print(f"[DISK CACHE] Saved {name} ({os.path.getsize(path) // 1024}KB)")
+    except Exception as e:
+        print(f"[DISK CACHE] Error saving {name}: {e}")
+
+
+def _disk_cache_load(name: str):
+    """Load cache data from disk if not expired. Returns (data, ts) or (None, 0)."""
+    try:
+        path = os.path.join(_DISK_CACHE_DIR, f"{name}.json")
+        if not os.path.exists(path):
+            return None, 0
+        with open(path) as f:
+            obj = json.load(f)
+        ts = obj.get("ts", 0)
+        if _cache_expired(ts):
+            print(f"[DISK CACHE] {name} expired")
+            return None, 0
+        print(f"[DISK CACHE] {name} loaded from disk (age: {(time.time()-ts)/60:.0f}min)")
+        return obj["data"], ts
+    except Exception as e:
+        print(f"[DISK CACHE] Error loading {name}: {e}")
+        return None, 0
 
 
 def _cache_expired(ts: float) -> bool:
@@ -4019,6 +4051,7 @@ def api_quilt():
             data = future.result(timeout=25)
         _quilt_cache["data"] = data
         _quilt_cache["ts"] = time.time()
+        _disk_cache_save("quilt", data)
         return jsonify(data)
     except FuturesTimeout:
         print("[ERROR] api_quilt: _compute_quilt timed out (25s)")
@@ -4243,6 +4276,7 @@ def api_quilt_fondos():
             data = future.result(timeout=25)
         _quilt_fondos_cache["data"] = data
         _quilt_fondos_cache["ts"] = time.time()
+        _disk_cache_save("quilt_fondos", data)
         return jsonify(data)
     except FuturesTimeout:
         print("[ERROR] api_quilt_fondos: _compute_quilt_fondos timed out (25s)")
@@ -4563,29 +4597,46 @@ def _prewarm_quilts():
     """Pre-compute ALL caches at startup so first user request is instant."""
     import time as _t
     _t0 = _t.time()
-    for _attempt in range(2):
+
+    # Try disk cache first (survives Render restarts)
+    disk_q, disk_q_ts = _disk_cache_load("quilt")
+    if disk_q:
+        _quilt_cache["data"] = disk_q
+        _quilt_cache["ts"] = disk_q_ts
+        print(f"[PREWARM] Quilt loaded from disk cache")
+    else:
+        for _attempt in range(2):
+            try:
+                print(f"[PREWARM] Computing quilt (asset classes)... attempt {_attempt+1}")
+                data = _compute_quilt()
+                _quilt_cache["data"] = data
+                _quilt_cache["ts"] = _t.time()
+                _disk_cache_save("quilt", data)
+                print(f"[PREWARM] Quilt done in {_t.time()-_t0:.1f}s")
+                break
+            except Exception as e:
+                import traceback
+                print(f"[PREWARM] Quilt error (attempt {_attempt+1}): {e}")
+                traceback.print_exc()
+                if _attempt < 1:
+                    _t.sleep(3)
+
+    disk_qf, disk_qf_ts = _disk_cache_load("quilt_fondos")
+    if disk_qf:
+        _quilt_fondos_cache["data"] = disk_qf
+        _quilt_fondos_cache["ts"] = disk_qf_ts
+        print(f"[PREWARM] Quilt fondos loaded from disk cache")
+    else:
         try:
-            print(f"[PREWARM] Computing quilt (asset classes)... attempt {_attempt+1}")
-            data = _compute_quilt()
-            _quilt_cache["data"] = data
-            _quilt_cache["ts"] = _t.time()
-            print(f"[PREWARM] Quilt done in {_t.time()-_t0:.1f}s")
-            break
+            _t1 = _t.time()
+            print("[PREWARM] Computing quilt fondos...")
+            data2 = _compute_quilt_fondos()
+            _quilt_fondos_cache["data"] = data2
+            _quilt_fondos_cache["ts"] = _t.time()
+            _disk_cache_save("quilt_fondos", data2)
+            print(f"[PREWARM] Quilt fondos done in {_t.time()-_t1:.1f}s")
         except Exception as e:
-            import traceback
-            print(f"[PREWARM] Quilt error (attempt {_attempt+1}): {e}")
-            traceback.print_exc()
-            if _attempt < 1:
-                _t.sleep(3)
-    try:
-        _t1 = _t.time()
-        print("[PREWARM] Computing quilt fondos...")
-        data2 = _compute_quilt_fondos()
-        _quilt_fondos_cache["data"] = data2
-        _quilt_fondos_cache["ts"] = _t.time()
-        print(f"[PREWARM] Quilt fondos done in {_t.time()-_t1:.1f}s")
-    except Exception as e:
-        print(f"[PREWARM] Quilt fondos error: {e}")
+            print(f"[PREWARM] Quilt fondos error: {e}")
     try:
         print("[PREWARM] Pre-warming factor series...")
         _fetch_factor_series()
