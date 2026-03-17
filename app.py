@@ -1481,6 +1481,12 @@ def get_accion_yf(ticker: str) -> dict | None:
             except Exception:
                 pass
 
+        # Days elapsed for each period (for frontend annualization)
+        def _days_since(p_ref, target_days):
+            if p_ref is not None:
+                return target_days
+            return None
+
         result = {
             "ticker":        ticker,
             "nombre":        nombre,
@@ -1494,9 +1500,16 @@ def get_accion_yf(ticker: str) -> dict | None:
             "r3m":           rend_efectivo(p_3m),
             "r6m":           rend_efectivo(p_6m),
             "ytd":           rend_efectivo(p_ytd),
-            "r1y":           rend_anual(p_1y, 1),
-            "r2y":           rend_anual(p_2y, 2),
-            "r3y":           rend_anual(p_3y, 3),
+            "r1y":           rend_efectivo(p_1y),
+            "r2y":           rend_efectivo(p_2y),
+            "r3y":           rend_efectivo(p_3y),
+            "days_r1m":      (today - date(today.year, today.month, 1)).days or 1,
+            "days_r3m":      91,
+            "days_r6m":      182,
+            "days_ytd":      (today - date(today.year, 1, 1)).days or 1,
+            "days_r1y":      365,
+            "days_r2y":      730,
+            "days_r3y":      1095,
             "sectores":      sectores_etf,
             "geo":           geo_etf,
             "historico":     historico_bt,
@@ -2476,9 +2489,12 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
             "r2y": nav_rend.get("r2y", 0),
             "r3y": nav_rend.get("r3y", 0),
             "days_r1m": nav_rend.get("days_r1m"),
+            "days_r3m": nav_rend.get("days_r3m"),
             "days_r6m": nav_rend.get("days_r6m"),
             "days_ytd": nav_rend.get("days_ytd"),
             "days_r1y": nav_rend.get("days_r1y"),
+            "days_r2y": nav_rend.get("days_r2y"),
+            "days_r3y": nav_rend.get("days_r3y"),
         })
 
         # ── Look-through: per-fund risk driver mapping ──
@@ -2611,11 +2627,14 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
         _today = date.today()
         _days_ytd = (_today - date(_today.year, 1, 1)).days or 1
         lista.append({"fondo": label_corto, "serie": "—", "pct": round(pct, 2),
+                      "tipo_fondo": "deuda",
                       "r1m": round(rend["r1m"], 6), "r3m": round(rend["r3m"], 6),
                       "r6m": round(rend["r6m"], 6), "ytd": round(rend["ytd"], 6),
                       "r1y": round(rend["r1y"], 6), "r2y": round(rend["r2y"], 6),
                       "r3y": round(rend["r3y"], 6),
-                      "days_r1m": 30, "days_r6m": 182, "days_ytd": _days_ytd})
+                      "days_r1m": 30, "days_r3m": 91, "days_r6m": 182,
+                      "days_ytd": _days_ytd, "days_r1y": 365,
+                      "days_r2y": 730, "days_r3y": 1095})
         # Look-through for Reporto — rate driver = full weight
         _repo_drivers = {}
         if es_usd:
@@ -2669,6 +2688,10 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
             "r6m": round(yfd.get("r6m") or 0, 6), "ytd": round(yfd.get("ytd") or 0, 6),
             "r1y": round(yfd.get("r1y") or 0, 6), "r2y": round(yfd.get("r2y") or 0, 6),
             "r3y": round(yfd.get("r3y") or 0, 6),
+            "days_r1m": yfd.get("days_r1m"), "days_r3m": yfd.get("days_r3m"),
+            "days_r6m": yfd.get("days_r6m"), "days_ytd": yfd.get("days_ytd"),
+            "days_r1y": yfd.get("days_r1y"), "days_r2y": yfd.get("days_r2y"),
+            "days_r3y": yfd.get("days_r3y"),
         })
 
         # Sectores
@@ -3986,23 +4009,33 @@ def _compute_quilt_fondos():
             except Exception as e:
                 print(f"[QUILT FONDOS] Error {futures[future]}: {e}")
 
-    # Calculate annual returns (year-end / prev year-end - 1)
+    # Calculate annual returns using operadora methodology:
+    # End NAV = first business day of Y+1 (T+1 settlement), Start NAV = last day of Y-1
+    # For current (incomplete) year: use last available NAV as end
     rets = {}
     for fondo, s in nav_series.items():
         fund_rets = {}
         for y in years:
-            sub_end = s[s.index.year == y]
             sub_start = s[s.index.year == y - 1]
-            if len(sub_end) > 0 and len(sub_start) > 0:
-                end_nav = float(sub_end.iloc[-1])
-                start_nav = float(sub_start.iloc[-1])
-                if start_nav > 0:
-                    ret = round((end_nav / start_nav - 1) * 100, 2)
-                    # Filter out restructurings/splits (no fund legitimately returns ±200%)
-                    if -200 <= ret <= 200:
-                        fund_rets[str(y)] = ret
-                    else:
-                        print(f"[QUILT FONDOS] {fondo} {y}: {ret}% skipped (likely restructuring)")
+            if len(sub_start) == 0:
+                continue
+            start_nav = float(sub_start.iloc[-1])
+            # For completed years, use first NAV of next year (operadora convention)
+            sub_next = s[s.index.year == y + 1]
+            sub_curr = s[s.index.year == y]
+            if y < current_year and len(sub_next) > 0:
+                end_nav = float(sub_next.iloc[0])
+            elif len(sub_curr) > 0:
+                end_nav = float(sub_curr.iloc[-1])
+            else:
+                continue
+            if start_nav > 0:
+                ret = round((end_nav / start_nav - 1) * 100, 2)
+                # Filter out restructurings/splits (no fund legitimately returns ±200%)
+                if -200 <= ret <= 200:
+                    fund_rets[str(y)] = ret
+                else:
+                    print(f"[QUILT FONDOS] {fondo} {y}: {ret}% skipped (likely restructuring)")
         if fund_rets:
             rets[fondo] = fund_rets
 
