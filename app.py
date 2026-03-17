@@ -4005,6 +4005,8 @@ def api_diag_apis():
         r = requests.get(FRED_BASE, params={"series_id": "GOLDAMGBD228NLBM", "api_key": FRED_API_KEY,
             "file_type": "json", "observation_start": "2025-01-01", "observation_end": "2025-01-31"}, timeout=10)
         results["fred_gold"] = {"status": r.status_code, "time": round(_t.time()-t0, 2), "ok": r.ok}
+    except Exception as e:
+        results["fred_gold"] = {"error": str(e), "ok": False}
     # Prewarm status
     results["prewarm_done"] = _prewarm_done.is_set()
     results["quilt_cached"] = _quilt_cache["data"] is not None
