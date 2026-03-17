@@ -3825,40 +3825,47 @@ def _compute_quilt():
             print(f"[QUILT] {ticker} error: {e}")
             return pd.Series(dtype=float)
 
-    with ThreadPoolExecutor(max_workers=14) as _pool:
-        _fx_f = _pool.submit(bx_series, "SF43718")
-        _cetes_f = _pool.submit(bx_series, "SF43936")
-        _inpc_f = _pool.submit(bx_series, "SP1")
-        _tasa_f = _pool.submit(bx_series, "SF61745")
-        _bond_f = _pool.submit(fred_series, "IRLTLT01MXM156N")
-        _naftrac_f = _pool.submit(ms_series, "NAFTRAC")
-        _eem_f = _pool.submit(ms_series, "EEM")
-        _urth_f = _pool.submit(ms_series, "URTH")
-        _bwx_f = _pool.submit(ms_series, "BWX")
-        _qqq_f = _pool.submit(ms_series, "QQQ")
-        _gold_f = _pool.submit(_yf_series, "GC=F")
-        _oil_f = _pool.submit(_yf_series, "CL=F")
-        fx = _fx_f.result(timeout=15)
-        cetes = _cetes_f.result(timeout=15)
-        inpc = _inpc_f.result(timeout=15)
-        tasa = _tasa_f.result(timeout=15)
-        bond10y = _bond_f.result(timeout=15)
-        naftrac = _naftrac_f.result(timeout=15)
-        eem = _eem_f.result(timeout=15)
-        urth = _urth_f.result(timeout=15)
-        bwx = _bwx_f.result(timeout=15)
-        qqq = _qqq_f.result(timeout=15)
-        # yfinance may hang on rate limiting — use short timeout and fallback to empty
+    # Fetch Banxico, FRED, Morningstar in main pool (reliable APIs)
+    _pool = ThreadPoolExecutor(max_workers=12)
+    _fx_f = _pool.submit(bx_series, "SF43718")
+    _cetes_f = _pool.submit(bx_series, "SF43936")
+    _inpc_f = _pool.submit(bx_series, "SP1")
+    _tasa_f = _pool.submit(bx_series, "SF61745")
+    _bond_f = _pool.submit(fred_series, "IRLTLT01MXM156N")
+    _naftrac_f = _pool.submit(ms_series, "NAFTRAC")
+    _eem_f = _pool.submit(ms_series, "EEM")
+    _urth_f = _pool.submit(ms_series, "URTH")
+    _bwx_f = _pool.submit(ms_series, "BWX")
+    _qqq_f = _pool.submit(ms_series, "QQQ")
+    fx = _fx_f.result(timeout=20)
+    cetes = _cetes_f.result(timeout=20)
+    inpc = _inpc_f.result(timeout=20)
+    tasa = _tasa_f.result(timeout=20)
+    bond10y = _bond_f.result(timeout=20)
+    naftrac = _naftrac_f.result(timeout=20)
+    eem = _eem_f.result(timeout=20)
+    urth = _urth_f.result(timeout=20)
+    bwx = _bwx_f.result(timeout=20)
+    qqq = _qqq_f.result(timeout=20)
+    _pool.shutdown(wait=False)
+    # yfinance in separate daemon pool — may hang on rate limiting, don't block
+    gold = pd.Series(dtype=float)
+    oil = pd.Series(dtype=float)
+    try:
+        _yf_pool = ThreadPoolExecutor(max_workers=2)
+        _gold_f = _yf_pool.submit(_yf_series, "GC=F")
+        _oil_f = _yf_pool.submit(_yf_series, "CL=F")
         try:
             gold = _gold_f.result(timeout=15)
         except Exception:
             print("[QUILT] Gold (GC=F) timed out — skipping")
-            gold = pd.Series(dtype=float)
         try:
             oil = _oil_f.result(timeout=15)
         except Exception:
             print("[QUILT] Oil (CL=F) timed out — skipping")
-            oil = pd.Series(dtype=float)
+        _yf_pool.shutdown(wait=False)
+    except Exception as e:
+        print(f"[QUILT] yfinance pool error: {e}")
 
     rets = {}
 
@@ -4024,13 +4031,22 @@ def api_diag_apis():
         results["morningstar"] = {"status": r.status_code, "time": round(_t.time()-t0, 2), "ok": r.ok}
     except Exception as e:
         results["morningstar"] = {"error": str(e), "ok": False}
-    # 4. Yahoo Finance
+    # 4. Yahoo Finance (run in separate thread with timeout — may hang on rate limit)
+    def _yf_check():
+        import yfinance as _yf
+        t = _yf.Ticker("GC=F")
+        h = t.history(period="5d")
+        return len(h)
     try:
         t0 = _t.time()
-        import yfinance as yf
-        t = yf.Ticker("GC=F")
-        h = t.history(period="5d")
-        results["yfinance"] = {"rows": len(h), "time": round(_t.time()-t0, 2), "ok": len(h) > 0}
+        _yp = ThreadPoolExecutor(max_workers=1)
+        _yf_fut = _yp.submit(_yf_check)
+        try:
+            rows = _yf_fut.result(timeout=10)
+            results["yfinance"] = {"rows": rows, "time": round(_t.time()-t0, 2), "ok": rows > 0}
+        except Exception:
+            results["yfinance"] = {"error": "Timeout (10s) — likely rate limited", "time": round(_t.time()-t0, 2), "ok": False}
+        _yp.shutdown(wait=False)
     except Exception as e:
         results["yfinance"] = {"error": str(e), "ok": False}
     # Prewarm status
