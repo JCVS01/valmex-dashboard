@@ -3777,7 +3777,10 @@ def _compute_quilt():
     def _yf_series(ticker):
         try:
             df = yf.download(ticker, start="2015-12-01", end=today.isoformat(),
-                             auto_adjust=True, progress=False)
+                             auto_adjust=True, progress=False, timeout=12)
+            if df is None or df.empty:
+                print(f"[QUILT] {ticker}: empty result (rate limited?)")
+                return pd.Series(dtype=float)
             if isinstance(df.columns, pd.MultiIndex):
                 df.columns = df.columns.get_level_values(0)
             s = df["Close"]
@@ -4560,7 +4563,7 @@ def _prewarm_quilts():
     """Pre-compute ALL caches at startup so first user request is instant."""
     import time as _t
     _t0 = _t.time()
-    for _attempt in range(3):
+    for _attempt in range(2):
         try:
             print(f"[PREWARM] Computing quilt (asset classes)... attempt {_attempt+1}")
             data = _compute_quilt()
@@ -4569,9 +4572,11 @@ def _prewarm_quilts():
             print(f"[PREWARM] Quilt done in {_t.time()-_t0:.1f}s")
             break
         except Exception as e:
+            import traceback
             print(f"[PREWARM] Quilt error (attempt {_attempt+1}): {e}")
-            if _attempt < 2:
-                _t.sleep(5)
+            traceback.print_exc()
+            if _attempt < 1:
+                _t.sleep(3)
     try:
         _t1 = _t.time()
         print("[PREWARM] Computing quilt fondos...")
