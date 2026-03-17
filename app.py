@@ -3809,7 +3809,7 @@ def _compute_quilt():
     def _yf_series(ticker):
         try:
             df = yf.download(ticker, start="2015-12-01", end=today.isoformat(),
-                             auto_adjust=True, progress=False, timeout=12)
+                             auto_adjust=True, progress=False)
             if df is None or df.empty:
                 print(f"[QUILT] {ticker}: empty result (rate limited?)")
                 return pd.Series(dtype=float)
@@ -3838,18 +3838,27 @@ def _compute_quilt():
         _qqq_f = _pool.submit(ms_series, "QQQ")
         _gold_f = _pool.submit(_yf_series, "GC=F")
         _oil_f = _pool.submit(_yf_series, "CL=F")
-    fx = _fx_f.result()
-    cetes = _cetes_f.result()
-    inpc = _inpc_f.result()
-    tasa = _tasa_f.result()
-    bond10y = _bond_f.result()
-    naftrac = _naftrac_f.result()
-    eem = _eem_f.result()
-    urth = _urth_f.result()
-    bwx = _bwx_f.result()
-    qqq = _qqq_f.result()
-    gold = _gold_f.result()
-    oil = _oil_f.result()
+        fx = _fx_f.result(timeout=15)
+        cetes = _cetes_f.result(timeout=15)
+        inpc = _inpc_f.result(timeout=15)
+        tasa = _tasa_f.result(timeout=15)
+        bond10y = _bond_f.result(timeout=15)
+        naftrac = _naftrac_f.result(timeout=15)
+        eem = _eem_f.result(timeout=15)
+        urth = _urth_f.result(timeout=15)
+        bwx = _bwx_f.result(timeout=15)
+        qqq = _qqq_f.result(timeout=15)
+        # yfinance may hang on rate limiting — use short timeout and fallback to empty
+        try:
+            gold = _gold_f.result(timeout=15)
+        except Exception:
+            print("[QUILT] Gold (GC=F) timed out — skipping")
+            gold = pd.Series(dtype=float)
+        try:
+            oil = _oil_f.result(timeout=15)
+        except Exception:
+            print("[QUILT] Oil (CL=F) timed out — skipping")
+            oil = pd.Series(dtype=float)
 
     rets = {}
 
