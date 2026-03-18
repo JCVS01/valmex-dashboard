@@ -4662,12 +4662,17 @@ def _prewarm_quilts():
             print(f"[PREWARM] Quilt fondos done in {_t.time()-_t1:.1f}s")
         except Exception as e:
             print(f"[PREWARM] Quilt fondos error: {e}")
+
+    # ── Mark prewarm done HERE so quilts are available immediately ──
+    _prewarm_done.set()
+    print(f"[PREWARM] Quilts ready in {_t.time()-_t0:.1f}s — continuing optional pre-warms...")
+
+    # ── Optional pre-warms (don't block quilt availability) ──
     try:
         print("[PREWARM] Pre-warming factor series...")
         _fetch_factor_series()
     except Exception as e:
         print(f"[PREWARM] Factor series error: {e}")
-    # Pre-warm NAV cache for all Serie A funds (most commonly used)
     try:
         _t2 = _t.time()
         print("[PREWARM] Pre-warming NAV cache (all Serie A)...")
@@ -4684,7 +4689,6 @@ def _prewarm_quilts():
                 pass
         executor = ThreadPoolExecutor(max_workers=12)
         futs = [executor.submit(_fetch_nav, item) for item in nav_items]
-        # Wait up to 30s for all NAV fetches, then move on
         for fut in futs:
             try:
                 fut.result(timeout=30)
@@ -4694,7 +4698,6 @@ def _prewarm_quilts():
         print(f"[PREWARM] NAV cache done ({len(nav_items)} funds) in {_t.time()-_t2:.1f}s")
     except Exception as e:
         print(f"[PREWARM] NAV cache error: {e}")
-    _prewarm_done.set()
     print(f"[PREWARM] All done in {_t.time()-_t0:.1f}s total")
 
 
