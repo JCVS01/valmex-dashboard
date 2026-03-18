@@ -1370,7 +1370,7 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
         </div>
 
         <!-- RIGHT: Resultados -->
-        <div style="display:flex;flex-direction:column;">
+        <div>
           <div style="background:var(--navy);color:#fff;padding:10px 16px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:14px;border-radius:8px 8px 0 0;">Resultados</div>
           <div style="border:1px solid #D3DDE6;border-top:none;border-radius:0 0 8px 8px;padding:0;">
             <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;">
@@ -1394,9 +1394,9 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
             </div>
           </div>
           <!-- Chart -->
-          <div style="margin-top:20px;background:#fff;border:1px solid #D3DDE6;border-radius:8px;padding:16px;flex:1;display:flex;flex-direction:column;">
-            <div style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:13px;color:var(--navy);margin-bottom:10px;">Proyección del saldo</div>
-            <canvas id="fp-chart" style="flex:1;min-height:180px;"></canvas>
+          <div style="margin-top:20px;background:#fff;border:1px solid #D3DDE6;border-radius:8px;padding:16px;">
+            <div style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:13px;color:var(--navy);margin-bottom:10px;">Proyecci&oacute;n del saldo</div>
+            <canvas id="fp-chart" height="240"></canvas>
           </div>
           <div style="text-align:right;margin-top:12px;">
             <img src="/VALMEX2.png" alt="VALMEX" style="height:50px;opacity:0.7;">
@@ -2315,6 +2315,9 @@ function showPage(name, el) {
     } else {
       setTimeout(() => { Object.values(cmp2Charts).forEach(c => c && c.resize && c.resize()); }, 80);
     }
+  }
+  if (name === 'recursos') {
+    _fpInitInputs();
   }
   window.scrollTo(0,0);
 }
@@ -5466,17 +5469,23 @@ function _fpFormatPct(el) {
   el.value = (p.length > 1 ? p[0] + '.' + p[1].slice(0, 2) : p[0]) + '%';
   calcTasaReal();
 }
-// Init: format money inputs on load
-document.querySelectorAll('.fp-money').forEach(el => {
-  el.addEventListener('input', () => _fpFormatMonto(el));
-  el.addEventListener('focus', () => { const v = parseFloat(el.value.replace(/[^0-9.]/g, '')) || 0; el.value = v || ''; });
-  _fpFormatMonto(el);
-});
-document.querySelectorAll('.fp-pct').forEach(el => {
-  el.addEventListener('input', () => _fpFormatPct(el));
-  el.addEventListener('focus', () => { const v = parseFloat(el.value.replace(/[^0-9.]/g, '')) || 0; el.value = v || ''; });
-  _fpFormatPct(el);
-});
+// Init: format money/pct inputs (deferred until DOM ready)
+let _fpInputsInit = false;
+function _fpInitInputs() {
+  if (_fpInputsInit) return;
+  _fpInputsInit = true;
+  document.querySelectorAll('.fp-money').forEach(el => {
+    el.addEventListener('input', () => _fpFormatMonto(el));
+    el.addEventListener('focus', () => { const v = parseFloat(el.value.replace(/[^0-9.]/g, '')) || 0; el.value = v || ''; });
+    _fpFormatMonto(el);
+  });
+  document.querySelectorAll('.fp-pct').forEach(el => {
+    el.addEventListener('input', () => _fpFormatPct(el));
+    el.addEventListener('focus', () => { const v = parseFloat(el.value.replace(/[^0-9.]/g, '')) || 0; el.value = v || ''; });
+    _fpFormatPct(el);
+  });
+  calcTasaReal();
+}
 
 let _fpChart = null;
 
