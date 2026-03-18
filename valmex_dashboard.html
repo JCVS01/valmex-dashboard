@@ -1325,7 +1325,7 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
 
     <!-- Sub-tab: Flujos Pensión -->
     <div id="rtab-flujos">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px;max-width:1200px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px;max-width:1200px;align-items:start;">
         <!-- LEFT: Supuestos iniciales -->
         <div>
           <div style="background:var(--navy);color:#fff;padding:10px 16px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:14px;border-radius:8px 8px 0 0;">Supuestos iniciales</div>
@@ -1333,9 +1333,9 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
             <!-- Situación actual -->
             <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:12px;color:var(--navy);font-family:'Montserrat',sans-serif;">Situación actual</div>
             <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;">
-              <span>Edad actual</span><input id="fp-edad" type="number" value="45" min="18" max="99" style="width:100px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
-              <span>Capital inicial</span><input id="fp-capital" type="text" value="0" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
-              <span>Ahorro mensual</span><input id="fp-ahorro" type="text" value="0" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
+              <span>Edad actual</span><div style="display:flex;align-items:center;gap:4px;"><input id="fp-edad" type="number" value="45" min="18" max="99" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"><span style="font-size:11px;color:var(--gray);">a&ntilde;os</span></div>
+              <span>Capital inicial</span><div style="display:flex;align-items:center;gap:4px;"><span style="font-size:12px;color:var(--gray);">$</span><input id="fp-capital" type="text" value="0" style="width:130px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"></div>
+              <span>Ahorro mensual</span><div style="display:flex;align-items:center;gap:4px;"><span style="font-size:12px;color:var(--gray);">$</span><input id="fp-ahorro" type="text" value="0" style="width:130px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"></div>
             </div>
             <!-- Rendimiento esperado -->
             <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:12px;color:var(--navy);font-family:'Montserrat',sans-serif;">Rendimiento esperado</div>
@@ -1347,21 +1347,21 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
             <!-- Flujos al retiro -->
             <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:12px;color:var(--navy);font-family:'Montserrat',sans-serif;">Flujos al retiro</div>
             <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;">
-              <span>Edad de jubilación</span><input id="fp-edad-jub" type="number" value="65" min="30" max="99" style="width:100px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
-              <span>Liquidación por retiro laboral (AFORE, finiquito)</span><input id="fp-liquidacion" type="text" value="0" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
-              <span>Pensión garantizada mensual</span><input id="fp-pension" type="text" value="0" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
+              <span>Edad de jubilaci&oacute;n</span><div style="display:flex;align-items:center;gap:4px;"><input id="fp-edad-jub" type="number" value="65" min="30" max="99" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"><span style="font-size:11px;color:var(--gray);">a&ntilde;os</span></div>
+              <span>Liquidaci&oacute;n por retiro laboral (AFORE, finiquito)</span><div style="display:flex;align-items:center;gap:4px;"><span style="font-size:12px;color:var(--gray);">$</span><input id="fp-liquidacion" type="text" value="0" style="width:130px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"></div>
+              <span>Pensi&oacute;n garantizada mensual</span><div style="display:flex;align-items:center;gap:4px;"><span style="font-size:12px;color:var(--gray);">$</span><input id="fp-pension" type="text" value="0" style="width:130px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"></div>
             </div>
             <!-- Otros flujos -->
             <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:12px;color:var(--navy);font-family:'Montserrat',sans-serif;">Otros flujos</div>
             <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;">
-              <span>Edad</span><input id="fp-edad-adicional" type="number" value="70" min="18" max="120" style="width:100px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
-              <span>Ingresos adicionales (venta de casa, terreno...)</span><input id="fp-ing-adicional" type="text" value="0" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
-              <span>Edad</span><input id="fp-edad-recurrente" type="number" value="65" min="18" max="120" style="width:100px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
-              <span>Ingresos recurrentes MENSUAL (rentas)</span><input id="fp-ing-recurrente" type="text" value="0" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
+              <span>Edad</span><div style="display:flex;align-items:center;gap:4px;"><input id="fp-edad-adicional" type="number" value="70" min="18" max="120" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"><span style="font-size:11px;color:var(--gray);">a&ntilde;os</span></div>
+              <span>Ingresos adicionales (venta de casa, terreno...)</span><div style="display:flex;align-items:center;gap:4px;"><span style="font-size:12px;color:var(--gray);">$</span><input id="fp-ing-adicional" type="text" value="0" style="width:130px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"></div>
+              <span>Edad</span><div style="display:flex;align-items:center;gap:4px;"><input id="fp-edad-recurrente" type="number" value="65" min="18" max="120" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"><span style="font-size:11px;color:var(--gray);">a&ntilde;os</span></div>
+              <span>Ingresos recurrentes MENSUAL (rentas)</span><div style="display:flex;align-items:center;gap:4px;"><span style="font-size:12px;color:var(--gray);">$</span><input id="fp-ing-recurrente" type="text" value="0" style="width:130px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"></div>
             </div>
             <!-- Gasto -->
             <div style="background:var(--navy);padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;color:#fff;font-weight:700;border-radius:0 0 8px 8px;">
-              <span>Gasto mensual ya jubilado</span><input id="fp-gasto" type="text" value="50,000" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;font-weight:700;">
+              <span>Gasto mensual ya jubilado</span><div style="display:flex;align-items:center;gap:4px;"><span style="font-size:12px;">$</span><input id="fp-gasto" type="text" value="50,000" style="width:130px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;font-weight:700;"></div>
               <span>Diferencia entre gasto - ingresos</span><span id="fp-diferencia" style="text-align:right;font-size:13px;width:140px;display:inline-block;">—</span>
             </div>
           </div>
@@ -1370,7 +1370,7 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
         </div>
 
         <!-- RIGHT: Resultados -->
-        <div>
+        <div style="display:flex;flex-direction:column;">
           <div style="background:var(--navy);color:#fff;padding:10px 16px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:14px;border-radius:8px 8px 0 0;">Resultados</div>
           <div style="border:1px solid #D3DDE6;border-top:none;border-radius:0 0 8px 8px;padding:0;">
             <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;">
@@ -1394,9 +1394,9 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
             </div>
           </div>
           <!-- Chart -->
-          <div style="margin-top:20px;background:#fff;border:1px solid #D3DDE6;border-radius:8px;padding:16px;">
+          <div style="margin-top:20px;background:#fff;border:1px solid #D3DDE6;border-radius:8px;padding:16px;flex:1;display:flex;flex-direction:column;">
             <div style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:13px;color:var(--navy);margin-bottom:10px;">Proyección del saldo</div>
-            <canvas id="fp-chart" height="220"></canvas>
+            <canvas id="fp-chart" style="flex:1;min-height:180px;"></canvas>
           </div>
           <div style="text-align:right;margin-top:12px;">
             <img src="/VALMEX2.png" alt="VALMEX" style="height:50px;opacity:0.7;">
