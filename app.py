@@ -3814,8 +3814,8 @@ def _compute_quilt():
     _inpc_f = _pool.submit(bx_series, "SP1")
     _tasa_f = _pool.submit(bx_series, "SF61745")
     _bond_f = _pool.submit(fred_series, "IRLTLT01MXM156N")
-    _gold_f = _pool.submit(fred_series, "GOLDAMGBD228NLBM")  # Gold London PM Fix USD/oz
-    _oil_f = _pool.submit(fred_series, "DCOILWTICO")          # WTI Crude USD/bbl
+    _gold_f = _pool.submit(ms_series, "IAU")                   # iShares Gold Trust (USD)
+    _oil_f = _pool.submit(fred_series, "DCOILWTICO")           # WTI Crude USD/bbl
     _naftrac_f = _pool.submit(ms_series, "NAFTRAC")
     _eem_f = _pool.submit(ms_series, "EEM")
     _urth_f = _pool.submit(ms_series, "URTH")
@@ -3999,14 +3999,15 @@ def api_diag_apis():
         results["morningstar"] = {"status": r.status_code, "time": round(_t.time()-t0, 2), "ok": r.ok}
     except Exception as e:
         results["morningstar"] = {"error": str(e), "ok": False}
-    # 4. FRED Gold (replaced yfinance — was rate limited on Render)
+    # 4. Morningstar IAU (Gold proxy — replaced yfinance)
     try:
         t0 = _t.time()
-        r = requests.get(FRED_BASE, params={"series_id": "GOLDAMGBD228NLBM", "api_key": FRED_API_KEY,
-            "file_type": "json", "observation_start": "2025-01-01", "observation_end": "2025-01-31"}, timeout=10)
-        results["fred_gold"] = {"status": r.status_code, "time": round(_t.time()-t0, 2), "ok": r.ok}
+        r = _ms_session.get(
+            "https://api.morningstar.com/service/mf/UnadjustedNAV/TICKER/IAU",
+            params={"startdate": "2025-01-01", "enddate": "2025-01-31", "accesscode": MS_ACCESS}, timeout=10)
+        results["ms_gold_iau"] = {"status": r.status_code, "time": round(_t.time()-t0, 2), "ok": r.ok}
     except Exception as e:
-        results["fred_gold"] = {"error": str(e), "ok": False}
+        results["ms_gold_iau"] = {"error": str(e), "ok": False}
     # Prewarm status
     results["prewarm_done"] = _prewarm_done.is_set()
     results["quilt_cached"] = _quilt_cache["data"] is not None
