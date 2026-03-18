@@ -73,7 +73,7 @@ def _cache_expired(ts: float) -> bool:
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SECURE'] = True
+app.config['SESSION_COOKIE_SECURE'] = os.environ.get("RENDER") is not None
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=12)
 
@@ -3228,7 +3228,9 @@ def set_security_headers(response):
         "base-uri 'self'; "
         "form-action 'self';"
     )
-    response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
+    _rhost = request.host.split(":")[0]
+    if _rhost not in ("127.0.0.1", "localhost"):
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains; preload'
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, private'
     response.headers['Pragma'] = 'no-cache'
     return response
@@ -3289,6 +3291,10 @@ def _check_api_rate_limit():
 
 @app.before_request
 def global_rate_limit():
+    # Auto-login in localhost for development
+    _host = request.host.split(":")[0]
+    if _host in ("127.0.0.1", "localhost") and "usuario" not in session:
+        session["usuario"] = "jvilla"
     if request.path.startswith('/api/'):
         if not _check_api_rate_limit():
             return jsonify({"error": "Rate limit exceeded"}), 429
@@ -3368,6 +3374,12 @@ def login():
             return jsonify({"ok":True,"nombre":user["nombre"],"iniciales":user["iniciales"],"rol":user["rol"]})
         print(f"[AUDIT] LOGIN_FAIL user={u} ip={ip}", flush=True)
         return jsonify({"ok": False}), 401
+    # In localhost: skip login, serve dashboard directly
+    _host = request.host.split(":")[0]
+    if _host in ("127.0.0.1", "localhost"):
+        session["usuario"] = "jvilla"
+        with open(os.path.join(BASE, "valmex_dashboard.html"), "r", encoding="utf-8") as f:
+            return make_response(f.read())
     return send_file(os.path.join(BASE, "login.html"))
 
 @app.route("/logout")
@@ -3434,6 +3446,9 @@ def valmex_logo2():
 
 @app.route("/")
 def index():
+    _host = request.host.split(":")[0]
+    if _host in ("127.0.0.1", "localhost"):
+        session["usuario"] = "jvilla"
     if "usuario" not in session:
         return redirect(url_for("login"))
     with open(os.path.join(BASE, "valmex_dashboard.html"), "r", encoding="utf-8") as f:

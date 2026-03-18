@@ -1334,34 +1334,34 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
             <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:12px;color:var(--navy);font-family:'Montserrat',sans-serif;">Situación actual</div>
             <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;">
               <span>Edad actual</span><div style="display:flex;align-items:center;gap:4px;"><input id="fp-edad" type="number" value="45" min="18" max="99" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"><span style="font-size:11px;color:var(--gray);">a&ntilde;os</span></div>
-              <span>Capital inicial</span><div style="display:flex;align-items:center;gap:4px;"><span style="font-size:12px;color:var(--gray);">$</span><input id="fp-capital" type="text" value="0" style="width:130px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"></div>
-              <span>Ahorro mensual</span><div style="display:flex;align-items:center;gap:4px;"><span style="font-size:12px;color:var(--gray);">$</span><input id="fp-ahorro" type="text" value="0" style="width:130px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"></div>
+              <span>Capital inicial</span><input id="fp-capital" class="fp-money" type="text" value="0" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
+              <span>Ahorro mensual</span><input id="fp-ahorro" class="fp-money" type="text" value="0" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
             </div>
             <!-- Rendimiento esperado -->
             <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:12px;color:var(--navy);font-family:'Montserrat',sans-serif;">Rendimiento esperado</div>
             <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;">
-              <span>Rendimiento anualizado del portafolio</span><div style="display:flex;align-items:center;gap:4px;"><input id="fp-rendimiento" type="text" value="8.50" oninput="calcTasaReal()" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"><span style="font-size:11px;color:var(--gray);">%</span></div>
-              <span>Inflaci&oacute;n anual</span><div style="display:flex;align-items:center;gap:4px;"><input id="fp-inflacion" type="text" value="3.50" oninput="calcTasaReal()" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"><span style="font-size:11px;color:var(--gray);">%</span></div>
+              <span>Rendimiento anualizado del portafolio</span><input id="fp-rendimiento" class="fp-pct" type="text" value="8.50" style="width:100px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
+              <span>Inflaci&oacute;n anual</span><input id="fp-inflacion" class="fp-pct" type="text" value="3.50" style="width:100px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
               <span style="font-weight:700;">Rendimiento en tasa real*</span><span id="fp-tasa-real" style="text-align:right;font-weight:700;color:var(--navy);">5.00%</span>
             </div>
             <!-- Flujos al retiro -->
             <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:12px;color:var(--navy);font-family:'Montserrat',sans-serif;">Flujos al retiro</div>
             <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;">
               <span>Edad de jubilaci&oacute;n</span><div style="display:flex;align-items:center;gap:4px;"><input id="fp-edad-jub" type="number" value="65" min="30" max="99" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"><span style="font-size:11px;color:var(--gray);">a&ntilde;os</span></div>
-              <span>Liquidaci&oacute;n por retiro laboral (AFORE, finiquito)</span><div style="display:flex;align-items:center;gap:4px;"><span style="font-size:12px;color:var(--gray);">$</span><input id="fp-liquidacion" type="text" value="0" style="width:130px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"></div>
-              <span>Pensi&oacute;n garantizada mensual</span><div style="display:flex;align-items:center;gap:4px;"><span style="font-size:12px;color:var(--gray);">$</span><input id="fp-pension" type="text" value="0" style="width:130px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"></div>
+              <span>Liquidaci&oacute;n por retiro laboral (AFORE, finiquito)</span><input id="fp-liquidacion" class="fp-money" type="text" value="0" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
+              <span>Pensi&oacute;n garantizada mensual</span><input id="fp-pension" class="fp-money" type="text" value="0" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
             </div>
             <!-- Otros flujos -->
             <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:12px;color:var(--navy);font-family:'Montserrat',sans-serif;">Otros flujos</div>
             <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;">
               <span>Edad</span><div style="display:flex;align-items:center;gap:4px;"><input id="fp-edad-adicional" type="number" value="70" min="18" max="120" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"><span style="font-size:11px;color:var(--gray);">a&ntilde;os</span></div>
-              <span>Ingresos adicionales (venta de casa, terreno...)</span><div style="display:flex;align-items:center;gap:4px;"><span style="font-size:12px;color:var(--gray);">$</span><input id="fp-ing-adicional" type="text" value="0" style="width:130px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"></div>
+              <span>Ingresos adicionales (venta de casa, terreno...)</span><input id="fp-ing-adicional" class="fp-money" type="text" value="0" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
               <span>Edad</span><div style="display:flex;align-items:center;gap:4px;"><input id="fp-edad-recurrente" type="number" value="65" min="18" max="120" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"><span style="font-size:11px;color:var(--gray);">a&ntilde;os</span></div>
-              <span>Ingresos recurrentes MENSUAL (rentas)</span><div style="display:flex;align-items:center;gap:4px;"><span style="font-size:12px;color:var(--gray);">$</span><input id="fp-ing-recurrente" type="text" value="0" style="width:130px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"></div>
+              <span>Ingresos recurrentes MENSUAL (rentas)</span><input id="fp-ing-recurrente" class="fp-money" type="text" value="0" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
             </div>
             <!-- Gasto -->
             <div style="background:var(--navy);padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;color:#fff;font-weight:700;border-radius:0 0 8px 8px;">
-              <span>Gasto mensual ya jubilado</span><div style="display:flex;align-items:center;gap:4px;"><span style="font-size:12px;">$</span><input id="fp-gasto" type="text" value="50,000" style="width:130px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;font-weight:700;"></div>
+              <span>Gasto mensual ya jubilado</span><input id="fp-gasto" class="fp-money" type="text" value="50000" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;font-weight:700;">
               <span>Diferencia entre gasto - ingresos</span><span id="fp-diferencia" style="text-align:right;font-size:13px;width:140px;display:inline-block;">—</span>
             </div>
           </div>
@@ -5452,20 +5452,30 @@ function _fpNum(id) {
 }
 function _fpFmt(v) {
   if (v == null || isNaN(v)) return '—';
-  return '$ ' + v.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  return '$' + v.toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 }
-
-['fp-capital','fp-ahorro','fp-liquidacion','fp-pension','fp-ing-adicional','fp-ing-recurrente','fp-gasto'].forEach(id => {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.addEventListener('blur', () => {
-    const v = parseFloat(el.value.replace(/[^0-9.\-]/g, '')) || 0;
-    el.value = v.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0});
-  });
-  el.addEventListener('focus', () => {
-    const v = parseFloat(el.value.replace(/[^0-9.\-]/g, '')) || 0;
-    el.value = v || '';
-  });
+function _fpFormatMonto(el) {
+  let v = el.value.replace(/[^0-9.]/g, '');
+  const p = v.split('.');
+  p[0] = p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  el.value = '$' + (p.length > 1 ? p[0] + '.' + p[1].slice(0, 2) : p[0]);
+}
+function _fpFormatPct(el) {
+  let v = el.value.replace(/[^0-9.]/g, '');
+  const p = v.split('.');
+  el.value = (p.length > 1 ? p[0] + '.' + p[1].slice(0, 2) : p[0]) + '%';
+  calcTasaReal();
+}
+// Init: format money inputs on load
+document.querySelectorAll('.fp-money').forEach(el => {
+  el.addEventListener('input', () => _fpFormatMonto(el));
+  el.addEventListener('focus', () => { const v = parseFloat(el.value.replace(/[^0-9.]/g, '')) || 0; el.value = v || ''; });
+  _fpFormatMonto(el);
+});
+document.querySelectorAll('.fp-pct').forEach(el => {
+  el.addEventListener('input', () => _fpFormatPct(el));
+  el.addEventListener('focus', () => { const v = parseFloat(el.value.replace(/[^0-9.]/g, '')) || 0; el.value = v || ''; });
+  _fpFormatPct(el);
 });
 
 let _fpChart = null;
