@@ -3982,6 +3982,29 @@ def _compute_quilt():
         "updated": datetime.now().strftime("%d/%m/%Y"),
     }
 
+@app.route("/api/diag-prewarm")
+def api_diag_prewarm():
+    """Force a mini prewarm to see what fails."""
+    if "usuario" not in session:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    import time as _t, traceback as _tb
+    results = {}
+    # Test _compute_quilt
+    try:
+        t0 = _t.time()
+        data = _compute_quilt()
+        results["quilt"] = {"ok": True, "time": round(_t.time()-t0, 1), "assets": len(data.get("assets", []))}
+    except Exception as e:
+        results["quilt"] = {"ok": False, "error": str(e), "trace": _tb.format_exc()[-500:]}
+    # Test _compute_quilt_fondos
+    try:
+        t0 = _t.time()
+        data2 = _compute_quilt_fondos()
+        results["quilt_fondos"] = {"ok": True, "time": round(_t.time()-t0, 1), "funds": len(data2.get("funds", []))}
+    except Exception as e:
+        results["quilt_fondos"] = {"ok": False, "error": str(e), "trace": _tb.format_exc()[-500:]}
+    return jsonify(results)
+
 @app.route("/api/diag-apis")
 def api_diag_apis():
     """Quick health check for all external APIs used by quilt."""
