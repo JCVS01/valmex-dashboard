@@ -3978,7 +3978,7 @@ def _compute_quilt():
             {"name": "Inflaci\u00f3n", "values": ref_infl, "cumulative": infl_cum, "annualized": infl_ann},
         ],
         "cumulative": cumulative, "annualized": annualized,
-        "note": "Rendimientos brutos efectivos en moneda nacional. Fuentes: Morningstar (NAFTRAC, EEM, URTH, BWX, QQQ), Yahoo Finance (Oro GC=F, Petr\u00f3leo CL=F), Banxico (FX FIX, CETES, INPC, Tasa Objetivo), FRED (Bono M10 yield). Deuda LP: modelo de duraci\u00f3n (carry + delta yield \u00d7 dur). Activos en USD convertidos a MXN con tipo de cambio FIX Banxico.",
+        "note": "Rendimientos brutos efectivos en moneda nacional. Referencias: D\u00f3lar (FIX Banxico), Bolsa Local (iShares NAFTRAC \u2014 S&P/BMV IPC), Bolsa Emergentes (iShares MSCI EM \u2014 EEM), Mercados Desarrollados (iShares MSCI World \u2014 URTH), Deuda Gub. Global (SPDR Bloomberg Intl Treasury \u2014 BWX), Deuda CP (CETES 28d Banxico), Deuda LP (modelo de duraci\u00f3n con yield Bono M 10Y), Tecnolog\u00eda (Invesco QQQ Trust \u2014 Nasdaq-100), Oro (iShares Gold Trust \u2014 IAU). Tasa de Referencia: Tasa Objetivo Banxico. Inflaci\u00f3n: INPC Banxico. Activos en USD convertidos a MXN con tipo de cambio FIX.",
         "updated": datetime.now().strftime("%d/%m/%Y"),
     }
 
@@ -4278,7 +4278,7 @@ def _compute_quilt_fondos():
         ],
         "cumulative": cumulative, "annualized": annualized, "ann_years": ann_years,
         "top_n": 10,
-        "note": "Rendimientos brutos efectivos en moneda nacional. Fuente: Morningstar NAV hist\u00f3rico. Tasa de Referencia: promedio anual Banxico. Inflaci\u00f3n: INPC Banxico.",
+        "note": "Rendimientos brutos efectivos en moneda nacional. Fuente: Morningstar (NAV hist\u00f3rico por ISIN, Serie A). Tasa de Referencia: Tasa Objetivo Banxico (promedio anual). Inflaci\u00f3n: INPC Banxico.",
         "updated": datetime.now().strftime("%d/%m/%Y"),
     }
 
