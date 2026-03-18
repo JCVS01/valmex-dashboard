@@ -1772,40 +1772,41 @@ def _fetch_factor_series():
         return (name, pd.Series(dtype=float))
 
     # ── Submit all fetches in parallel ──
+    executor = ThreadPoolExecutor(max_workers=15)
     tasks = []
-    with ThreadPoolExecutor(max_workers=15) as executor:
-        # Banxico (5 series)
-        tasks.append(executor.submit(_banxico, "fx", "SF43718"))
-        tasks.append(executor.submit(_banxico, "bono_m10", "SF44071"))
-        tasks.append(executor.submit(_banxico, "tiie_28d", "SF43783"))
-        tasks.append(executor.submit(_banxico, "udibono_10y", "SF43924"))
-        tasks.append(executor.submit(_banxico, "bono_m30", "SF60696"))
-        # FRED (6 series)
-        tasks.append(executor.submit(_fred, "ust_10y", "DGS10", "UST 10Y"))
-        tasks.append(executor.submit(_fred, "em_spread", "BAMLEMCBPIOAS", "EM Corp OAS"))
-        tasks.append(executor.submit(_fred, "latam_oas", "BAMLEMRLCRPILAOAS", "LatAm EM Corp OAS"))
-        tasks.append(executor.submit(_fred, "hy_spread", "BAMLH0A0HYM2", "US HY OAS"))
-        tasks.append(executor.submit(_fred, "breakeven", "T10YIE", "US 10Y Breakeven"))
-        tasks.append(executor.submit(_fred, "term_premium", "THREEFYTP10", "US 10Y Term Premium"))
-        # Yahoo Finance (8 series)
-        tasks.append(executor.submit(_yf, "ipc", ["^MXX", "NAFTRACISHRS.MX"]))
-        tasks.append(executor.submit(_yf, "sp500", ["^GSPC"]))
-        tasks.append(executor.submit(_yf, "gold", ["GC=F"]))
-        tasks.append(executor.submit(_yf, "oil", ["CL=F"]))
-        tasks.append(executor.submit(_yf, "vix", ["^VIX"]))
-        tasks.append(executor.submit(_yf, "copper", ["HG=F"]))
-        tasks.append(executor.submit(_yf, "dxy", ["DX-Y.NYB"]))
-        tasks.append(executor.submit(_yf, "eww", ["EWW"]))
+    # Banxico (5 series)
+    tasks.append(executor.submit(_banxico, "fx", "SF43718"))
+    tasks.append(executor.submit(_banxico, "bono_m10", "SF44071"))
+    tasks.append(executor.submit(_banxico, "tiie_28d", "SF43783"))
+    tasks.append(executor.submit(_banxico, "udibono_10y", "SF43924"))
+    tasks.append(executor.submit(_banxico, "bono_m30", "SF60696"))
+    # FRED (6 series)
+    tasks.append(executor.submit(_fred, "ust_10y", "DGS10", "UST 10Y"))
+    tasks.append(executor.submit(_fred, "em_spread", "BAMLEMCBPIOAS", "EM Corp OAS"))
+    tasks.append(executor.submit(_fred, "latam_oas", "BAMLEMRLCRPILAOAS", "LatAm EM Corp OAS"))
+    tasks.append(executor.submit(_fred, "hy_spread", "BAMLH0A0HYM2", "US HY OAS"))
+    tasks.append(executor.submit(_fred, "breakeven", "T10YIE", "US 10Y Breakeven"))
+    tasks.append(executor.submit(_fred, "term_premium", "THREEFYTP10", "US 10Y Term Premium"))
+    # Yahoo Finance (8 series) — may hang on Render, use individual timeouts
+    tasks.append(executor.submit(_yf, "ipc", ["^MXX", "NAFTRACISHRS.MX"]))
+    tasks.append(executor.submit(_yf, "sp500", ["^GSPC"]))
+    tasks.append(executor.submit(_yf, "gold", ["GC=F"]))
+    tasks.append(executor.submit(_yf, "oil", ["CL=F"]))
+    tasks.append(executor.submit(_yf, "vix", ["^VIX"]))
+    tasks.append(executor.submit(_yf, "copper", ["HG=F"]))
+    tasks.append(executor.submit(_yf, "dxy", ["DX-Y.NYB"]))
+    tasks.append(executor.submit(_yf, "eww", ["EWW"]))
 
-        for future in as_completed(tasks):
-            try:
-                name, series = future.result()
-                if len(series) > 0:
-                    factors[name] = series
-                else:
-                    factors[name] = pd.Series(dtype=float)
-            except Exception as e:
-                print(f"[BETAS] Future error: {e}")
+    for future in tasks:
+        try:
+            name, series = future.result(timeout=30)
+            if len(series) > 0:
+                factors[name] = series
+            else:
+                factors[name] = pd.Series(dtype=float)
+        except Exception as e:
+            print(f"[BETAS] Future error (timeout or failure): {e}")
+    executor.shutdown(wait=False)
 
     # ── Bono M10 FRED fallback if Banxico failed ──
     if "bono_m10" not in factors or len(factors.get("bono_m10", [])) < 12:
