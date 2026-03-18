@@ -3271,9 +3271,9 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
     }
     const fi = portfolios.map(getScenarios);
     const sensScenarios = [
-      ['Bono M10 +1%',               f => f?.bonoMxUp],
-      ['Treasury 10Y +1%',           f => f?.ustUp],
-      ['TIIE +1%',                   f => f?.tiieUp],
+      ['Bono M10 +100pb',             f => f?.bonoMxUp],
+      ['Treasury 10Y +100pb',        f => f?.ustUp],
+      ['TIIE +100pb',                f => f?.tiieUp],
       ['-10% USD/MXN',                f => f?.mxnUp],
       ['+10% USD/MXN',                f => f?.mxnDown],
       ['IPC -10%',                   f => f?.ipcDown],

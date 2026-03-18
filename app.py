@@ -3821,19 +3821,26 @@ def _compute_quilt():
     _urth_f = _pool.submit(ms_series, "URTH")
     _bwx_f = _pool.submit(ms_series, "BWX")
     _qqq_f = _pool.submit(ms_series, "QQQ")
-    fx = _fx_f.result(timeout=20)
-    cetes = _cetes_f.result(timeout=20)
-    inpc = _inpc_f.result(timeout=20)
-    tasa = _tasa_f.result(timeout=20)
-    bond10y = _bond_f.result(timeout=20)
-    gold = _gold_f.result(timeout=20)
-    oil = _oil_f.result(timeout=20)
-    naftrac = _naftrac_f.result(timeout=20)
-    eem = _eem_f.result(timeout=20)
-    urth = _urth_f.result(timeout=20)
-    bwx = _bwx_f.result(timeout=20)
-    qqq = _qqq_f.result(timeout=20)
+    def _safe_result(fut, name, timeout=30):
+        try:
+            return fut.result(timeout=timeout)
+        except Exception as e:
+            print(f"[QUILT] {name} failed: {e}")
+            return pd.Series(dtype=float)
+    fx = _safe_result(_fx_f, "FX")
+    cetes = _safe_result(_cetes_f, "CETES")
+    inpc = _safe_result(_inpc_f, "INPC")
+    tasa = _safe_result(_tasa_f, "Tasa")
+    bond10y = _safe_result(_bond_f, "Bond10Y")
+    gold = _safe_result(_gold_f, "Gold/IAU")
+    oil = _safe_result(_oil_f, "Oil/WTI")
+    naftrac = _safe_result(_naftrac_f, "NAFTRAC")
+    eem = _safe_result(_eem_f, "EEM")
+    urth = _safe_result(_urth_f, "URTH")
+    bwx = _safe_result(_bwx_f, "BWX")
+    qqq = _safe_result(_qqq_f, "QQQ")
     _pool.shutdown(wait=False)
+    print(f"[QUILT] Data fetched: FX={len(fx)}, CETES={len(cetes)}, NAFTRAC={len(naftrac)}, Gold={len(gold)}, Oil={len(oil)}")
 
     rets = {}
 
