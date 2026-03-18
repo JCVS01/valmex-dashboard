@@ -4069,19 +4069,21 @@ def _compute_quilt_fondos():
         data = get_ms_nav(isin, start="2015-12-01")
         return fondo, data
 
-    with ThreadPoolExecutor(max_workers=12) as executor:
-        futures = {executor.submit(fetch_fund, f, i): f for f, i in fondos.items()}
-        for future in as_completed(futures):
-            try:
-                fondo, data = future.result()
-                if data:
-                    s = pd.Series(
-                        {datetime.strptime(n["fecha"], "%Y-%m-%d"): n["nav"] for n in data}
-                    ).sort_index()
-                    nav_series[fondo] = s
-                    print(f"[QUILT FONDOS] {fondo}: {len(s)} NAVs")
-            except Exception as e:
-                print(f"[QUILT FONDOS] Error {futures[future]}: {e}")
+    executor = ThreadPoolExecutor(max_workers=15)
+    futures = {executor.submit(fetch_fund, f, i): f for f, i in fondos.items()}
+    for future in as_completed(futures, timeout=45):
+        try:
+            fondo, data = future.result(timeout=20)
+            if data:
+                s = pd.Series(
+                    {datetime.strptime(n["fecha"], "%Y-%m-%d"): n["nav"] for n in data}
+                ).sort_index()
+                nav_series[fondo] = s
+                print(f"[QUILT FONDOS] {fondo}: {len(s)} NAVs")
+        except Exception as e:
+            fname = futures.get(future, "?")
+            print(f"[QUILT FONDOS] Error {fname}: {e}")
+    executor.shutdown(wait=False)
 
     # Calculate annual returns using operadora methodology:
     # End NAV = first business day of Y+1 (T+1 settlement), Start NAV = last day of Y-1
@@ -4637,9 +4639,19 @@ def _prewarm_quilts():
                 nav_items.append((isin, fondo, "A"))
         def _fetch_nav(args):
             isin, f, s = args
-            get_ms_nav(isin, expect_fund=f, expect_serie=s)
-        with ThreadPoolExecutor(max_workers=12) as executor:
-            list(executor.map(_fetch_nav, nav_items))
+            try:
+                get_ms_nav(isin, expect_fund=f, expect_serie=s)
+            except Exception:
+                pass
+        executor = ThreadPoolExecutor(max_workers=12)
+        futs = [executor.submit(_fetch_nav, item) for item in nav_items]
+        # Wait up to 30s for all NAV fetches, then move on
+        for fut in futs:
+            try:
+                fut.result(timeout=30)
+            except Exception:
+                pass
+        executor.shutdown(wait=False)
         print(f"[PREWARM] NAV cache done ({len(nav_items)} funds) in {_t.time()-_t2:.1f}s")
     except Exception as e:
         print(f"[PREWARM] NAV cache error: {e}")
