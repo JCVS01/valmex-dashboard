@@ -2993,7 +2993,7 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
     const comps = _hAllComps.filter((_, i) => _hShowFlags[i]);
     const mps = comps.map(c => { const m={}; c.forEach(f => { m[f.fondo]=f; }); return m; });
     const allFunds = new Set(comps.flat().map(f=>f.fondo));
-    const DEUDA_SET = new Set(['VXREPO1','VXGUBCP','VXUDIMP','VXDEUDA','VXGUBLP','VXTBILL','VXCOBER']);
+    const DEUDA_SET = new Set(['VXREPO1','VXGUBCP','VXUDIMP','VXDEUDA','VXGUBLP','VLMXETF','VXTBILL','VXCOBER','VLMXDME']);
     const REPORTO_SET = new Set(['Reporto MXN','Reporto USD','VXREPO1']);
     const ACCIONES_SET = new Set(['Acciones']);
     const ETF_SET = new Set(["ETF's"]);
