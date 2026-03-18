@@ -1755,23 +1755,29 @@ def _fetch_factor_series():
             print(f"[BETAS] {label} error: {e}")
             return (name, pd.Series(dtype=float))
 
-    # ── Helper: fetch Yahoo Finance series ──
-    def _yf(name, tickers):
-        for ticker in tickers:
-            try:
-                df = yf.download(ticker, start=start, end=end, auto_adjust=True, progress=False)
-                if isinstance(df.columns, pd.MultiIndex):
-                    df.columns = df.columns.get_level_values(0)
-                s = df["Close"].dropna()
-                if len(s) >= 60:
-                    print(f"[BETAS] {name} ({ticker}): {len(s)} prices")
-                    return (name, s)
-            except Exception as e:
-                print(f"[BETAS] {name} ({ticker}) failed: {e}")
-        print(f"[BETAS] {name}: ALL tickers failed")
-        return (name, pd.Series(dtype=float))
+    # ── Helper: fetch Morningstar TICKER series (same as quilt) ──
+    def _ms(name, ticker):
+        try:
+            r = _ms_session.get(
+                f"https://api.morningstar.com/service/mf/UnadjustedNAV/TICKER/{ticker}",
+                params={"startdate": start, "enddate": end, "accesscode": MS_ACCESS},
+                timeout=20,
+            )
+            r.raise_for_status()
+            root = ET.fromstring(r.text)
+            out = {}
+            for elem in root.iter("r"):
+                try:
+                    out[datetime.strptime(elem.get("d"), "%Y-%m-%d")] = float(elem.get("v"))
+                except: pass
+            s = pd.Series(out).sort_index()
+            print(f"[BETAS] {name} (MS {ticker}): {len(s)} prices")
+            return (name, s)
+        except Exception as e:
+            print(f"[BETAS] {name} (MS {ticker}) error: {e}")
+            return (name, pd.Series(dtype=float))
 
-    # ── Submit all fetches in parallel ──
+    # ── Submit all fetches in parallel (NO yfinance — hangs on Render) ──
     executor = ThreadPoolExecutor(max_workers=15)
     tasks = []
     # Banxico (5 series)
@@ -1780,33 +1786,35 @@ def _fetch_factor_series():
     tasks.append(executor.submit(_banxico, "tiie_28d", "SF43783"))
     tasks.append(executor.submit(_banxico, "udibono_10y", "SF43924"))
     tasks.append(executor.submit(_banxico, "bono_m30", "SF60696"))
-    # FRED (6 series)
+    # FRED (8 series — includes replacements for yfinance)
     tasks.append(executor.submit(_fred, "ust_10y", "DGS10", "UST 10Y"))
     tasks.append(executor.submit(_fred, "em_spread", "BAMLEMCBPIOAS", "EM Corp OAS"))
     tasks.append(executor.submit(_fred, "latam_oas", "BAMLEMRLCRPILAOAS", "LatAm EM Corp OAS"))
     tasks.append(executor.submit(_fred, "hy_spread", "BAMLH0A0HYM2", "US HY OAS"))
     tasks.append(executor.submit(_fred, "breakeven", "T10YIE", "US 10Y Breakeven"))
     tasks.append(executor.submit(_fred, "term_premium", "THREEFYTP10", "US 10Y Term Premium"))
-    # Yahoo Finance (8 series) — may hang on Render, use individual timeouts
-    tasks.append(executor.submit(_yf, "ipc", ["^MXX", "NAFTRACISHRS.MX"]))
-    tasks.append(executor.submit(_yf, "sp500", ["^GSPC"]))
-    tasks.append(executor.submit(_yf, "gold", ["GC=F"]))
-    tasks.append(executor.submit(_yf, "oil", ["CL=F"]))
-    tasks.append(executor.submit(_yf, "vix", ["^VIX"]))
-    tasks.append(executor.submit(_yf, "copper", ["HG=F"]))
-    tasks.append(executor.submit(_yf, "dxy", ["DX-Y.NYB"]))
-    tasks.append(executor.submit(_yf, "eww", ["EWW"]))
+    tasks.append(executor.submit(_fred, "vix", "VIXCLS", "VIX"))
+    tasks.append(executor.submit(_fred, "oil", "DCOILWTICO", "WTI Crude"))
+    # Morningstar (equity/commodity proxies — replaces yfinance)
+    tasks.append(executor.submit(_ms, "ipc", "NAFTRAC"))       # IPC proxy
+    tasks.append(executor.submit(_ms, "sp500", "SPY"))          # S&P 500 proxy
+    tasks.append(executor.submit(_ms, "gold", "IAU"))           # Gold proxy
+    tasks.append(executor.submit(_ms, "copper", "CPER"))        # Copper proxy
+    tasks.append(executor.submit(_ms, "eww", "EWW"))            # iShares MSCI Mexico
 
     for future in tasks:
         try:
-            name, series = future.result(timeout=30)
+            name, series = future.result(timeout=25)
             if len(series) > 0:
                 factors[name] = series
             else:
                 factors[name] = pd.Series(dtype=float)
         except Exception as e:
-            print(f"[BETAS] Future error (timeout or failure): {e}")
+            print(f"[BETAS] Future error: {e}")
     executor.shutdown(wait=False)
+    # DXY not available via FRED/MS — skip if not critical
+    if "dxy" not in factors:
+        print("[BETAS] DXY not available (yfinance removed) — skipping")
 
     # ── Bono M10 FRED fallback if Banxico failed ──
     if "bono_m10" not in factors or len(factors.get("bono_m10", [])) < 12:
