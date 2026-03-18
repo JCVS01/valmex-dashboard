@@ -3478,8 +3478,16 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
       'VALMXES':'RV Espa\u00f1a','VLMXTEC':'RV Sector Tecnol\u00f3gico',
       'VLMXESG':'RV ESG','VALMXHC':'RV Sector Salud',
       'VXINFRA':'RV Infraestructura',
+      'VLMXJUB':'Ciclo de Vida Jubilación',
+      'VLMXP24':'Ciclo de Vida 2024','VLMXP31':'Ciclo de Vida 2031',
+      'VLMXP38':'Ciclo de Vida 2038','VLMXP45':'Ciclo de Vida 2045',
+      'VLMXP52':'Ciclo de Vida 2052','VLMXP59':'Ciclo de Vida 2059',
+      'VALMX19':'RV Flexible','VALMX20':'RV Local',
       'Fondos Ciclo de Vida':'RV Ciclo de Vida'
     };
+    // Fallback: use composicion description if available
+    const _descFromComp = {};
+    [...compA, ...compDest].forEach(f => { if (f.fondo && f.descripcion) _descFromComp[f.fondo] = f.descripcion; });
     if (movPanel) movPanel.style.display = (allM.size && monto > 0) ? '' : 'none';
     if (movTbody && monto > 0) {
       movTbody.innerHTML = '';
@@ -3508,7 +3516,7 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
         sumPctA += r.pA; sumMonA += r.monA;
         sumPctD += r.pD; sumMonD += r.monD;
         sumDifPct += r.difP; sumDifMon += r.difM;
-        const desc = FUND_DESC_M[r.fund] || '';
+        const desc = FUND_DESC_M[r.fund] || _descFromComp[r.fund] || '';
         const fmtM = v => v === 0 ? '$0.00' : '$' + v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
         const clsDif = v => v > 0.005 ? 'r pos' : v < -0.005 ? 'r neg' : 'r';
         const fmtDifP = v => Math.abs(v) < 0.005 ? '\u2014' : (v > 0 ? '+' : '') + v.toFixed(2) + '%';
