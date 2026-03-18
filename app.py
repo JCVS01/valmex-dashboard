@@ -4621,8 +4621,21 @@ def api_creditos_db():
 def _prewarm_quilts():
     """Pre-compute ALL caches at startup so first user request is instant."""
     import time as _t
+    import traceback as _tb
     _t0 = _t.time()
+    print("[PREWARM] Starting prewarm thread...")
+    try:
+        _prewarm_quilts_inner(_t, _tb, _t0)
+    except Exception as e:
+        print(f"[PREWARM] FATAL ERROR: {e}")
+        _tb.print_exc()
+    finally:
+        if not _prewarm_done.is_set():
+            _prewarm_done.set()
+            print(f"[PREWARM] Force-set prewarm_done after error")
 
+
+def _prewarm_quilts_inner(_t, _tb, _t0):
     # Try disk cache first (survives Render restarts)
     disk_q, disk_q_ts = _disk_cache_load("quilt")
     if disk_q:
