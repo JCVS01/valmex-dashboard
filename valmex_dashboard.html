@@ -676,6 +676,7 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
         <button class="nav-tab" onclick="showPage('propuesta',this)">Propuesta</button>
         <button class="nav-tab" onclick="showPage('comparativa2',this)">Comparativa</button>
         <button class="nav-tab" onclick="showPage('elite',this)">VALMEX Elite</button>
+        <button class="nav-tab" onclick="showPage('recursos',this)">Recursos</button>
       </nav>
     </div>
     <div class="header-right">
@@ -703,6 +704,7 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
     <button class="mobile-tab" onclick="showPage('propuesta',this);closeMobileNav()">Propuesta</button>
     <button class="mobile-tab" onclick="showPage('comparativa2',this);closeMobileNav()">Comparativa</button>
     <button class="mobile-tab" onclick="showPage('elite',this);closeMobileNav()">VALMEX Elite</button>
+    <button class="mobile-tab" onclick="showPage('recursos',this);closeMobileNav()">Recursos</button>
     <button class="mobile-tab" onclick="openChangePwModal();closeMobileNav()">Cambiar contraseña</button>
     <button class="mobile-logout" onclick="window.location.href='/logout'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h7"/><polyline points="17 15 20 12 17 9"/><line x1="20" y1="12" x2="9" y2="12"/></svg> Cerrar sesión</button>
   </div>
@@ -1313,6 +1315,103 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
   </div>
 
   <!-- ELITE -->
+  <!-- ═══════════════════════ PAGE: RECURSOS ═══════════════════════ -->
+  <div id="page-recursos" class="page">
+    <!-- Sub-tab bar -->
+    <div style="display:flex;gap:8px;padding:12px 0 16px;border-bottom:2px solid var(--silver);margin-bottom:20px;">
+      <button class="cmp2-vf-btn active" data-rtab="flujos" onclick="showRecursosTab('flujos',this)" style="font-size:14px;padding:8px 20px;">Flujos Pensión</button>
+      <button class="cmp2-vf-btn" data-rtab="bonos" onclick="showRecursosTab('bonos',this)" style="font-size:14px;padding:8px 20px;">Calculadora Bonos</button>
+    </div>
+
+    <!-- Sub-tab: Flujos Pensión -->
+    <div id="rtab-flujos">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px;max-width:1200px;">
+        <!-- LEFT: Supuestos iniciales -->
+        <div>
+          <div style="background:var(--navy);color:#fff;padding:10px 16px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:14px;border-radius:8px 8px 0 0;">Supuestos iniciales</div>
+          <div style="border:1px solid #D3DDE6;border-top:none;border-radius:0 0 8px 8px;padding:0;">
+            <!-- Situación actual -->
+            <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:12px;color:var(--navy);font-family:'Montserrat',sans-serif;">Situación actual</div>
+            <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;">
+              <span>Edad actual</span><input id="fp-edad" type="number" value="45" min="18" max="99" style="width:100px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
+              <span>Capital inicial</span><input id="fp-capital" type="text" value="0" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
+              <span>Ahorro mensual</span><input id="fp-ahorro" type="text" value="0" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
+            </div>
+            <!-- Rendimiento esperado -->
+            <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:12px;color:var(--navy);font-family:'Montserrat',sans-serif;">Rendimiento esperado</div>
+            <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;">
+              <span>Rendimiento del portafolio (tasa real)*</span><input id="fp-rendimiento" type="text" value="2.00" style="width:100px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"><span></span><span style="font-size:11px;color:var(--gray);">% anual efectiva</span>
+            </div>
+            <!-- Flujos al retiro -->
+            <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:12px;color:var(--navy);font-family:'Montserrat',sans-serif;">Flujos al retiro</div>
+            <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;">
+              <span>Edad de jubilación</span><input id="fp-edad-jub" type="number" value="65" min="30" max="99" style="width:100px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
+              <span>Liquidación por retiro laboral (AFORE, finiquito)</span><input id="fp-liquidacion" type="text" value="0" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
+              <span>Pensión garantizada mensual</span><input id="fp-pension" type="text" value="0" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
+            </div>
+            <!-- Otros flujos -->
+            <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:12px;color:var(--navy);font-family:'Montserrat',sans-serif;">Otros flujos</div>
+            <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;">
+              <span>Edad</span><input id="fp-edad-adicional" type="number" value="70" min="18" max="120" style="width:100px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
+              <span>Ingresos adicionales (venta de casa, terreno...)</span><input id="fp-ing-adicional" type="text" value="0" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
+              <span>Edad</span><input id="fp-edad-recurrente" type="number" value="65" min="18" max="120" style="width:100px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
+              <span>Ingresos recurrentes MENSUAL (rentas)</span><input id="fp-ing-recurrente" type="text" value="0" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
+            </div>
+            <!-- Gasto -->
+            <div style="background:var(--navy);padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;color:#fff;font-weight:700;border-radius:0 0 8px 8px;">
+              <span>Gasto mensual ya jubilado</span><input id="fp-gasto" type="text" value="50,000" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;font-weight:700;">
+              <span>Diferencia entre gasto - ingresos</span><span id="fp-diferencia" style="text-align:right;font-size:13px;width:140px;display:inline-block;">—</span>
+            </div>
+          </div>
+          <p style="font-size:10px;color:var(--gray);margin-top:8px;font-family:'Montserrat',sans-serif;font-style:italic;">*Asumiendo valores constantes a lo largo del tiempo</p>
+          <button onclick="calcFlujosPension()" style="margin-top:12px;background:var(--navy);color:#fff;border:none;padding:10px 28px;border-radius:8px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:14px;cursor:pointer;">Calcular</button>
+        </div>
+
+        <!-- RIGHT: Resultados -->
+        <div>
+          <div style="background:var(--navy);color:#fff;padding:10px 16px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:14px;border-radius:8px 8px 0 0;">Resultados</div>
+          <div style="border:1px solid #D3DDE6;border-top:none;border-radius:0 0 8px 8px;padding:0;">
+            <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;">
+              <span style="font-weight:700;">Edad de jubilación</span><span id="fp-res-edad-jub" style="text-align:right;font-weight:700;">—</span>
+            </div>
+            <!-- Con inversión -->
+            <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:12px;color:var(--navy);font-family:'Montserrat',sans-serif;">Con inversión</div>
+            <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;">
+              <span>Saldo acumulado a la edad de retiro</span><span id="fp-res-saldo-inv" style="text-align:right;font-weight:600;color:#047857;">—</span>
+              <span>Edad que se termina el $</span><span id="fp-res-edad-fin-inv" style="text-align:right;font-weight:600;">—</span>
+              <span>Saldo nominal disponible a la edad</span><span style="display:flex;align-items:center;justify-content:flex-end;gap:4px;"><input id="fp-edad-consulta-inv" type="number" value="100" min="30" max="120" style="width:60px;text-align:right;padding:3px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:12px;"></span>
+              <span>Monto</span><span id="fp-res-monto-inv" style="text-align:right;font-weight:600;">—</span>
+            </div>
+            <!-- Sin inversión -->
+            <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:12px;color:var(--navy);font-family:'Montserrat',sans-serif;">Sin inversión</div>
+            <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;">
+              <span>Saldo acumulado a la edad de retiro</span><span id="fp-res-saldo-sin" style="text-align:right;font-weight:600;color:#DC2626;">—</span>
+              <span>Edad que se termina el $</span><span id="fp-res-edad-fin-sin" style="text-align:right;font-weight:600;">—</span>
+              <span>Saldo nominal disponible a la edad</span><span id="fp-edad-consulta-sin-lbl" style="text-align:right;font-size:12px;color:var(--gray);">—</span>
+              <span>Monto</span><span id="fp-res-monto-sin" style="text-align:right;font-weight:600;">—</span>
+            </div>
+          </div>
+          <!-- Chart -->
+          <div style="margin-top:20px;background:#fff;border:1px solid #D3DDE6;border-radius:8px;padding:16px;">
+            <div style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:13px;color:var(--navy);margin-bottom:10px;">Proyección del saldo</div>
+            <canvas id="fp-chart" height="220"></canvas>
+          </div>
+          <div style="text-align:right;margin-top:12px;">
+            <img src="/VALMEX2.png" alt="VALMEX" style="height:50px;opacity:0.7;">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sub-tab: Calculadora Bonos (en pausa) -->
+    <div id="rtab-bonos" style="display:none;">
+      <div style="text-align:center;padding:60px 20px;color:var(--gray);font-family:'Montserrat',sans-serif;">
+        <p style="font-size:18px;font-weight:600;">Calculadora de Bonos</p>
+        <p style="font-size:14px;margin-top:8px;">Próximamente</p>
+      </div>
+    </div>
+  </div>
+
   <div id="page-elite" class="page">
     <div class="elite-hero">
       <div class="elite-icon">⭐</div>
@@ -2163,7 +2262,7 @@ async function cargarTasasRef(){
 }
 
 // ── NAVEGACIÓN ──
-const PAGES = ['presentacion','propuesta','configuracion','comparativa2','elite'];
+const PAGES = ['presentacion','propuesta','configuracion','comparativa2','elite','recursos'];
 
 let _propuestaCargada = false;
 function showPage(name, el) {
@@ -2177,7 +2276,7 @@ function showPage(name, el) {
   if (el && (el.classList.contains('nav-tab') || el.classList.contains('mobile-tab'))) {
     el.classList.add('active');
   }
-  const nameMap = {'presentacion':'presentación','configuracion':'configuración','propuesta':'propuesta','comparativa2':'comparativa','elite':'valmex elite'};
+  const nameMap = {'presentacion':'presentación','configuracion':'configuración','propuesta':'propuesta','comparativa2':'comparativa','elite':'valmex elite','recursos':'recursos'};
   const label = nameMap[name] || name;
   if (el && el.classList.contains('nav-tab')) {
     document.querySelectorAll('.mobile-tab').forEach(b => { if(b.textContent.trim().toLowerCase()===label) b.classList.add('active'); });
@@ -5324,6 +5423,141 @@ function submitChangePw() {
       if (data.ok) { suc.textContent='Contraseña actualizada'; setTimeout(closeChangePwModal,1500); }
       else { err.textContent=data.error||'Error'; }
     }).catch(()=>{ err.textContent='Error de conexión'; });
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// ██ RECURSOS — Sub-tabs + Flujos Pensión Calculator
+// ══════════════════════════════════════════════════════════════════════════
+
+function showRecursosTab(tab, btn) {
+  document.querySelectorAll('#page-recursos [id^="rtab-"]').forEach(d => d.style.display = 'none');
+  document.getElementById('rtab-' + tab).style.display = '';
+  document.querySelectorAll('#page-recursos .cmp2-vf-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+}
+
+function _fpNum(id) {
+  const v = document.getElementById(id)?.value || '0';
+  return parseFloat(v.replace(/[^0-9.\-]/g, '')) || 0;
+}
+function _fpFmt(v) {
+  if (v == null || isNaN(v)) return '—';
+  return '$ ' + v.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+
+['fp-capital','fp-ahorro','fp-liquidacion','fp-pension','fp-ing-adicional','fp-ing-recurrente','fp-gasto'].forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('blur', () => {
+    const v = parseFloat(el.value.replace(/[^0-9.\-]/g, '')) || 0;
+    el.value = v.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0});
+  });
+  el.addEventListener('focus', () => {
+    const v = parseFloat(el.value.replace(/[^0-9.\-]/g, '')) || 0;
+    el.value = v || '';
+  });
+});
+
+let _fpChart = null;
+
+function calcFlujosPension() {
+  const edadActual = parseInt(document.getElementById('fp-edad').value) || 45;
+  const capitalInicial = _fpNum('fp-capital');
+  const ahorroMensual = _fpNum('fp-ahorro');
+  const rendAnual = parseFloat(document.getElementById('fp-rendimiento').value) / 100 || 0.02;
+  const edadJub = parseInt(document.getElementById('fp-edad-jub').value) || 65;
+  const liquidacion = _fpNum('fp-liquidacion');
+  const pensionMensual = _fpNum('fp-pension');
+  const edadAdicional = parseInt(document.getElementById('fp-edad-adicional').value) || 70;
+  const ingAdicional = _fpNum('fp-ing-adicional');
+  const edadRecurrente = parseInt(document.getElementById('fp-edad-recurrente').value) || 65;
+  const ingRecurrente = _fpNum('fp-ing-recurrente');
+  const gastoMensual = _fpNum('fp-gasto');
+  const edadConsulta = parseInt(document.getElementById('fp-edad-consulta-inv').value) || 100;
+
+  document.getElementById('fp-diferencia').textContent = _fpFmt(pensionMensual + ingRecurrente - gastoMensual);
+
+  const tasaMensual = Math.pow(1 + rendAnual, 1/12) - 1;
+  const maxMeses = 70 * 12;
+  let saldoInv = capitalInicial, saldoSin = capitalInicial;
+  let anio = 0, mes = 1, edad = edadActual;
+  let liquidacionUsada = false, ingAdicionalUsado = false;
+  let saldoRetiroInv = null, saldoRetiroSin = null;
+  let edadFinInv = null, edadFinSin = null;
+  let montoEdadInv = null, montoEdadSin = null;
+  const chartEdades = [], chartInv = [], chartSin = [];
+
+  for (let m = 0; m <= maxMeses; m++) {
+    if (mes === 1) edad = edadActual + anio;
+    if (mes === 1) {
+      chartEdades.push(edad);
+      chartInv.push(Math.max(saldoInv, 0));
+      chartSin.push(Math.max(saldoSin, 0));
+    }
+    if (edad === edadJub && mes === 1) { saldoRetiroInv = saldoInv; saldoRetiroSin = saldoSin; }
+    if (edad === edadConsulta && mes === 1) { montoEdadInv = Math.max(saldoInv, 0); montoEdadSin = Math.max(saldoSin, 0); }
+    if (edadFinInv == null && saldoInv <= 0 && edad > edadJub) edadFinInv = edad;
+    if (edadFinSin == null && saldoSin <= 0 && edad > edadJub) edadFinSin = edad;
+    if (m === maxMeses) break;
+
+    const ahorro = edad < edadJub ? ahorroMensual : 0;
+    const gasto = edad >= edadJub ? gastoMensual : 0;
+    const pension = edad >= edadJub ? pensionMensual : 0;
+    const recurrente = edad >= edadRecurrente ? ingRecurrente : 0;
+    const adicional = (edad === edadAdicional && !ingAdicionalUsado && mes === 1) ? ingAdicional : 0;
+    if (adicional > 0) ingAdicionalUsado = true;
+    const liq = (edad === edadJub && !liquidacionUsada && mes === 1) ? liquidacion : 0;
+    if (liq > 0) liquidacionUsada = true;
+
+    const netoIngGasto = pension + recurrente - gasto;
+    const cargoNeg = netoIngGasto < 0 ? netoIngGasto : 0;
+    const cargoPos = netoIngGasto > 0 ? netoIngGasto : 0;
+
+    const baseInv = saldoInv + ahorro + cargoPos + liq + adicional;
+    const intereses = baseInv > 0 ? baseInv * tasaMensual : 0;
+    saldoInv = saldoInv + ahorro + cargoNeg + cargoPos + liq + adicional + intereses;
+    saldoSin = saldoSin + ahorro + cargoNeg + cargoPos + liq + adicional;
+
+    mes++;
+    if (mes > 12) { mes = 1; anio++; }
+  }
+
+  if (edadFinInv == null) edadFinInv = 'No se acaba';
+  if (edadFinSin == null) edadFinSin = 'No se acaba';
+
+  document.getElementById('fp-res-edad-jub').textContent = edadJub;
+  document.getElementById('fp-res-saldo-inv').textContent = saldoRetiroInv != null ? _fpFmt(saldoRetiroInv) : '—';
+  document.getElementById('fp-res-edad-fin-inv').textContent = edadFinInv;
+  document.getElementById('fp-res-monto-inv').textContent = _fpFmt(montoEdadInv || 0);
+  document.getElementById('fp-res-saldo-sin').textContent = saldoRetiroSin != null ? _fpFmt(saldoRetiroSin) : '—';
+  document.getElementById('fp-res-edad-fin-sin').textContent = edadFinSin;
+  document.getElementById('fp-edad-consulta-sin-lbl').textContent = edadConsulta;
+  document.getElementById('fp-res-monto-sin').textContent = _fpFmt(montoEdadSin || 0);
+
+  const ctx = document.getElementById('fp-chart');
+  if (_fpChart) _fpChart.destroy();
+  _fpChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: chartEdades,
+      datasets: [
+        { label: 'Con inversión', data: chartInv, borderColor: '#047857', backgroundColor: 'rgba(4,120,87,0.08)', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 },
+        { label: 'Sin inversión', data: chartSin, borderColor: '#DC2626', backgroundColor: 'rgba(220,38,38,0.08)', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 },
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'top', labels: { font: { family: 'Montserrat', size: 11 }, usePointStyle: true, pointStyle: 'line' } },
+        tooltip: { callbacks: { label: c => c.dataset.label + ': ' + _fpFmt(c.raw), title: c => 'Edad: ' + c[0].label } }
+      },
+      scales: {
+        x: { title: { display: true, text: 'Edad', font: { family: 'Montserrat', size: 11 } }, ticks: { font: { size: 10 } } },
+        y: { title: { display: true, text: 'Saldo ($)', font: { family: 'Montserrat', size: 11 } }, ticks: { font: { size: 10 }, callback: v => '$' + (v >= 1000000 ? (v/1000000).toFixed(1)+'M' : (v/1000).toFixed(0)+'K') }, beginAtZero: true }
+      },
+      interaction: { intersect: false, mode: 'index' }
+    }
+  });
 }
 </script>
 
