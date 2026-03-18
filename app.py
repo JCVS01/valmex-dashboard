@@ -4060,27 +4060,22 @@ def api_quilt():
     # Return cached data immediately if available
     if _quilt_cache["data"] and not _cache_expired(_quilt_cache["ts"]):
         return jsonify(_quilt_cache["data"])
-    # Wait for prewarm (up to 25s — Render proxy kills at 30s)
-    if not _prewarm_done.is_set():
-        _prewarm_done.wait(timeout=25)
-        if _quilt_cache["data"]:
-            return jsonify(_quilt_cache["data"])
-        return jsonify({"ok": False, "loading": True, "error": "Datos cargando, reintenta en unos segundos"}), 202
-    # Prewarm finished but cache empty (prewarm failed) — try once with timeout
-    from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
+    # Try disk cache
+    disk_q, disk_q_ts = _disk_cache_load("quilt")
+    if disk_q:
+        _quilt_cache["data"] = disk_q
+        _quilt_cache["ts"] = disk_q_ts
+        return jsonify(disk_q)
+    # Compute directly (takes ~6s)
     try:
-        with ThreadPoolExecutor(max_workers=1) as ex:
-            future = ex.submit(_compute_quilt)
-            data = future.result(timeout=25)
+        data = _compute_quilt()
         _quilt_cache["data"] = data
         _quilt_cache["ts"] = time.time()
         _disk_cache_save("quilt", data)
         return jsonify(data)
-    except FuturesTimeout:
-        print("[ERROR] api_quilt: _compute_quilt timed out (25s)")
-        return jsonify({"ok": False, "error": "Timeout calculando datos históricos, reintenta"}), 504
     except Exception as e:
         print(f"[ERROR] api_quilt: {e}")
+        import traceback; traceback.print_exc()
         return jsonify({"ok": False, "error": "Error al calcular datos históricos"}), 500
 
 
@@ -4289,25 +4284,22 @@ def api_quilt_fondos():
         return jsonify({"ok": False, "error": "No autenticado"}), 401
     if _quilt_fondos_cache["data"] and not _cache_expired(_quilt_fondos_cache["ts"]):
         return jsonify(_quilt_fondos_cache["data"])
-    if not _prewarm_done.is_set():
-        _prewarm_done.wait(timeout=25)
-        if _quilt_fondos_cache["data"]:
-            return jsonify(_quilt_fondos_cache["data"])
-        return jsonify({"ok": False, "loading": True, "error": "Datos cargando, reintenta en unos segundos"}), 202
-    from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout
+    # Try disk cache
+    disk_qf, disk_qf_ts = _disk_cache_load("quilt_fondos")
+    if disk_qf:
+        _quilt_fondos_cache["data"] = disk_qf
+        _quilt_fondos_cache["ts"] = disk_qf_ts
+        return jsonify(disk_qf)
+    # Compute directly (takes ~9s)
     try:
-        with ThreadPoolExecutor(max_workers=1) as ex:
-            future = ex.submit(_compute_quilt_fondos)
-            data = future.result(timeout=25)
+        data = _compute_quilt_fondos()
         _quilt_fondos_cache["data"] = data
         _quilt_fondos_cache["ts"] = time.time()
         _disk_cache_save("quilt_fondos", data)
         return jsonify(data)
-    except FuturesTimeout:
-        print("[ERROR] api_quilt_fondos: _compute_quilt_fondos timed out (25s)")
-        return jsonify({"ok": False, "error": "Timeout calculando datos de fondos, reintenta"}), 504
     except Exception as e:
         print(f"[ERROR] api_quilt_fondos: {e}")
+        import traceback; traceback.print_exc()
         return jsonify({"ok": False, "error": "Error al calcular datos de fondos"}), 500
 
 
