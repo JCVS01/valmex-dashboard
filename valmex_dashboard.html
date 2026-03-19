@@ -1334,32 +1334,32 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
             <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:12px;color:var(--navy);font-family:'Montserrat',sans-serif;">Situación actual</div>
             <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;">
               <span>Edad actual</span><input id="fp-edad" type="number" value="45" min="18" max="99" style="width:100px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
-              <span>Capital inicial</span><input id="fp-capital" type="text" value="0" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
-              <span>Ahorro mensual</span><input id="fp-ahorro" type="text" value="0" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
+              <span>Capital inicial</span><input id="fp-capital" type="text" value="$0" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
+              <span>Ahorro mensual</span><input id="fp-ahorro" type="text" value="$0" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
             </div>
             <!-- Rendimiento esperado -->
             <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:12px;color:var(--navy);font-family:'Montserrat',sans-serif;">Rendimiento esperado</div>
             <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;">
-              <span>Rendimiento del portafolio (tasa real)*</span><input id="fp-rendimiento" type="text" value="2.00" style="width:100px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"><span></span><span style="font-size:11px;color:var(--gray);">% anual efectiva</span>
+              <span>Rendimiento del portafolio (tasa real)*</span><input id="fp-rendimiento" type="text" value="2.00%" oninput="fpFormatPct(this)" style="width:100px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"><span></span><span style="font-size:11px;color:var(--gray);">anual efectiva</span>
             </div>
             <!-- Flujos al retiro -->
             <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:12px;color:var(--navy);font-family:'Montserrat',sans-serif;">Flujos al retiro</div>
             <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;">
               <span>Edad de jubilación</span><input id="fp-edad-jub" type="number" value="65" min="30" max="99" style="width:100px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
-              <span>Liquidación por retiro laboral (AFORE, finiquito)</span><input id="fp-liquidacion" type="text" value="0" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
-              <span>Pensión garantizada mensual</span><input id="fp-pension" type="text" value="0" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
+              <span>Liquidaci&oacute;n por retiro laboral (AFORE, finiquito)</span><input id="fp-liquidacion" type="text" value="$0" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
+              <span>Pensi&oacute;n garantizada mensual</span><input id="fp-pension" type="text" value="$0" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
             </div>
             <!-- Otros flujos -->
             <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:12px;color:var(--navy);font-family:'Montserrat',sans-serif;">Otros flujos</div>
             <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;">
               <span>Edad</span><input id="fp-edad-adicional" type="number" value="70" min="18" max="120" style="width:100px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
-              <span>Ingresos adicionales (venta de casa, terreno...)</span><input id="fp-ing-adicional" type="text" value="0" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
+              <span>Ingresos adicionales (venta de casa, terreno...)</span><input id="fp-ing-adicional" type="text" value="$0" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
               <span>Edad</span><input id="fp-edad-recurrente" type="number" value="65" min="18" max="120" style="width:100px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
-              <span>Ingresos recurrentes MENSUAL (rentas)</span><input id="fp-ing-recurrente" type="text" value="0" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
+              <span>Ingresos recurrentes MENSUAL (rentas)</span><input id="fp-ing-recurrente" type="text" value="$0" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
             </div>
             <!-- Gasto -->
             <div style="background:var(--navy);padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;color:#fff;font-weight:700;border-radius:0 0 8px 8px;">
-              <span>Gasto mensual ya jubilado</span><input id="fp-gasto" type="text" value="50,000" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;font-weight:700;">
+              <span>Gasto mensual ya jubilado</span><input id="fp-gasto" type="text" value="$50,000" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;font-weight:700;">
               <span>Diferencia entre gasto - ingresos</span><span id="fp-diferencia" style="text-align:right;font-size:13px;width:140px;display:inline-block;">—</span>
             </div>
           </div>
@@ -5434,6 +5434,14 @@ function showRecursosTab(tab, btn) {
   if (btn) btn.classList.add('active');
 }
 
+function fpFormatPct(el) {
+  let v = el.value.replace(/[^0-9.]/g, '');
+  if (!v) { el.value = ''; return; }
+  el.value = v + '%';
+  const pos = v.length;
+  setTimeout(() => { try { el.setSelectionRange(pos, pos); } catch(e) {} }, 0);
+}
+
 function _fpNum(id) {
   const v = document.getElementById(id)?.value || '0';
   return parseFloat(v.replace(/[^0-9.\-]/g, '')) || 0;
@@ -5443,18 +5451,6 @@ function _fpFmt(v) {
   return '$ ' + v.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 }
 
-['fp-capital','fp-ahorro','fp-liquidacion','fp-pension','fp-ing-adicional','fp-ing-recurrente','fp-gasto'].forEach(id => {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.addEventListener('blur', () => {
-    const v = parseFloat(el.value.replace(/[^0-9.\-]/g, '')) || 0;
-    el.value = v.toLocaleString('en-US', {minimumFractionDigits: 0, maximumFractionDigits: 0});
-  });
-  el.addEventListener('focus', () => {
-    const v = parseFloat(el.value.replace(/[^0-9.\-]/g, '')) || 0;
-    el.value = v || '';
-  });
-});
 
 let _fpChart = null;
 let _fpChartInited = false;
