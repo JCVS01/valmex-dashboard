@@ -5603,11 +5603,13 @@ function calcFlujosPension() {
           if (meta.hidden || ds.hidden) return null;
           const lp = meta.data[meta.data.length - 1];
           if (!lp || !ds.data.length) return null;
-          return { x: lp.x, y: lp.y, val: _fpFmt(ds.data[ds.data.length - 1]), color: ds.borderColor };
+          const raw = ds.data[ds.data.length - 1];
+          const short = raw >= 1000000 ? '$' + (raw/1000000).toFixed(1) + 'M' : raw >= 1000 ? '$' + (raw/1000).toFixed(0) + 'K' : '$' + raw.toFixed(0);
+          return { x: lp.x, y: lp.y, val: short, color: ds.borderColor };
         }).filter(Boolean);
         pts.sort((a, b) => a.y - b.y);
-        for (let i = 1; i < pts.length; i++) { if (pts[i].y - pts[i - 1].y < 16) pts[i].y = pts[i - 1].y + 16; }
-        pts.forEach(p => { ctx.fillStyle = p.color; ctx.font = 'bold 12px Montserrat,sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(p.val, p.x + 6, p.y); });
+        for (let i = 1; i < pts.length; i++) { if (pts[i].y - pts[i - 1].y < 14) pts[i].y = pts[i - 1].y + 14; }
+        pts.forEach(p => { ctx.fillStyle = p.color; ctx.font = 'bold 10px Montserrat,sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(p.val, p.x + 4, p.y); });
         ctx.restore();
       }
     }]
