@@ -5534,15 +5534,28 @@ function calcFlujosPension() {
   document.getElementById('fp-edad-consulta-sin-lbl').textContent = edadConsulta;
   document.getElementById('fp-res-monto-sin').textContent = _fpFmt(montoEdadSin || 0);
 
+  // Trim chart to max age where money runs out (+ 2 years buffer)
+  let maxChartAge = edadActual + 70;
+  const finInvNum = typeof edadFinInv === 'number' ? edadFinInv : null;
+  const finSinNum = typeof edadFinSin === 'number' ? edadFinSin : null;
+  if (finInvNum || finSinNum) {
+    maxChartAge = Math.max(finInvNum || 0, finSinNum || 0) + 2;
+  }
+  const cutIdx = chartEdades.findIndex(e => e > maxChartAge);
+  const trimIdx = cutIdx > 0 ? cutIdx : chartEdades.length;
+  const cEdades = chartEdades.slice(0, trimIdx);
+  const cInv = chartInv.slice(0, trimIdx);
+  const cSin = chartSin.slice(0, trimIdx);
+
   const ctx = document.getElementById('fp-chart');
   if (_fpChart) _fpChart.destroy();
   _fpChart = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: chartEdades,
+      labels: cEdades,
       datasets: [
-        { label: 'Con inversión', data: chartInv, borderColor: '#00205C', backgroundColor: 'rgba(0,32,92,0.06)', fill: true, borderWidth: 1.5, pointRadius: 0, pointHitRadius: 4, pointHoverRadius: 3, tension: 0.35 },
-        { label: 'Sin inversión', data: chartSin, borderColor: '#41BBC9', backgroundColor: 'rgba(65,187,201,0.06)', fill: true, borderWidth: 1.5, pointRadius: 0, pointHitRadius: 4, pointHoverRadius: 3, tension: 0.35 },
+        { label: 'Con inversión', data: cInv, borderColor: '#00205C', backgroundColor: 'rgba(0,32,92,0.06)', fill: true, borderWidth: 1.5, pointRadius: 0, pointHitRadius: 4, pointHoverRadius: 3, tension: 0.35 },
+        { label: 'Sin inversión', data: cSin, borderColor: '#41BBC9', backgroundColor: 'rgba(65,187,201,0.06)', fill: true, borderWidth: 1.5, pointRadius: 0, pointHitRadius: 4, pointHoverRadius: 3, tension: 0.35 },
       ]
     },
     options: {
