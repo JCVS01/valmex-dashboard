@@ -1356,11 +1356,11 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
               <span>Ingresos adicionales (venta de casa, terreno...)</span><input id="fp-ing-adicional" type="text" value="$0" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
               <span>Edad</span><div style="display:flex;align-items:center;gap:4px;"><input id="fp-edad-recurrente" type="number" value="65" min="18" max="120" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"><span style="font-size:11px;color:var(--gray);">a&ntilde;os</span></div>
               <span>Ingresos recurrentes MENSUAL (rentas)</span><input id="fp-ing-recurrente" type="text" value="$0" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
+              <span>Gasto mensual ya jubilado</span><input id="fp-gasto" type="text" value="$50,000" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
             </div>
-            <!-- Gasto -->
-            <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;font-weight:700;border-radius:0 0 8px 8px;">
-              <span>Gasto mensual ya jubilado</span><input id="fp-gasto" type="text" value="$50,000" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;font-weight:700;">
-              <span>Diferencia entre gasto - ingresos</span><span id="fp-diferencia" style="text-align:right;font-size:13px;width:140px;display:inline-block;">—</span>
+            <!-- Diferencia -->
+            <div style="background:var(--navy);padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;color:#fff;font-weight:700;border-radius:0 0 8px 8px;">
+              <span>Diferencia entre gasto e ingreso mensual</span><span id="fp-diferencia" style="text-align:right;font-size:13px;width:140px;display:inline-block;">—</span>
             </div>
           </div>
           <p style="font-size:10px;color:var(--gray);margin-top:8px;font-family:'Montserrat',sans-serif;font-style:italic;">*Asumiendo valores constantes a lo largo del tiempo</p>
