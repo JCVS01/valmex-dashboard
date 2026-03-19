@@ -1332,26 +1332,26 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
           <div style="border:1px solid #D3DDE6;border-top:none;border-radius:0 0 8px 8px;padding:0;">
             <!-- Situación actual -->
             <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:12px;color:var(--navy);font-family:'Montserrat',sans-serif;">Situación actual</div>
-            <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;">
+            <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);">
               <span>Edad actual</span><div style="display:flex;align-items:center;gap:4px;"><input id="fp-edad" type="number" value="45" min="18" max="99" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"><span style="font-size:11px;color:var(--gray);">a&ntilde;os</span></div>
               <span>Capital inicial</span><input id="fp-capital" type="text" value="$0" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
               <span>Ahorro mensual</span><input id="fp-ahorro" type="text" value="$0" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
             </div>
             <!-- Rendimiento esperado -->
             <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:12px;color:var(--navy);font-family:'Montserrat',sans-serif;">Rendimiento esperado</div>
-            <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;">
+            <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);">
               <span>Rendimiento del portafolio (tasa real)*</span><input id="fp-rendimiento" type="text" value="2.00%" oninput="fpFormatPct(this)" style="width:100px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"><span></span><span style="font-size:11px;color:var(--gray);">anual efectiva</span>
             </div>
             <!-- Flujos al retiro -->
             <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:12px;color:var(--navy);font-family:'Montserrat',sans-serif;">Flujos al retiro</div>
-            <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;">
+            <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);">
               <span>Edad de jubilaci&oacute;n</span><div style="display:flex;align-items:center;gap:4px;"><input id="fp-edad-jub" type="number" value="65" min="30" max="99" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"><span style="font-size:11px;color:var(--gray);">a&ntilde;os</span></div>
               <span>Liquidaci&oacute;n por retiro laboral (AFORE, finiquito)</span><input id="fp-liquidacion" type="text" value="$0" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
               <span>Pensi&oacute;n garantizada mensual</span><input id="fp-pension" type="text" value="$0" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
             </div>
             <!-- Otros flujos -->
             <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:12px;color:var(--navy);font-family:'Montserrat',sans-serif;">Otros flujos</div>
-            <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;">
+            <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);">
               <span>Edad</span><div style="display:flex;align-items:center;gap:4px;"><input id="fp-edad-adicional" type="number" value="70" min="18" max="120" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"><span style="font-size:11px;color:var(--gray);">a&ntilde;os</span></div>
               <span>Ingresos adicionales (venta de casa, terreno...)</span><input id="fp-ing-adicional" type="text" value="$0" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
               <span>Edad</span><div style="display:flex;align-items:center;gap:4px;"><input id="fp-edad-recurrente" type="number" value="65" min="18" max="120" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"><span style="font-size:11px;color:var(--gray);">a&ntilde;os</span></div>
@@ -1371,12 +1371,12 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
         <div>
           <div style="background:var(--navy);color:#fff;padding:10px 16px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:14px;border-radius:8px 8px 0 0;">Resultados</div>
           <div style="border:1px solid #D3DDE6;border-top:none;border-radius:0 0 8px 8px;padding:0;">
-            <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;">
+            <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);">
               <span style="font-weight:700;">Edad de jubilación</span><span id="fp-res-edad-jub" style="text-align:right;font-weight:700;">—</span>
             </div>
             <!-- Con inversión -->
             <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:12px;color:var(--navy);font-family:'Montserrat',sans-serif;">Con inversión</div>
-            <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;">
+            <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);">
               <span>Saldo acumulado a la edad de retiro</span><span id="fp-res-saldo-inv" style="text-align:right;font-weight:600;color:#047857;">—</span>
               <span>Edad que se termina el $</span><span id="fp-res-edad-fin-inv" style="text-align:right;font-weight:600;">—</span>
               <span>Saldo nominal disponible a la edad</span><span style="display:flex;align-items:center;justify-content:flex-end;gap:4px;"><input id="fp-edad-consulta-inv" type="number" value="100" min="30" max="120" style="width:60px;text-align:right;padding:3px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:12px;"></span>
@@ -1384,7 +1384,7 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
             </div>
             <!-- Sin inversión -->
             <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:12px;color:var(--navy);font-family:'Montserrat',sans-serif;">Sin inversión</div>
-            <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;">
+            <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);">
               <span>Saldo acumulado a la edad de retiro</span><span id="fp-res-saldo-sin" style="text-align:right;font-weight:600;color:#DC2626;">—</span>
               <span>Edad que se termina el $</span><span id="fp-res-edad-fin-sin" style="text-align:right;font-weight:600;">—</span>
               <span>Saldo nominal disponible a la edad</span><span id="fp-edad-consulta-sin-lbl" style="text-align:right;font-size:12px;color:var(--gray);">—</span>
