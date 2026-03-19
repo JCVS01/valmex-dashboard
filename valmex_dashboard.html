@@ -5541,24 +5541,42 @@ function calcFlujosPension() {
     data: {
       labels: chartEdades,
       datasets: [
-        { label: 'Con inversión', data: chartInv, borderColor: '#047857', backgroundColor: 'rgba(4,120,87,0.08)', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 },
-        { label: 'Sin inversión', data: chartSin, borderColor: '#DC2626', backgroundColor: 'rgba(220,38,38,0.08)', fill: true, tension: 0.3, pointRadius: 0, borderWidth: 2 },
+        { label: 'Con inversión', data: chartInv, borderColor: '#00205C', backgroundColor: 'rgba(0,32,92,0.06)', fill: true, borderWidth: 1.5, pointRadius: 0, pointHitRadius: 4, pointHoverRadius: 3, tension: 0.35 },
+        { label: 'Sin inversión', data: chartSin, borderColor: '#41BBC9', backgroundColor: 'rgba(65,187,201,0.06)', fill: true, borderWidth: 1.5, pointRadius: 0, pointHitRadius: 4, pointHoverRadius: 3, tension: 0.35 },
       ]
     },
     options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      aspectRatio: 2,
+      responsive: true, maintainAspectRatio: true, aspectRatio: 2,
+      interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { position: 'top', labels: { font: { family: 'Montserrat', size: 11 }, usePointStyle: true, pointStyle: 'line' } },
-        tooltip: { callbacks: { label: c => c.dataset.label + ': ' + _fpFmt(c.raw), title: c => 'Edad: ' + c[0].label } }
+        legend: { display: false },
+        tooltip: { backgroundColor: '#00205C', titleFont: { size: 12, weight: '600' }, bodyFont: { size: 12 }, padding: 10, cornerRadius: 6,
+          callbacks: { title: c => 'Edad: ' + c[0].label, label: c => ' ' + c.dataset.label + ': ' + _fpFmt(c.raw) } }
       },
+      layout: { padding: { right: 60, top: 18 } },
       scales: {
-        x: { title: { display: true, text: 'Edad', font: { family: 'Montserrat', size: 11 } }, ticks: { font: { size: 10 } } },
-        y: { title: { display: true, text: 'Saldo ($)', font: { family: 'Montserrat', size: 11 } }, ticks: { font: { size: 10 }, callback: v => '$' + (v >= 1000000 ? (v/1000000).toFixed(1)+'M' : (v/1000).toFixed(0)+'K') }, beginAtZero: true }
-      },
-      interaction: { intersect: false, mode: 'index' }
-    }
+        x: { grid: { display: false }, ticks: { font: { size: 13, family: 'Montserrat' }, color: '#00205C', maxTicksLimit: 8, maxRotation: 0, autoSkip: true }, border: { display: false } },
+        y: { grid: { display: false }, ticks: { font: { size: 13, family: 'Montserrat' }, color: '#00205C', callback: v => '$' + (v >= 1000000 ? (v/1000000).toFixed(1)+'M' : (v/1000).toFixed(0)+'K') }, border: { display: false } }
+      }
+    },
+    plugins: [{
+      id: 'fpEndLabels',
+      afterDatasetsDraw(chart) {
+        const { ctx } = chart;
+        ctx.save();
+        const pts = chart.data.datasets.map((ds, i) => {
+          const meta = chart.getDatasetMeta(i);
+          if (meta.hidden || ds.hidden) return null;
+          const lp = meta.data[meta.data.length - 1];
+          if (!lp || !ds.data.length) return null;
+          return { x: lp.x, y: lp.y, val: _fpFmt(ds.data[ds.data.length - 1]), color: ds.borderColor };
+        }).filter(Boolean);
+        pts.sort((a, b) => a.y - b.y);
+        for (let i = 1; i < pts.length; i++) { if (pts[i].y - pts[i - 1].y < 16) pts[i].y = pts[i - 1].y + 16; }
+        pts.forEach(p => { ctx.fillStyle = p.color; ctx.font = 'bold 12px Montserrat,sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(p.val, p.x + 6, p.y); });
+        ctx.restore();
+      }
+    }]
   });
 }
 </script>
