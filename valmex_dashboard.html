@@ -1396,9 +1396,6 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
             <div style="font-family:'Montserrat',sans-serif;font-weight:700;font-size:13px;color:var(--navy);margin-bottom:10px;">Proyección del saldo</div>
             <canvas id="fp-chart" height="220"></canvas>
           </div>
-          <div style="text-align:right;margin-top:12px;">
-            <img src="/VALMEX2.png" alt="VALMEX" style="height:50px;opacity:0.7;">
-          </div>
         </div>
       </div>
     </div>
@@ -2314,6 +2311,7 @@ function showPage(name, el) {
       setTimeout(() => { Object.values(cmp2Charts).forEach(c => c && c.resize && c.resize()); }, 80);
     }
   }
+  if (name === 'recursos') { _fpInitEmptyChart(); }
   window.scrollTo(0,0);
 }
 function openMobileNav()  { document.getElementById('mobile-nav').style.display='block'; document.body.style.overflow='hidden'; document.body.style.position='fixed'; document.body.style.width='100%'; }
@@ -5459,6 +5457,32 @@ function _fpFmt(v) {
 });
 
 let _fpChart = null;
+let _fpChartInited = false;
+function _fpInitEmptyChart() {
+  if (_fpChartInited) return;
+  _fpChartInited = true;
+  const ctx = document.getElementById('fp-chart');
+  if (!ctx) return;
+  const edades = [];
+  for (let e = 45; e <= 100; e += 5) edades.push(e);
+  _fpChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: edades, datasets: [
+      { label: 'Con inversión', data: edades.map(() => null), borderColor: '#00205C', backgroundColor: 'rgba(0,32,92,0.06)', fill: true, borderWidth: 1.5, pointRadius: 0, tension: 0.35 },
+      { label: 'Sin inversión', data: edades.map(() => null), borderColor: '#41BBC9', backgroundColor: 'rgba(65,187,201,0.06)', fill: true, borderWidth: 1.5, pointRadius: 0, tension: 0.35 },
+    ]},
+    options: {
+      responsive: true, maintainAspectRatio: true, aspectRatio: 2,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { display: false }, tooltip: { enabled: false } },
+      layout: { padding: { right: 60, top: 18 } },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 13, family: 'Montserrat' }, color: '#00205C' }, border: { display: false }, title: { display: true, text: 'Edad', font: { size: 12, family: 'Montserrat' }, color: '#00205C' } },
+        y: { grid: { display: false }, ticks: { font: { size: 13, family: 'Montserrat' }, color: '#00205C', callback: v => '$' + (v/1000000).toFixed(1) + 'M' }, border: { display: false }, title: { display: true, text: 'Saldo ($)', font: { size: 12, family: 'Montserrat' }, color: '#00205C' } }
+      }
+    }
+  });
+}
 
 function calcFlujosPension() {
   const edadActual = parseInt(document.getElementById('fp-edad').value) || 45;
@@ -5549,6 +5573,7 @@ function calcFlujosPension() {
 
   const ctx = document.getElementById('fp-chart');
   if (_fpChart) _fpChart.destroy();
+  _fpChartInited = true;
   _fpChart = new Chart(ctx, {
     type: 'line',
     data: {
