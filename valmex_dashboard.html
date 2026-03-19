@@ -5547,6 +5547,8 @@ function calcFlujosPension() {
     },
     options: {
       responsive: true,
+      maintainAspectRatio: true,
+      aspectRatio: 2,
       plugins: {
         legend: { position: 'top', labels: { font: { family: 'Montserrat', size: 11 }, usePointStyle: true, pointStyle: 'line' } },
         tooltip: { callbacks: { label: c => c.dataset.label + ': ' + _fpFmt(c.raw), title: c => 'Edad: ' + c[0].label } }
