@@ -5477,8 +5477,8 @@ function _fpInitEmptyChart() {
       plugins: { legend: { display: false }, tooltip: { enabled: false } },
       layout: { padding: { right: 60, top: 18 } },
       scales: {
-        x: { grid: { display: false }, ticks: { font: { size: 13, family: 'Montserrat' }, color: '#00205C' }, border: { display: false }, title: { display: true, text: 'Edad', font: { size: 12, family: 'Montserrat' }, color: '#00205C' } },
-        y: { grid: { display: false }, ticks: { font: { size: 13, family: 'Montserrat' }, color: '#00205C', callback: v => '$' + (v/1000000).toFixed(1) + 'M' }, border: { display: false }, title: { display: true, text: 'Saldo ($)', font: { size: 12, family: 'Montserrat' }, color: '#00205C' } }
+        x: { grid: { display: false }, ticks: { font: { size: 13, family: 'Montserrat' }, color: '#00205C' }, border: { display: true, color: '#00205C' }, title: { display: true, text: 'Edad', font: { size: 12, family: 'Montserrat' }, color: '#00205C' } },
+        y: { grid: { display: false }, ticks: { font: { size: 13, family: 'Montserrat' }, color: '#00205C', callback: v => '$' + (v/1000000).toFixed(1) + 'M' }, border: { display: true, color: '#00205C' }, title: { display: true, text: 'Saldo ($)', font: { size: 12, family: 'Montserrat' }, color: '#00205C' } }
       }
     }
   });
@@ -5593,8 +5593,8 @@ function calcFlujosPension() {
       },
       layout: { padding: { right: 60, top: 18 } },
       scales: {
-        x: { grid: { display: false }, ticks: { font: { size: 13, family: 'Montserrat' }, color: '#00205C', maxTicksLimit: 8, maxRotation: 0, autoSkip: true }, border: { display: false } },
-        y: { grid: { display: false }, ticks: { font: { size: 13, family: 'Montserrat' }, color: '#00205C', callback: v => '$' + (v >= 1000000 ? (v/1000000).toFixed(1)+'M' : (v/1000).toFixed(0)+'K') }, border: { display: false } }
+        x: { grid: { display: false }, ticks: { font: { size: 13, family: 'Montserrat' }, color: '#00205C', maxTicksLimit: 8, maxRotation: 0, autoSkip: true }, border: { display: true, color: '#00205C' } },
+        y: { grid: { display: false }, ticks: { font: { size: 13, family: 'Montserrat' }, color: '#00205C', callback: v => '$' + (v >= 1000000 ? (v/1000000).toFixed(1)+'M' : (v/1000).toFixed(0)+'K') }, border: { display: true, color: '#00205C' } }
       }
     },
     plugins: [{
