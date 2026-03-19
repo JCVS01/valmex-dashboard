@@ -73,7 +73,7 @@ def _cache_expired(ts: float) -> bool:
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SECURE'] = os.environ.get("RENDER") is not None
+app.config['SESSION_COOKIE_SECURE'] = bool(os.environ.get("PORT"))  # True on Render (has $PORT), False local
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=12)
 
