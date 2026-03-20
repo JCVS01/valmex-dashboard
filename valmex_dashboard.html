@@ -5589,12 +5589,12 @@ function calcFlujosPension() {
     if (mes > 12) { mes = 1; anio++; }
   }
 
-  // Nullify chart points after depletion so line stops at $0
+  // Nullify chart points: keep depletion year + 1 yr at $0, then null
   if (edadFinSin != null) {
-    for (let i = 0; i < chartEdades.length; i++) { if (chartEdades[i] > edadFinSin) chartSin[i] = null; }
+    for (let i = 0; i < chartEdades.length; i++) { if (chartEdades[i] > edadFinSin + 1) chartSin[i] = null; }
   }
   if (edadFinInv != null) {
-    for (let i = 0; i < chartEdades.length; i++) { if (chartEdades[i] > edadFinInv) chartInv[i] = null; }
+    for (let i = 0; i < chartEdades.length; i++) { if (chartEdades[i] > edadFinInv + 1) chartInv[i] = null; }
   }
 
   // Build sim data lookup and find max patrimonio
@@ -5620,7 +5620,7 @@ function calcFlujosPension() {
   const finInvNum = typeof edadFinInv === 'number' ? edadFinInv : null;
   const finSinNum = typeof edadFinSin === 'number' ? edadFinSin : null;
   let maxChartAge = (finInvNum || finSinNum)
-    ? Math.min(Math.max(finInvNum || 0, finSinNum || 0), 100)
+    ? Math.min(Math.max(finInvNum || 0, finSinNum || 0) + 2, 100)
     : 100;
   const cutIdx = chartEdades.findIndex(e => e > maxChartAge);
   const trimIdx = cutIdx > 0 ? cutIdx : chartEdades.length;
