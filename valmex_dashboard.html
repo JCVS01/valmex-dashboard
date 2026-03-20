@@ -1409,7 +1409,7 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
 
             <!-- Fila 2: Saldo al retiro -->
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;border-top:1px solid #D3DDE6;">
-              <div style="padding:10px 16px;font-size:14px;color:var(--navy);font-weight:600;">Saldo al retiro (<span id="fp-res-edad-jub">—</span> a&ntilde;os)</div>
+              <div style="padding:10px 16px;font-size:14px;color:var(--navy);font-weight:600;white-space:nowrap;">Saldo al retiro (<span id="fp-res-edad-jub">—</span> a&ntilde;os)</div>
               <div style="padding:10px 16px;font-size:14px;color:#C0392B;font-weight:700;text-align:center;border-left:1px solid #D3DDE6;"><span id="fp-res-saldo-sin">—</span></div>
               <div style="padding:10px 16px;font-size:14px;color:#1A7A4A;font-weight:700;text-align:center;border-left:1px solid #D3DDE6;"><span id="fp-res-saldo-inv">—</span></div>
               <div style="padding:10px 16px;font-size:14px;color:var(--navy);font-weight:700;text-align:center;border-left:1px solid #D3DDE6;"><span id="fp-res-diff">—</span></div>
@@ -1417,7 +1417,7 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
 
             <!-- Fila 3: Saldo a los X años -->
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;border-top:1px solid #D3DDE6;background:#F8FAFC;">
-              <div style="padding:10px 16px;font-size:14px;color:var(--navy);font-weight:600;">Saldo a los <input id="fp-edad-consulta-inv" type="number" value="0" min="0" max="120" oninput="updateFpEdadConsulta()" style="width:48px;text-align:center;padding:2px 6px;border:1px solid var(--navy);border-radius:4px;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);"> a&ntilde;os</div>
+              <div style="padding:10px 16px;font-size:14px;color:var(--navy);font-weight:600;white-space:nowrap;">Saldo a los <input id="fp-edad-consulta-inv" type="number" value="" placeholder="—" min="0" max="120" oninput="updateFpEdadConsulta()" style="width:48px;text-align:center;padding:2px 6px;border:1px solid var(--navy);border-radius:4px;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);"> a&ntilde;os</div>
               <div style="padding:10px 16px;font-size:14px;color:#C0392B;font-weight:700;text-align:center;border-left:1px solid #D3DDE6;"><span id="fp-res-monto-sin">—</span></div>
               <div style="padding:10px 16px;font-size:14px;color:#1A7A4A;font-weight:700;text-align:center;border-left:1px solid #D3DDE6;"><span id="fp-res-monto-inv">—</span></div>
               <div style="padding:10px 16px;font-size:14px;color:var(--navy);font-weight:700;text-align:center;border-left:1px solid #D3DDE6;"><span id="fp-res-diff-edad">—</span></div>
@@ -5781,7 +5781,7 @@ function calcFlujosPension() {
       responsive: true, maintainAspectRatio: true, aspectRatio: 2,
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { position: 'bottom', labels: { font: { family: 'Montserrat', size: 11, weight: '600' }, color: '#00205C', usePointStyle: true, pointStyle: 'line', padding: 16 } },
+        legend: { position: 'bottom', labels: { font: { family: 'Montserrat', size: 14, weight: '600' }, color: '#00205C', usePointStyle: true, pointStyle: 'line', padding: 16 } },
         tooltip: { backgroundColor: '#00205C', titleFont: { size: 12, weight: '600' }, bodyFont: { size: 12 }, padding: 10, cornerRadius: 6,
           callbacks: { title: c => 'Edad: ' + c[0].label, label: c => c.raw == null ? null : ' ' + c.dataset.label + ': ' + _fpFmt(c.raw) } }
       },
