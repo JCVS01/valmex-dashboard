@@ -5861,13 +5861,14 @@ function calcTbill() {
   const plazo = parseInt(document.getElementById('tb-plazo').value) || 0;
   const tasaCli = parseFloat(document.getElementById('tb-tasa-cli').value) / 100 || 0;
 
-  const tasaTAS = tasaDesc / (1 - tasaDesc * plazo / 360);
-  const comision = tasaCli / tasaTAS - 1;
-  const precioMesa = 100 * (1 - tasaDesc * plazo / 360);
-  const precioCli = 100 / (1 + tasaCli * plazo / 360);
+  const hasInputs = tasaDesc > 0 && plazo > 0;
+  const tasaTAS = hasInputs ? tasaDesc / (1 - tasaDesc * plazo / 360) : 0;
+  const comision = (hasInputs && tasaCli > 0 && tasaTAS > 0) ? tasaCli / tasaTAS - 1 : null;
+  const precioMesa = hasInputs ? 100 * (1 - tasaDesc * plazo / 360) : 100;
+  const precioCli = (hasInputs && tasaCli > 0) ? 100 / (1 + tasaCli * plazo / 360) : 100;
 
-  document.getElementById('tb-tasa-tas').textContent = (tasaTAS * 100).toFixed(4) + '%';
-  document.getElementById('tb-comision').textContent = (comision * 100).toFixed(2) + '%';
+  document.getElementById('tb-tasa-tas').textContent = hasInputs ? (tasaTAS * 100).toFixed(4) + '%' : '—';
+  document.getElementById('tb-comision').textContent = comision != null ? (comision * 100).toFixed(2) + '%' : '—';
 
   // Fecha vencimiento
   const hoy = new Date();
@@ -5906,7 +5907,7 @@ function calcTbill() {
   }
 
   document.getElementById('tb-tot-monto').textContent = totMonto > 0 ? f2(totMonto) : '—';
-  document.getElementById('tb-tot-pmesa').textContent = precioMesa.toFixed(6);
+  document.getElementById('tb-tot-pmesa').textContent = hasInputs ? precioMesa.toFixed(6) : '—';
   document.getElementById('tb-tot-titulos').textContent = totTit > 0 ? totTit.toLocaleString('en-US') : '—';
   document.getElementById('tb-tot-nominal').textContent = totNom > 0 ? totNom.toLocaleString('en-US') : '—';
   document.getElementById('tb-tot-pagar-mesa').textContent = totPagarMesa > 0 ? f2(totPagarMesa) : '—';
