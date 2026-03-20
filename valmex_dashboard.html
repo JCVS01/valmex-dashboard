@@ -1428,13 +1428,6 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
               <div style="padding:10px 16px;font-size:14px;color:var(--navy);font-weight:700;text-align:center;border-left:1px solid #D3DDE6;"><span id="fp-res-diff-fin">—</span></div>
             </div>
 
-            <!-- Fila 5: Monto Máx. Patrimonio -->
-            <div style="display:grid;grid-template-columns:1.6fr 1fr 1fr 0.8fr;border-top:1px solid #D3DDE6;border-radius:0 0 8px 8px;">
-              <div style="padding:10px 16px;font-size:14px;color:var(--navy);font-weight:600;">Monto M&aacute;x. Patrimonio</div>
-              <div style="padding:10px 16px;font-size:14px;color:#C0392B;font-weight:700;text-align:center;border-left:1px solid #D3DDE6;"><span id="fp-res-max-sin">—</span></div>
-              <div style="padding:10px 16px;font-size:14px;color:#1A7A4A;font-weight:700;text-align:center;border-left:1px solid #D3DDE6;"><span id="fp-res-max-inv">—</span></div>
-              <div style="padding:10px 16px;font-size:14px;color:var(--navy);font-weight:700;text-align:center;border-left:1px solid #D3DDE6;"><span id="fp-res-diff-max">—</span></div>
-            </div>
 
           </div>
 
@@ -5649,10 +5642,6 @@ function calcFlujosPension() {
     _finDiffEl.textContent = (_fd >= 0 ? '+' : '') + _fd + ' a\xF1os';
   }
 
-  // +/- Monto Máx. Patrimonio
-  const _diffMaxEl = document.getElementById('fp-res-diff-max');
-  const _diffMax = maxInvMonto - maxSinMonto;
-  _diffMaxEl.textContent = (_diffMax >= 0 ? '+' : '') + _fpFmt(_diffMax);
 
   // Trim chart: stop shortly after last depletion, or show full simulation horizon
   const finInvNum = typeof edadFinInv === 'number' ? edadFinInv : null;
