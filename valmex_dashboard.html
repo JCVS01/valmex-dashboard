@@ -5646,7 +5646,7 @@ function calcFlujosPension() {
       plugins: {
         legend: { display: false },
         tooltip: { backgroundColor: '#00205C', titleFont: { size: 12, weight: '600' }, bodyFont: { size: 12 }, padding: 10, cornerRadius: 6,
-          callbacks: { title: c => 'Edad: ' + c[0].label, label: c => ' ' + c.dataset.label + ': ' + _fpFmt(c.raw) } }
+          callbacks: { title: c => 'Edad: ' + c[0].label, label: c => c.raw == null ? null : ' ' + c.dataset.label + ': ' + _fpFmt(c.raw) } }
       },
       layout: { padding: { right: 60, top: 18 } },
       scales: {
@@ -5662,9 +5662,13 @@ function calcFlujosPension() {
         const pts = chart.data.datasets.map((ds, i) => {
           const meta = chart.getDatasetMeta(i);
           if (meta.hidden || ds.hidden) return null;
-          const lp = meta.data[meta.data.length - 1];
-          if (!lp || !ds.data.length) return null;
-          const raw = ds.data[ds.data.length - 1];
+          // Find last non-null data point
+          let lastIdx = ds.data.length - 1;
+          while (lastIdx >= 0 && ds.data[lastIdx] == null) lastIdx--;
+          if (lastIdx < 0) return null;
+          const lp = meta.data[lastIdx];
+          if (!lp) return null;
+          const raw = ds.data[lastIdx];
           const short = raw >= 1000000 ? '$' + (raw/1000000).toFixed(1) + 'M' : raw >= 1000 ? '$' + (raw/1000).toFixed(0) + 'K' : '$' + raw.toFixed(0);
           return { x: lp.x, y: lp.y, val: short, color: ds.borderColor };
         }).filter(Boolean);
