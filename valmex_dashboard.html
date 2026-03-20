@@ -5620,7 +5620,7 @@ function calcFlujosPension() {
   const finInvNum = typeof edadFinInv === 'number' ? edadFinInv : null;
   const finSinNum = typeof edadFinSin === 'number' ? edadFinSin : null;
   let maxChartAge = (finInvNum || finSinNum)
-    ? Math.min(Math.max(finInvNum || 0, finSinNum || 0) + 2, 100)
+    ? Math.min(Math.max(finInvNum || 0, finSinNum || 0), 100)
     : 100;
   const cutIdx = chartEdades.findIndex(e => e > maxChartAge);
   const trimIdx = cutIdx > 0 ? cutIdx : chartEdades.length;
@@ -5648,7 +5648,7 @@ function calcFlujosPension() {
         tooltip: { backgroundColor: '#00205C', titleFont: { size: 12, weight: '600' }, bodyFont: { size: 12 }, padding: 10, cornerRadius: 6,
           callbacks: { title: c => 'Edad: ' + c[0].label, label: c => c.raw == null ? null : ' ' + c.dataset.label + ': ' + _fpFmt(c.raw) } }
       },
-      layout: { padding: { right: 60, top: 18 } },
+      layout: { padding: { right: 45, top: 18 } },
       scales: {
         x: { grid: { display: false }, ticks: { font: { size: 13, family: 'Montserrat' }, color: '#00205C', maxTicksLimit: 8, maxRotation: 0, autoSkip: true }, border: { display: true, color: '#00205C' } },
         y: { grid: { display: false }, ticks: { font: { size: 13, family: 'Montserrat' }, color: '#00205C', callback: v => '$' + (v >= 1000000 ? (v/1000000).toFixed(1)+'M' : (v/1000).toFixed(0)+'K') }, border: { display: true, color: '#00205C' } }
@@ -5674,7 +5674,7 @@ function calcFlujosPension() {
         }).filter(Boolean);
         pts.sort((a, b) => a.y - b.y);
         for (let i = 1; i < pts.length; i++) { if (pts[i].y - pts[i - 1].y < 14) pts[i].y = pts[i - 1].y + 14; }
-        pts.forEach(p => { ctx.fillStyle = p.color; ctx.font = 'bold 10px Montserrat,sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(p.val, p.x + 4, p.y); });
+        pts.forEach(p => { ctx.fillStyle = p.color; ctx.font = 'bold 13px Montserrat,sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(p.val, p.x + 4, p.y); });
         ctx.restore();
       }
     }]
