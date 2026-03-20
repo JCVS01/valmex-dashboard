@@ -1335,7 +1335,7 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
         <div class="prop-title-left">
           <div class="prop-accent"></div>
           <div style="display:flex;flex-direction:column;gap:2px;">
-            <span class="prop-title">Flujo de pensión</span>
+            <span class="prop-title" id="recursos-page-title">Flujo de Pensión</span>
           </div>
         </div>
         <img src="/VALMEX2.png" style="height:75px;width:auto;" alt="VALMEX">
@@ -1473,8 +1473,8 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
             <!-- Inputs principales -->
             <div style="padding:10px 16px;display:grid;grid-template-columns:repeat(6,auto);gap:6px 14px;align-items:center;font-size:14px;font-family:'Montserrat',sans-serif;color:var(--navy);">
               <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">Tasa Descuento</div><input id="tb-tasa-desc" type="text" value="" placeholder="%" autocomplete="nope" oninput="fpFormatPct(this);calcTbill()" style="width:80px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;"></div>
-              <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">D&iacute;as Liq (T+)</div><input id="tb-dias-liq" type="number" value="" placeholder="0" autocomplete="nope" oninput="calcTbill()" style="width:50px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;"></div>
-              <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">Plazo</div><input id="tb-plazo" type="number" value="" placeholder="0" autocomplete="nope" oninput="calcTbill()" style="width:60px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;"></div>
+              <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">D&iacute;as Liq (T+)</div><input id="tb-dias-liq" type="number" value="" placeholder="—" autocomplete="nope" oninput="calcTbill()" style="width:50px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;"></div>
+              <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">Plazo</div><input id="tb-plazo" type="number" value="" placeholder="—" autocomplete="nope" oninput="calcTbill()" style="width:60px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;"></div>
               <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;color:var(--sky);">Tasa Cliente</div><input id="tb-tasa-cli" type="text" value="" placeholder="%" autocomplete="nope" oninput="fpFormatPct(this);calcTbill()" style="width:80px;text-align:right;padding:4px 6px;border:1px solid var(--sky);border-radius:4px;font-size:14px;background:rgba(65,187,201,0.1);"></div>
               <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">Tasa TAS</div><span id="tb-tasa-tas" style="font-weight:700;font-size:14px;">—</span></div>
               <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">Comisi&oacute;n</div><span id="tb-comision" style="font-weight:700;font-size:14px;">—</span></div>
@@ -5575,6 +5575,9 @@ function showRecursosTab(tab, btn) {
   document.getElementById('rtab-' + tab).style.display = '';
   document.querySelectorAll('#page-recursos .cmp2-vf-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
+  const titles = { flujos: 'Flujo de Pensión', bonos: 'Calculadora de Bonos' };
+  const titleEl = document.getElementById('recursos-page-title');
+  if (titleEl) titleEl.textContent = titles[tab] || '';
   if (tab === 'bonos') { _tbInitClientes(); calcCetes(); }
 }
 
