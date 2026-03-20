@@ -5633,9 +5633,6 @@ function calcFlujosPension() {
   const _finLabel = e => (e == null || e > 100) ? '> 100 años' : e + ' años';
   document.getElementById('fp-res-edad-fin-sin').textContent = _finLabel(edadFinSin);
   document.getElementById('fp-res-edad-fin-inv').textContent = _finLabel(edadFinInv);
-  const _maxEdadLabel = e => e > 100 ? '> 100 años' : e + ' años';
-  document.getElementById('fp-res-max-sin').textContent = maxSinEdad != null ? _fpFmt(maxSinMonto) + ' — ' + _maxEdadLabel(maxSinEdad) : '—';
-  document.getElementById('fp-res-max-inv').textContent = maxInvEdad != null ? _fpFmt(maxInvMonto) + ' — ' + _maxEdadLabel(maxInvEdad) : '—';
   // +/- Saldo al retiro
   const _diff = (saldoRetiroInv || 0) - (saldoRetiroSin || 0);
   const _diffEl = document.getElementById('fp-res-diff');
