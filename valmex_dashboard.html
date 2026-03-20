@@ -1317,11 +1317,27 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
   <!-- ELITE -->
   <!-- ═══════════════════════ PAGE: RECURSOS ═══════════════════════ -->
   <div id="page-recursos" class="page">
-    <!-- Sub-tab bar -->
-    <div style="display:flex;gap:8px;padding:12px 0 16px;border-bottom:2px solid var(--silver);margin-bottom:20px;">
-      <button class="cmp2-vf-btn active" data-rtab="flujos" onclick="showRecursosTab('flujos',this)" style="font-size:14px;padding:8px 20px;">Flujos Pensión</button>
-      <button class="cmp2-vf-btn" data-rtab="bonos" onclick="showRecursosTab('bonos',this)" style="font-size:14px;padding:8px 20px;">Calculadora Bonos</button>
+    <!-- Titlebar (mirrors prop-titlebar) -->
+    <div class="prop-titlebar">
+      <div></div>
+      <div class="prop-right">
+        <button class="cmp2-vf-btn active" data-rtab="flujos" onclick="showRecursosTab('flujos',this)" style="font-size:14px;padding:8px 20px;">Flujos Pensión</button>
+        <button class="cmp2-vf-btn" data-rtab="bonos" onclick="showRecursosTab('bonos',this)" style="font-size:14px;padding:8px 20px;">Calculadora Bonos</button>
+      </div>
     </div>
+
+    <div class="prop-dash-scaler">
+      <!-- Title + logo (mirrors prop-dash-title) -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 2px 2px;">
+        <div class="prop-title-left">
+          <div class="prop-accent"></div>
+          <div style="display:flex;flex-direction:column;gap:2px;">
+            <span class="prop-title">Recursos</span>
+          </div>
+        </div>
+        <img src="/VALMEX2.png" style="height:75px;width:auto;" alt="VALMEX">
+      </div>
+      <div class="prop-rule" style="margin-bottom:16px;"></div>
 
     <!-- Sub-tab: Flujos Pensión -->
     <div id="rtab-flujos">
@@ -1403,6 +1419,7 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
         <p style="font-size:14px;margin-top:8px;">Próximamente</p>
       </div>
     </div>
+    </div><!-- end prop-dash-scaler -->
   </div>
 
   <div id="page-elite" class="page">
