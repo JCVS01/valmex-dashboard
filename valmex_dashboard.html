@@ -1351,29 +1351,29 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
             <!-- Situación actual -->
             <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:14px;color:var(--navy);font-family:'Montserrat',sans-serif;">Situación actual</div>
             <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:14px;font-family:'Montserrat',sans-serif;color:var(--navy);">
-              <span>Edad actual</span><div style="display:flex;align-items:center;gap:4px;"><input id="fp-edad" type="number" value="0" min="0" max="99" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;"><span style="font-size:14px;color:var(--navy);">a&ntilde;os</span></div>
-              <span>Capital inicial</span><input id="fp-capital" type="text" value="$0" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
-              <span>Ahorro mensual hasta retiro</span><input id="fp-ahorro" type="text" value="$0" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
+              <span>Edad actual</span><div style="display:flex;align-items:center;gap:4px;"><input id="fp-edad" type="number" value="" min="0" max="99" placeholder="0" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;"><span style="font-size:14px;color:var(--navy);">a&ntilde;os</span></div>
+              <span>Capital inicial</span><input id="fp-capital" type="text" value="" placeholder="$" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
+              <span>Ahorro mensual hasta retiro</span><input id="fp-ahorro" type="text" value="" placeholder="$" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
             </div>
             <!-- Rendimiento esperado -->
             <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:14px;color:var(--navy);font-family:'Montserrat',sans-serif;">Rendimiento esperado</div>
             <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:14px;font-family:'Montserrat',sans-serif;color:var(--navy);">
-              <span>Rendimiento anualizado (tasa real)*</span><input id="fp-rendimiento" type="text" value="0.00%" oninput="fpFormatPct(this)" style="width:100px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">            </div>
+              <span>Rendimiento anualizado (tasa real)*</span><input id="fp-rendimiento" type="text" value="" placeholder="%" oninput="fpFormatPct(this)" style="width:100px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">            </div>
             <!-- Flujos al retiro -->
             <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:14px;color:var(--navy);font-family:'Montserrat',sans-serif;">Flujos al retiro</div>
             <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:14px;font-family:'Montserrat',sans-serif;color:var(--navy);">
               <span>Edad jubilaci&oacute;n</span><div style="display:flex;align-items:center;gap:4px;"><input id="fp-edad-jub" type="number" value="65" min="30" max="99" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;"><span style="font-size:14px;color:var(--navy);">a&ntilde;os</span></div>
-              <span>Liquidaci&oacute;n por retiro (AFORE, finiquito, etc)</span><input id="fp-liquidacion" type="text" value="$0" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
-              <span>Pensi&oacute;n mensual</span><input id="fp-pension" type="text" value="$0" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
+              <span>Liquidaci&oacute;n por retiro (AFORE, finiquito, etc)</span><input id="fp-liquidacion" type="text" value="" placeholder="$" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
+              <span>Pensi&oacute;n mensual</span><input id="fp-pension" type="text" value="" placeholder="$" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
             </div>
             <!-- Otros flujos -->
             <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:14px;color:var(--navy);font-family:'Montserrat',sans-serif;">Otros flujos</div>
             <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:14px;font-family:'Montserrat',sans-serif;color:var(--navy);">
-              <span>Edad</span><div style="display:flex;align-items:center;gap:4px;"><input id="fp-edad-adicional" type="number" value="0" min="0" max="120" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;"><span style="font-size:14px;color:var(--navy);">a&ntilde;os</span></div>
-              <span>Ingresos adicionales (venta de casa, terreno, etc)</span><input id="fp-ing-adicional" type="text" value="$0" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
-              <span>Edad</span><div style="display:flex;align-items:center;gap:4px;"><input id="fp-edad-recurrente" type="number" value="0" min="0" max="120" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;"><span style="font-size:14px;color:var(--navy);">a&ntilde;os</span></div>
-              <span>Ingresos y gastos mensuales recurrentes</span><input id="fp-ing-recurrente" type="text" value="$0" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
-              <span>Gastos mensuales al jubilarse</span><input id="fp-gasto" type="text" value="$0" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
+              <span>Edad</span><div style="display:flex;align-items:center;gap:4px;"><input id="fp-edad-adicional" type="number" value="" min="0" max="120" placeholder="0" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;"><span style="font-size:14px;color:var(--navy);">a&ntilde;os</span></div>
+              <span>Ingresos adicionales (venta de casa, terreno, etc)</span><input id="fp-ing-adicional" type="text" value="" placeholder="$" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
+              <span>Edad</span><div style="display:flex;align-items:center;gap:4px;"><input id="fp-edad-recurrente" type="number" value="" min="0" max="120" placeholder="0" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;"><span style="font-size:14px;color:var(--navy);">a&ntilde;os</span></div>
+              <span>Ingresos y gastos mensuales recurrentes</span><input id="fp-ing-recurrente" type="text" value="" placeholder="$" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
+              <span>Gastos mensuales al jubilarse</span><input id="fp-gasto" type="text" value="" placeholder="$" oninput="formatMonto(this)" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
             </div>
             <!-- Diferencia -->
             <div style="background:var(--navy);padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:14px;font-family:'Montserrat',sans-serif;color:#fff;font-weight:700;border-radius:0 0 8px 8px;">
@@ -1511,6 +1511,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 function formatMonto(el){
   let v=el.value.replace(/[^0-9.]/g,'');
+  if(!v){el.value='';return;}
   const p=v.split('.');
   p[0]=p[0].replace(/\B(?=(\d{3})+(?!\d))/g,',');
   el.value='$'+(p.length>1?p[0]+'.'+p[1].slice(0,2):p[0]);
@@ -5588,13 +5589,21 @@ function calcFlujosPension() {
     if (mes > 12) { mes = 1; anio++; }
   }
 
+  // Nullify chart points after depletion so line stops at $0
+  if (edadFinSin != null) {
+    for (let i = 0; i < chartEdades.length; i++) { if (chartEdades[i] > edadFinSin) chartSin[i] = null; }
+  }
+  if (edadFinInv != null) {
+    for (let i = 0; i < chartEdades.length; i++) { if (chartEdades[i] > edadFinInv) chartInv[i] = null; }
+  }
+
   // Build sim data lookup and find max patrimonio
   _fpSimData = {};
   let maxInvMonto = 0, maxInvEdad = null, maxSinMonto = 0, maxSinEdad = null;
   for (let i = 0; i < chartEdades.length; i++) {
-    _fpSimData[chartEdades[i]] = { inv: chartInv[i], sin: chartSin[i] };
-    if (chartInv[i] > maxInvMonto) { maxInvMonto = chartInv[i]; maxInvEdad = chartEdades[i]; }
-    if (chartSin[i] > maxSinMonto) { maxSinMonto = chartSin[i]; maxSinEdad = chartEdades[i]; }
+    _fpSimData[chartEdades[i]] = { inv: chartInv[i] ?? 0, sin: chartSin[i] ?? 0 };
+    if ((chartInv[i] ?? 0) > maxInvMonto) { maxInvMonto = chartInv[i]; maxInvEdad = chartEdades[i]; }
+    if ((chartSin[i] ?? 0) > maxSinMonto) { maxSinMonto = chartSin[i]; maxSinEdad = chartEdades[i]; }
   }
 
   document.getElementById('fp-res-edad-jub').textContent = edadJub;
@@ -5607,8 +5616,13 @@ function calcFlujosPension() {
   document.getElementById('fp-res-max-sin').textContent = maxSinEdad != null ? _fpFmt(maxSinMonto) + ' — ' + maxSinEdad + ' años' : '—';
   document.getElementById('fp-res-max-inv').textContent = maxInvEdad != null ? _fpFmt(maxInvMonto) + ' — ' + maxInvEdad + ' años' : '—';
 
-  // Trim chart to model horizon
+  // Trim chart: stop shortly after last depletion (or full horizon if neither depletes)
   let maxChartAge = edadActual + 70;
+  const finInvNum = typeof edadFinInv === 'number' ? edadFinInv : null;
+  const finSinNum = typeof edadFinSin === 'number' ? edadFinSin : null;
+  if (finInvNum || finSinNum) {
+    maxChartAge = Math.max(finInvNum || 0, finSinNum || 0) + 2;
+  }
   const cutIdx = chartEdades.findIndex(e => e > maxChartAge);
   const trimIdx = cutIdx > 0 ? cutIdx : chartEdades.length;
   const cEdades = chartEdades.slice(0, trimIdx);
