@@ -1431,6 +1431,12 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
               <div style="padding:10px 16px;font-size:14px;color:#1A7A4A;font-weight:700;text-align:center;border-left:1px solid #D3DDE6;"><span id="fp-res-max-inv">—</span></div>
             </div>
 
+            <!-- Fila 6: Diferencial +/- -->
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-top:2px solid var(--navy);background:#E8EEF4;border-radius:0 0 8px 8px;">
+              <div style="padding:10px 16px;font-size:14px;color:var(--navy);font-weight:700;">+/-</div>
+              <div style="grid-column:2/span 2;padding:10px 16px;font-size:14px;font-weight:700;text-align:center;border-left:1px solid #D3DDE6;"><span id="fp-res-diff">—</span></div>
+            </div>
+
           </div>
 
         </div>
@@ -5615,6 +5621,10 @@ function calcFlujosPension() {
   document.getElementById('fp-res-edad-fin-inv').textContent = edadFinInv != null ? edadFinInv + ' años' : '> 100 años';
   document.getElementById('fp-res-max-sin').textContent = maxSinEdad != null ? _fpFmt(maxSinMonto) + ' — ' + maxSinEdad + ' años' : '—';
   document.getElementById('fp-res-max-inv').textContent = maxInvEdad != null ? _fpFmt(maxInvMonto) + ' — ' + maxInvEdad + ' años' : '—';
+  const _diff = (saldoRetiroInv || 0) - (saldoRetiroSin || 0);
+  const _diffEl = document.getElementById('fp-res-diff');
+  _diffEl.textContent = (_diff >= 0 ? '+' : '') + _fpFmt(_diff);
+  _diffEl.style.color = _diff >= 0 ? '#1A7A4A' : '#C0392B';
 
   // Trim chart: stop shortly after last depletion, max horizon = age 100
   const finInvNum = typeof edadFinInv === 'number' ? edadFinInv : null;
