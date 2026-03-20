@@ -1576,6 +1576,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     inp.setAttribute('autocorrect', 'off');
     inp.setAttribute('autocapitalize', 'off');
     inp.setAttribute('spellcheck', 'false');
+    inp.setAttribute('name', 'x' + Math.random().toString(36).slice(2,8));
+    if (inp.type !== 'password') { inp.setAttribute('readonly',''); inp.addEventListener('focus', function(){this.removeAttribute('readonly');}); inp.addEventListener('blur', function(){this.setAttribute('readonly','');}); }
     // Borrar todo cuando hay selección y se presiona Delete/Backspace
     inp.addEventListener('keydown', e => {
       if ((e.key === 'Delete' || e.key === 'Backspace') &&
