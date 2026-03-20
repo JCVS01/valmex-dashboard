@@ -1475,42 +1475,42 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
               <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">Tasa Descuento</div><input id="tb-tasa-desc" type="text" value="" placeholder="%" autocomplete="nope" oninput="fpFormatPct(this);calcTbill()" style="width:80px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;"></div>
               <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">D&iacute;as Liq (T+)</div><input id="tb-dias-liq" type="number" value="" placeholder="0" autocomplete="nope" oninput="calcTbill()" style="width:50px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;"></div>
               <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">Plazo</div><input id="tb-plazo" type="number" value="" placeholder="0" autocomplete="nope" oninput="calcTbill()" style="width:60px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;"></div>
-              <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">Tasa TAS</div><span id="tb-tasa-tas" style="font-weight:700;font-size:14px;">—</span></div>
               <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;color:var(--sky);">Tasa Cliente</div><input id="tb-tasa-cli" type="text" value="" placeholder="%" autocomplete="nope" oninput="fpFormatPct(this);calcTbill()" style="width:80px;text-align:right;padding:4px 6px;border:1px solid var(--sky);border-radius:4px;font-size:14px;background:rgba(65,187,201,0.1);"></div>
+              <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">Tasa TAS</div><span id="tb-tasa-tas" style="font-weight:700;font-size:14px;">—</span></div>
               <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">Comisi&oacute;n</div><span id="tb-comision" style="font-weight:700;font-size:14px;">—</span></div>
             </div>
             <!-- Lista de clientes -->
             <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:14px;color:var(--navy);font-family:'Montserrat',sans-serif;">Clientes</div>
             <div style="padding:6px 16px;overflow-x:auto;">
-              <table style="width:100%;border-collapse:collapse;font-size:12px;font-family:'Montserrat',sans-serif;color:var(--navy);">
-                <thead><tr style="background:var(--navy);color:#fff;font-size:11px;">
-                  <th style="padding:6px 4px;text-align:left;"># Cto</th>
-                  <th style="padding:6px 4px;text-align:left;">Nombre</th>
-                  <th style="padding:6px 4px;text-align:right;">Monto a invertir</th>
-                  <th style="padding:6px 4px;text-align:right;">Tasa Descuento</th>
-                  <th style="padding:6px 4px;text-align:right;">Plazo</th>
-                  <th style="padding:6px 4px;text-align:right;">Precio Mesa</th>
-                  <th style="padding:6px 4px;text-align:right;">Precio Cliente</th>
-                  <th style="padding:6px 4px;text-align:right;">T&iacute;tulos</th>
-                  <th style="padding:6px 4px;text-align:right;">Monto Nominal</th>
-                  <th style="padding:6px 4px;text-align:right;">Saldo Mesa</th>
-                  <th style="padding:6px 4px;text-align:right;">Saldo Cliente</th>
-                  <th style="padding:6px 4px;text-align:right;">Utilidad</th>
-                  <th style="padding:6px 4px;text-align:right;">Sobrante</th>
+              <table style="min-width:960px;width:100%;border-collapse:collapse;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);">
+                <thead><tr style="background:var(--navy);color:#fff;font-size:12px;">
+                  <th style="padding:8px 10px;text-align:left;white-space:nowrap;"># Cto</th>
+                  <th style="padding:8px 10px;text-align:right;white-space:nowrap;">Mto a invertir</th>
+                  <th style="padding:8px 10px;text-align:right;white-space:nowrap;">Plazo</th>
+                  <th style="padding:8px 10px;text-align:right;white-space:nowrap;">T&iacute;tulos</th>
+                  <th style="padding:8px 10px;text-align:right;white-space:nowrap;">Monto Nominal</th>
+                  <th style="padding:8px 10px;text-align:right;white-space:nowrap;">T. Desc</th>
+                  <th style="padding:8px 10px;text-align:right;white-space:nowrap;">Precio Mesa</th>
+                  <th style="padding:8px 10px;text-align:right;white-space:nowrap;">Saldo Mesa</th>
+                  <th style="padding:8px 10px;text-align:right;white-space:nowrap;">Precio Cliente</th>
+                  <th style="padding:8px 10px;text-align:right;white-space:nowrap;">Saldo Cliente</th>
+                  <th style="padding:8px 10px;text-align:right;white-space:nowrap;">Utilidad</th>
+                  <th style="padding:8px 10px;text-align:right;white-space:nowrap;">Sobrante</th>
                 </tr></thead>
                 <tbody id="tb-clientes-body"></tbody>
-                <tfoot><tr style="font-weight:700;border-top:2px solid var(--navy);">
-                  <td style="padding:6px 4px;">Total</td><td></td>
-                  <td id="tb-tot-monto" style="padding:6px 4px;text-align:right;">—</td>
-                  <td></td><td></td>
-                  <td id="tb-tot-pmesa" style="padding:6px 4px;text-align:right;"></td>
-                  <td></td>
-                  <td id="tb-tot-titulos" style="padding:6px 4px;text-align:right;">—</td>
-                  <td id="tb-tot-nominal" style="padding:6px 4px;text-align:right;">—</td>
-                  <td id="tb-tot-pagar-mesa" style="padding:6px 4px;text-align:right;">—</td>
-                  <td id="tb-tot-pagar-cli" style="padding:6px 4px;text-align:right;">—</td>
-                  <td id="tb-tot-utilidad" style="padding:6px 4px;text-align:right;">—</td>
-                  <td id="tb-tot-saldo" style="padding:6px 4px;text-align:right;">—</td>
+                <tfoot><tr style="font-weight:700;border-top:2px solid var(--navy);font-size:13px;">
+                  <td style="padding:7px 10px;">Total</td>
+                  <td id="tb-tot-monto" style="padding:7px 10px;text-align:right;">—</td>
+                  <td style="padding:7px 10px;"></td>
+                  <td id="tb-tot-titulos" style="padding:7px 10px;text-align:right;">—</td>
+                  <td id="tb-tot-nominal" style="padding:7px 10px;text-align:right;">—</td>
+                  <td style="padding:7px 10px;"></td>
+                  <td id="tb-tot-pmesa" style="padding:7px 10px;text-align:right;"></td>
+                  <td id="tb-tot-pagar-mesa" style="padding:7px 10px;text-align:right;">—</td>
+                  <td style="padding:7px 10px;"></td>
+                  <td id="tb-tot-pagar-cli" style="padding:7px 10px;text-align:right;">—</td>
+                  <td id="tb-tot-utilidad" style="padding:7px 10px;text-align:right;">—</td>
+                  <td id="tb-tot-saldo" style="padding:7px 10px;text-align:right;">—</td>
                 </tr></tfoot>
               </table>
             </div>
@@ -5837,19 +5837,19 @@ function _tbInitClientes() {
   for (let i = 0; i < 5; i++) {
     const tr = document.createElement('tr');
     tr.style.borderBottom = '1px solid #E8EEF4';
-    tr.innerHTML = `<td style="padding:4px;"><input id="tb-c${i}-contrato" type="text" placeholder="" autocomplete="nope" oninput="calcTbill()" style="width:60px;padding:3px 4px;border:1px solid #D3DDE6;border-radius:3px;font-size:12px;"></td>` +
-      `<td style="padding:4px;"><input id="tb-c${i}-nombre" type="text" placeholder="" autocomplete="nope" oninput="calcTbill()" style="width:80px;padding:3px 4px;border:1px solid #D3DDE6;border-radius:3px;font-size:12px;"></td>` +
-      `<td style="padding:4px;"><input id="tb-c${i}-monto" type="text" placeholder="$" autocomplete="nope" oninput="formatMonto(this);calcTbill()" style="width:80px;text-align:right;padding:3px 4px;border:1px solid #D3DDE6;border-radius:3px;font-size:12px;"></td>` +
-      `<td id="tb-c${i}-td" style="padding:4px;text-align:right;font-size:12px;">—</td>` +
-      `<td id="tb-c${i}-plazo" style="padding:4px;text-align:right;font-size:12px;">—</td>` +
-      `<td id="tb-c${i}-pmesa" style="padding:4px;text-align:right;font-size:12px;">—</td>` +
-      `<td id="tb-c${i}-pcli" style="padding:4px;text-align:right;font-size:12px;">—</td>` +
-      `<td id="tb-c${i}-tit" style="padding:4px;text-align:right;font-size:12px;">—</td>` +
-      `<td id="tb-c${i}-nom" style="padding:4px;text-align:right;font-size:12px;">—</td>` +
-      `<td id="tb-c${i}-pmesa2" style="padding:4px;text-align:right;font-size:12px;">—</td>` +
-      `<td id="tb-c${i}-cpag" style="padding:4px;text-align:right;font-size:12px;">—</td>` +
-      `<td id="tb-c${i}-util" style="padding:4px;text-align:right;font-size:12px;">—</td>` +
-      `<td id="tb-c${i}-saldo" style="padding:4px;text-align:right;font-size:12px;">—</td>`;
+    tr.innerHTML =
+      `<td style="padding:5px 10px;"><input id="tb-c${i}-contrato" type="text" placeholder="" autocomplete="nope" oninput="calcTbill()" style="width:76px;padding:4px 6px;border:1px solid #D3DDE6;border-radius:3px;font-size:13px;font-family:'Montserrat',sans-serif;"></td>` +
+      `<td style="padding:5px 10px;"><input id="tb-c${i}-monto" type="text" placeholder="$" autocomplete="nope" oninput="formatMonto(this);calcTbill()" style="width:100px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:3px;font-size:13px;font-family:'Montserrat',sans-serif;"></td>` +
+      `<td id="tb-c${i}-plazo" style="padding:5px 10px;text-align:right;font-size:13px;">—</td>` +
+      `<td id="tb-c${i}-tit" style="padding:5px 10px;text-align:right;font-size:13px;">—</td>` +
+      `<td id="tb-c${i}-nom" style="padding:5px 10px;text-align:right;font-size:13px;">—</td>` +
+      `<td id="tb-c${i}-td" style="padding:5px 10px;text-align:right;font-size:13px;color:var(--sky);font-weight:600;">—</td>` +
+      `<td id="tb-c${i}-pmesa" style="padding:5px 10px;text-align:right;font-size:13px;">—</td>` +
+      `<td id="tb-c${i}-pmesa2" style="padding:5px 10px;text-align:right;font-size:13px;">—</td>` +
+      `<td id="tb-c${i}-pcli" style="padding:5px 10px;text-align:right;font-size:13px;">—</td>` +
+      `<td id="tb-c${i}-cpag" style="padding:5px 10px;text-align:right;font-size:13px;">—</td>` +
+      `<td id="tb-c${i}-util" style="padding:5px 10px;text-align:right;font-size:13px;">—</td>` +
+      `<td id="tb-c${i}-saldo" style="padding:5px 10px;text-align:right;font-size:13px;">—</td>`;
     tbody.appendChild(tr);
   }
   calcTbill();
