@@ -1380,8 +1380,10 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
               <span>Diferencia entre gasto e ingreso mensual</span><span id="fp-diferencia" style="text-align:right;font-size:14px;width:140px;display:inline-block;">—</span>
             </div>
           </div>
-          <p style="font-size:12px;color:var(--gray);margin-top:8px;font-family:'Montserrat',sans-serif;font-style:italic;">*Asumiendo valores constantes a lo largo del tiempo</p>
-          <button onclick="calcFlujosPension()" style="margin-top:12px;background:var(--navy);color:#fff;border:none;padding:10px 28px;border-radius:8px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:14px;cursor:pointer;">Calcular</button>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px;">
+            <p style="font-size:12px;color:var(--gray);font-family:'Montserrat',sans-serif;font-style:italic;margin:0;">*Asumiendo valores constantes a lo largo del tiempo</p>
+            <button onclick="calcFlujosPension()" style="background:var(--navy);color:#fff;border:none;padding:8px 24px;border-radius:8px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:14px;cursor:pointer;white-space:nowrap;">Calcular</button>
+          </div>
         </div>
 
         <!-- RIGHT: Chart arriba + Resultados abajo -->
@@ -5778,7 +5780,7 @@ function calcFlujosPension() {
       responsive: true, maintainAspectRatio: true, aspectRatio: 2,
       interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { position: 'top', labels: { font: { family: 'Montserrat', size: 11, weight: '600' }, color: '#00205C', usePointStyle: true, pointStyle: 'line', padding: 16 } },
+        legend: { position: 'bottom', labels: { font: { family: 'Montserrat', size: 11, weight: '600' }, color: '#00205C', usePointStyle: true, pointStyle: 'line', padding: 16 } },
         tooltip: { backgroundColor: '#00205C', titleFont: { size: 12, weight: '600' }, bodyFont: { size: 12 }, padding: 10, cornerRadius: 6,
           callbacks: { title: c => 'Edad: ' + c[0].label, label: c => c.raw == null ? null : ' ' + c.dataset.label + ': ' + _fpFmt(c.raw) } }
       },
