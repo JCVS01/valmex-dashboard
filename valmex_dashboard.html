@@ -1440,17 +1440,17 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
 
     <!-- Sub-tab: Calculadora Bonos (en pausa) -->
     <div id="rtab-bonos" style="display:none;">
-      <div style="display:grid;grid-template-columns:1fr 1.8fr;gap:24px;max-width:1400px;">
+      <div style="display:grid;grid-template-columns:0.8fr 2fr;gap:24px;max-width:1400px;">
 
         <!-- LEFT: CETES NOMINALES -->
         <div>
-          <div style="background:var(--navy);color:#fff;padding:10px 16px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:14px;border-radius:8px 8px 0 0;">F&oacute;rmula de Bonos MXN</div>
+          <div style="background:var(--sky);color:#fff;padding:10px 16px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:14px;border-radius:8px 8px 0 0;">F&oacute;rmula de Bonos MXN</div>
           <div style="border:1px solid #D3DDE6;border-top:none;border-radius:0 0 8px 8px;padding:0;">
             <div style="padding:10px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:14px;font-family:'Montserrat',sans-serif;color:var(--navy);">
-              <span style="font-weight:700;">Monto Nominal</span><input id="ct-monto" type="text" value="$3,500,000" oninput="formatMonto(this);calcCetes()" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
-              <span style="font-weight:700;">Plazo (d&iacute;as)</span><input id="ct-plazo" type="number" value="721" min="1" max="9999" oninput="calcCetes()" style="width:100px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
-              <span style="font-weight:700;">Tasa de rendimiento (%)</span><input id="ct-tasa-rend" type="text" value="8.40" oninput="calcCetes()" style="width:100px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
-              <span style="font-weight:700;">Valor Nominal</span><input id="ct-vn" type="number" value="10" min="1" max="1000" oninput="calcCetes()" style="width:100px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
+              <span style="font-weight:700;">Monto Nominal</span><input id="ct-monto" type="text" value="" placeholder="$" autocomplete="off" oninput="formatMonto(this);calcCetes()" style="width:120px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
+              <span style="font-weight:700;">Plazo (d&iacute;as)</span><input id="ct-plazo" type="number" value="" placeholder="0" autocomplete="off" oninput="calcCetes()" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
+              <span style="font-weight:700;">Tasa de rendimiento (%)</span><input id="ct-tasa-rend" type="text" value="" placeholder="0.00" autocomplete="off" oninput="calcCetes()" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
+              <span style="font-weight:700;">Valor Nominal</span><input id="ct-vn" type="number" value="10" placeholder="10" autocomplete="off" oninput="calcCetes()" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
             </div>
             <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:14px;color:var(--navy);font-family:'Montserrat',sans-serif;">Resultados</div>
             <div style="padding:10px 16px;display:grid;grid-template-columns:1fr auto;gap:5px 12px;align-items:center;font-size:14px;font-family:'Montserrat',sans-serif;color:var(--navy);">
@@ -1469,11 +1469,11 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
           <div style="border:1px solid #D3DDE6;border-top:none;border-radius:0 0 8px 8px;padding:0;">
             <!-- Inputs principales -->
             <div style="padding:10px 16px;display:grid;grid-template-columns:repeat(6,auto);gap:6px 14px;align-items:center;font-size:14px;font-family:'Montserrat',sans-serif;color:var(--navy);">
-              <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">Tasa Descuento</div><input id="tb-tasa-desc" type="text" value="4.18" oninput="calcTbill()" style="width:80px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">%</div>
-              <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">D&iacute;as Liq (T+)</div><input id="tb-dias-liq" type="number" value="4" min="0" max="10" oninput="calcTbill()" style="width:50px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;"></div>
-              <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">Plazo</div><input id="tb-plazo" type="number" value="51" min="1" max="360" oninput="calcTbill()" style="width:60px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;"></div>
+              <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">Tasa Descuento</div><input id="tb-tasa-desc" type="text" value="" placeholder="0.00" autocomplete="off" oninput="calcTbill()" style="width:80px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">%</div>
+              <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">D&iacute;as Liq (T+)</div><input id="tb-dias-liq" type="number" value="" placeholder="0" autocomplete="off" oninput="calcTbill()" style="width:50px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;"></div>
+              <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">Plazo</div><input id="tb-plazo" type="number" value="" placeholder="0" autocomplete="off" oninput="calcTbill()" style="width:60px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;"></div>
               <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">Tasa TAS</div><span id="tb-tasa-tas" style="font-weight:700;font-size:14px;">—</span></div>
-              <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;color:#B8860B;">Tasa Cliente</div><input id="tb-tasa-cli" type="text" value="3.780" oninput="calcTbill()" style="width:80px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;background:#FFF8DC;">%</div>
+              <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;color:#B8860B;">Tasa Cliente</div><input id="tb-tasa-cli" type="text" value="" placeholder="0.00" autocomplete="off" oninput="calcTbill()" style="width:80px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;background:#FFF8DC;">%</div>
               <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">Comisi&oacute;n</div><span id="tb-comision" style="font-weight:700;font-size:14px;">—</span></div>
             </div>
             <!-- Lista de clientes -->
