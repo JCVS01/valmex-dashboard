@@ -1385,31 +1385,43 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
           <button onclick="calcFlujosPension()" style="margin-top:12px;background:var(--navy);color:#fff;border:none;padding:10px 28px;border-radius:8px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:14px;cursor:pointer;">Calcular</button>
         </div>
 
-        <!-- RIGHT: Resultados -->
-        <div>
-          <div style="background:var(--navy);color:#fff;padding:10px 16px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:14px;border-radius:8px 8px 0 0;">Resultados</div>
-          <div style="border:1px solid #D3DDE6;border-top:none;border-radius:0 0 8px 8px;padding:0;">
-            <!-- Con inversión -->
-            <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:14px;color:var(--navy);font-family:'Montserrat',sans-serif;">Con inversi&oacute;n</div>
-            <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;font-size:14px;font-family:'Montserrat',sans-serif;color:var(--navy);">
-              <span>Saldo a la edad de retiro (<span id="fp-res-edad-jub">—</span> a&ntilde;os)</span><span id="fp-res-saldo-inv" style="text-align:right;font-weight:600;">—</span>
-              <span>Saldo a la edad de</span><div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;"><input id="fp-edad-consulta-inv" type="number" value="85" min="30" max="120" style="width:55px;text-align:right;padding:3px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"><span style="font-size:13px;color:var(--gray);">a&ntilde;os</span></div>
-              <span></span><span id="fp-res-monto-inv" style="text-align:right;font-weight:600;">—</span>
-              <span>Edad que se termina el $</span><span id="fp-res-edad-fin-inv" style="text-align:right;font-weight:700;">—</span>
-            </div>
-            <!-- Sin inversión -->
-            <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:14px;color:var(--navy);font-family:'Montserrat',sans-serif;">Sin inversi&oacute;n</div>
-            <div style="padding:8px 16px;display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;font-size:14px;font-family:'Montserrat',sans-serif;color:var(--navy);">
-              <span>Saldo a la edad de retiro</span><span id="fp-res-saldo-sin" style="text-align:right;font-weight:600;">—</span>
-              <span>Saldo a la edad de <span id="fp-edad-consulta-sin-lbl">85</span> a&ntilde;os</span><span id="fp-res-monto-sin" style="text-align:right;font-weight:600;">—</span>
-              <span>Edad que se termina el $</span><span id="fp-res-edad-fin-sin" style="text-align:right;font-weight:700;">—</span>
-            </div>
-          </div>
-          <!-- Chart -->
-          <div style="margin-top:20px;background:#fff;border:1px solid #D3DDE6;border-radius:8px;padding:16px;">
+        <!-- RIGHT: Chart arriba + Resultados abajo -->
+        <div style="display:flex;flex-direction:column;gap:20px;">
+
+          <!-- Chart (TOP) -->
+          <div style="background:#fff;border:1px solid #D3DDE6;border-radius:8px;padding:16px;">
             <div style="background:var(--navy);color:#fff;padding:10px 16px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:14px;border-radius:8px 8px 0 0;margin:-16px -16px 10px -16px;">Proyecci&oacute;n del saldo</div>
             <canvas id="fp-chart" height="220"></canvas>
           </div>
+
+          <!-- Resultados (BOTTOM) -->
+          <div style="border-radius:8px;overflow:hidden;border:1px solid #D3DDE6;">
+            <div style="background:var(--navy);color:#fff;padding:10px 16px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:14px;">Resultados</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;">
+
+              <!-- SIN INVERSIÓN -->
+              <div style="background:var(--sky);padding:28px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;border-right:2px solid rgba(255,255,255,0.3);">
+                <div style="font-family:'Montserrat',sans-serif;font-weight:900;font-size:18px;color:#fff;letter-spacing:1px;text-transform:uppercase;text-align:center;">Sin inversi&oacute;n</div>
+                <div style="font-family:'Montserrat',sans-serif;font-size:13px;color:rgba(255,255,255,0.9);text-align:center;display:flex;flex-direction:column;gap:8px;width:100%;">
+                  <div style="display:flex;justify-content:space-between;gap:8px;"><span>Saldo al retiro (<span id="fp-res-edad-jub2">—</span> a&ntilde;os)</span><span id="fp-res-saldo-sin" style="font-weight:700;white-space:nowrap;">—</span></div>
+                  <div style="display:flex;justify-content:space-between;gap:8px;"><span>Saldo a los <span id="fp-edad-consulta-sin-lbl">85</span> a&ntilde;os</span><span id="fp-res-monto-sin" style="font-weight:700;white-space:nowrap;">—</span></div>
+                  <div style="display:flex;justify-content:space-between;gap:8px;"><span>Se termina a los</span><span id="fp-res-edad-fin-sin" style="font-weight:700;white-space:nowrap;">—</span></div>
+                </div>
+              </div>
+
+              <!-- CON INVERSIÓN -->
+              <div style="background:var(--sky);padding:28px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;filter:brightness(0.88);">
+                <div style="font-family:'Montserrat',sans-serif;font-weight:900;font-size:18px;color:#fff;letter-spacing:1px;text-transform:uppercase;text-align:center;">Con inversi&oacute;n</div>
+                <div style="font-family:'Montserrat',sans-serif;font-size:13px;color:rgba(255,255,255,0.9);text-align:center;display:flex;flex-direction:column;gap:8px;width:100%;">
+                  <div style="display:flex;justify-content:space-between;gap:8px;"><span>Saldo al retiro (<span id="fp-res-edad-jub">—</span> a&ntilde;os)</span><span id="fp-res-saldo-inv" style="font-weight:700;white-space:nowrap;">—</span></div>
+                  <div style="display:flex;justify-content:space-between;gap:8px;"><span>Saldo a los <input id="fp-edad-consulta-inv" type="number" value="85" min="30" max="120" style="width:45px;text-align:center;padding:2px 4px;border:1px solid rgba(255,255,255,0.5);border-radius:4px;font-size:12px;background:rgba(255,255,255,0.2);color:#fff;"> a&ntilde;os</span><span id="fp-res-monto-inv" style="font-weight:700;white-space:nowrap;">—</span></div>
+                  <div style="display:flex;justify-content:space-between;gap:8px;"><span>Se termina a los</span><span id="fp-res-edad-fin-inv" style="font-weight:700;white-space:nowrap;">—</span></div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
@@ -5561,6 +5573,7 @@ function calcFlujosPension() {
   if (edadFinSin == null) edadFinSin = 'No se acaba';
 
   document.getElementById('fp-res-edad-jub').textContent = edadJub;
+  document.getElementById('fp-res-edad-jub2').textContent = edadJub;
   document.getElementById('fp-res-saldo-inv').textContent = saldoRetiroInv != null ? _fpFmt(saldoRetiroInv) : '—';
   document.getElementById('fp-res-edad-fin-inv').textContent = edadFinInv;
   document.getElementById('fp-res-monto-inv').textContent = _fpFmt(montoEdadInv || 0);
