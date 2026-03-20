@@ -1437,9 +1437,104 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
 
     <!-- Sub-tab: Calculadora Bonos (en pausa) -->
     <div id="rtab-bonos" style="display:none;">
-      <div style="text-align:center;padding:60px 20px;color:var(--gray);font-family:'Montserrat',sans-serif;">
-        <p style="font-size:18px;font-weight:600;">Calculadora de Bonos</p>
-        <p style="font-size:14px;margin-top:8px;">Próximamente</p>
+      <div style="display:grid;grid-template-columns:1fr 1.8fr;gap:24px;max-width:1400px;">
+
+        <!-- LEFT: CETES NOMINALES -->
+        <div>
+          <div style="background:var(--navy);color:#fff;padding:10px 16px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:14px;border-radius:8px 8px 0 0;">F&oacute;rmula CETES</div>
+          <div style="border:1px solid #D3DDE6;border-top:none;border-radius:0 0 8px 8px;padding:0;">
+            <div style="padding:10px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);">
+              <span style="font-weight:700;">Monto Nominal</span><input id="ct-monto" type="text" value="$3,500,000" oninput="formatMonto(this);calcCetes()" style="width:140px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
+              <span style="font-weight:700;">Plazo (d&iacute;as)</span><input id="ct-plazo" type="number" value="721" min="1" max="9999" oninput="calcCetes()" style="width:100px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
+              <span style="font-weight:700;">Tasa de rendimiento (%)</span><input id="ct-tasa-rend" type="text" value="8.40" oninput="calcCetes()" style="width:100px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
+              <span style="font-weight:700;">Valor Nominal</span><input id="ct-vn" type="number" value="10" min="1" max="1000" oninput="calcCetes()" style="width:100px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">
+            </div>
+            <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:12px;color:var(--navy);font-family:'Montserrat',sans-serif;">Resultados</div>
+            <div style="padding:10px 16px;display:grid;grid-template-columns:1fr auto;gap:5px 12px;align-items:center;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);">
+              <span>Tasa de descuento</span><span id="ct-res-td" style="text-align:right;font-weight:600;">—</span>
+              <span>Precio</span><span id="ct-res-precio" style="text-align:right;font-weight:600;">—</span>
+              <span>T&iacute;tulos</span><span id="ct-res-titulos" style="text-align:right;font-weight:600;">—</span>
+              <span>Monto en miles</span><span id="ct-res-miles" style="text-align:right;font-weight:600;">—</span>
+              <span style="font-weight:700;">Monto real</span><span id="ct-res-real" style="text-align:right;font-weight:700;color:#1A7A4A;">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: TBILLS -->
+        <div>
+          <div style="background:var(--navy);color:#fff;padding:10px 16px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:14px;border-radius:8px 8px 0 0;">TBILL</div>
+          <div style="border:1px solid #D3DDE6;border-top:none;border-radius:0 0 8px 8px;padding:0;">
+            <!-- Inputs principales -->
+            <div style="padding:10px 16px;display:grid;grid-template-columns:repeat(6,auto);gap:6px 14px;align-items:center;font-size:12px;font-family:'Montserrat',sans-serif;color:var(--navy);">
+              <div><div style="font-weight:700;font-size:11px;margin-bottom:2px;">Tasa Descuento</div><input id="tb-tasa-desc" type="text" value="4.18" oninput="calcTbill()" style="width:80px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;">%</div>
+              <div><div style="font-weight:700;font-size:11px;margin-bottom:2px;">D&iacute;as Liq (T+)</div><input id="tb-dias-liq" type="number" value="4" min="0" max="10" oninput="calcTbill()" style="width:50px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"></div>
+              <div><div style="font-weight:700;font-size:11px;margin-bottom:2px;">Plazo</div><input id="tb-plazo" type="number" value="51" min="1" max="360" oninput="calcTbill()" style="width:60px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;"></div>
+              <div><div style="font-weight:700;font-size:11px;margin-bottom:2px;">Tasa TAS</div><span id="tb-tasa-tas" style="font-weight:700;font-size:13px;">—</span></div>
+              <div><div style="font-weight:700;font-size:11px;margin-bottom:2px;color:#B8860B;">Tasa Cliente</div><input id="tb-tasa-cli" type="text" value="3.780" oninput="calcTbill()" style="width:80px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:13px;background:#FFF8DC;">%</div>
+              <div><div style="font-weight:700;font-size:11px;margin-bottom:2px;">Comisi&oacute;n</div><span id="tb-comision" style="font-weight:700;font-size:13px;">—</span></div>
+            </div>
+            <!-- Lista de clientes -->
+            <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:12px;color:var(--navy);font-family:'Montserrat',sans-serif;">Clientes</div>
+            <div style="padding:6px 16px;overflow-x:auto;">
+              <table style="width:100%;border-collapse:collapse;font-size:11px;font-family:'Montserrat',sans-serif;color:var(--navy);">
+                <thead><tr style="background:var(--navy);color:#fff;font-size:10px;">
+                  <th style="padding:6px 4px;text-align:left;">No. Contrato</th>
+                  <th style="padding:6px 4px;text-align:left;">Nombre</th>
+                  <th style="padding:6px 4px;text-align:right;">Monto</th>
+                  <th style="padding:6px 4px;text-align:right;">Precio Mesa</th>
+                  <th style="padding:6px 4px;text-align:right;">Precio Cliente</th>
+                  <th style="padding:6px 4px;text-align:right;">T&iacute;tulos</th>
+                  <th style="padding:6px 4px;text-align:right;">Monto Nominal</th>
+                  <th style="padding:6px 4px;text-align:right;">Pagar Mesa</th>
+                  <th style="padding:6px 4px;text-align:right;">Cliente Pagar&aacute;</th>
+                  <th style="padding:6px 4px;text-align:right;">Utilidad</th>
+                  <th style="padding:6px 4px;text-align:right;">Saldo</th>
+                </tr></thead>
+                <tbody id="tb-clientes-body"></tbody>
+                <tfoot><tr style="font-weight:700;border-top:2px solid var(--navy);">
+                  <td style="padding:6px 4px;">Total</td><td></td>
+                  <td id="tb-tot-monto" style="padding:6px 4px;text-align:right;">—</td>
+                  <td id="tb-tot-pmesa" style="padding:6px 4px;text-align:right;"></td>
+                  <td></td>
+                  <td id="tb-tot-titulos" style="padding:6px 4px;text-align:right;">—</td>
+                  <td id="tb-tot-nominal" style="padding:6px 4px;text-align:right;">—</td>
+                  <td id="tb-tot-pagar-mesa" style="padding:6px 4px;text-align:right;">—</td>
+                  <td id="tb-tot-pagar-cli" style="padding:6px 4px;text-align:right;">—</td>
+                  <td id="tb-tot-utilidad" style="padding:6px 4px;text-align:right;">—</td>
+                  <td id="tb-tot-saldo" style="padding:6px 4px;text-align:right;">—</td>
+                </tr></tfoot>
+              </table>
+            </div>
+            <!-- Resumen Mesa -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:10px 16px;">
+              <div style="border:1px solid #D3DDE6;border-radius:6px;overflow:hidden;">
+                <div style="background:var(--navy);color:#fff;padding:6px 12px;font-weight:700;font-size:12px;font-family:'Montserrat',sans-serif;">Resumen Mesa</div>
+                <div style="padding:6px 12px;display:grid;grid-template-columns:1fr auto;gap:3px 8px;font-size:11px;font-family:'Montserrat',sans-serif;color:var(--navy);">
+                  <span>Plazo</span><span id="tb-rm-plazo" style="text-align:right;font-weight:600;">—</span>
+                  <span>Fecha Vencimiento</span><span id="tb-rm-venc" style="text-align:right;font-weight:600;">—</span>
+                  <span>Tasa Descuento</span><span id="tb-rm-td" style="text-align:right;font-weight:600;">—</span>
+                  <span>Tasa Rendimiento</span><span id="tb-rm-tr" style="text-align:right;font-weight:600;">—</span>
+                  <span>Precio Mesa</span><span id="tb-rm-precio" style="text-align:right;font-weight:600;">—</span>
+                  <span>T&iacute;tulos</span><span id="tb-rm-titulos" style="text-align:right;font-weight:700;">—</span>
+                  <span style="color:#C0392B;font-weight:700;">Monto Nominal</span><span id="tb-rm-nominal" style="text-align:right;font-weight:700;color:#C0392B;">—</span>
+                  <span>Monto a Pagar</span><span id="tb-rm-pagar" style="text-align:right;font-weight:600;">—</span>
+                </div>
+              </div>
+              <div style="border:1px solid #D3DDE6;border-radius:6px;overflow:hidden;">
+                <div style="background:var(--navy);color:#fff;padding:6px 12px;font-weight:700;font-size:12px;font-family:'Montserrat',sans-serif;">Resumen Cliente</div>
+                <div style="padding:6px 12px;display:grid;grid-template-columns:1fr auto;gap:3px 8px;font-size:11px;font-family:'Montserrat',sans-serif;color:var(--navy);">
+                  <span>Plazo</span><span id="tb-rc-plazo" style="text-align:right;font-weight:600;">—</span>
+                  <span>Fecha Vencimiento</span><span id="tb-rc-venc" style="text-align:right;font-weight:600;">—</span>
+                  <span>Tasa Rendimiento</span><span id="tb-rc-tr" style="text-align:right;font-weight:600;">—</span>
+                  <span>Precio</span><span id="tb-rc-precio" style="text-align:right;font-weight:600;">—</span>
+                  <span>T&iacute;tulos</span><span id="tb-rc-titulos" style="text-align:right;font-weight:700;">—</span>
+                  <span>Monto Nominal</span><span id="tb-rc-nominal" style="text-align:right;font-weight:600;">—</span>
+                  <span>Monto a Pagar</span><span id="tb-rc-pagar" style="text-align:right;font-weight:600;">—</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     </div><!-- end prop-dash-scaler -->
@@ -5469,6 +5564,7 @@ function showRecursosTab(tab, btn) {
   document.getElementById('rtab-' + tab).style.display = '';
   document.querySelectorAll('#page-recursos .cmp2-vf-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
+  if (tab === 'bonos') { _tbInitClientes(); calcCetes(); }
 }
 
 function fpFormatPct(el) {
@@ -5694,6 +5790,133 @@ function calcFlujosPension() {
     },
     plugins: []
   });
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// ██ CALCULADORA BONOS — CETES + TBILLS
+// ══════════════════════════════════════════════════════════════════════════
+
+function calcCetes() {
+  const monto = _fpNum('ct-monto');
+  const plazo = parseInt(document.getElementById('ct-plazo').value) || 0;
+  const tasaRend = parseFloat(document.getElementById('ct-tasa-rend').value) || 0;
+  const vn = parseFloat(document.getElementById('ct-vn').value) || 10;
+  const r = tasaRend / 100;
+  const tasaDesc = r / (1 + r / 360 * plazo) * 100;
+  const precio = vn * (1 - tasaDesc / 36000 * plazo);
+  const titulos = monto / vn;
+  const montoReal = titulos * precio;
+  document.getElementById('ct-res-td').textContent = tasaDesc.toFixed(4) + '%';
+  document.getElementById('ct-res-precio').textContent = precio.toFixed(6);
+  document.getElementById('ct-res-titulos').textContent = Math.floor(titulos).toLocaleString('en-US');
+  document.getElementById('ct-res-miles').textContent = (monto / 1000).toLocaleString('en-US', {minimumFractionDigits: 0});
+  document.getElementById('ct-res-real').textContent = '$' + montoReal.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+}
+
+// TBILL: init client rows
+let _tbClientes = [{contrato:'',nombre:'',monto:0},{contrato:'',nombre:'',monto:0},{contrato:'',nombre:'',monto:0},{contrato:'',nombre:'',monto:0},{contrato:'',nombre:'',monto:0}];
+let _tbInited = false;
+
+function _tbInitClientes() {
+  if (_tbInited) return;
+  _tbInited = true;
+  const tbody = document.getElementById('tb-clientes-body');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  for (let i = 0; i < 5; i++) {
+    const tr = document.createElement('tr');
+    tr.style.borderBottom = '1px solid #E8EEF4';
+    tr.innerHTML = `<td style="padding:4px;"><input id="tb-c${i}-contrato" type="text" placeholder="Contrato" oninput="calcTbill()" style="width:70px;padding:3px 4px;border:1px solid #D3DDE6;border-radius:3px;font-size:11px;"></td>` +
+      `<td style="padding:4px;"><input id="tb-c${i}-nombre" type="text" placeholder="Nombre" oninput="calcTbill()" style="width:80px;padding:3px 4px;border:1px solid #D3DDE6;border-radius:3px;font-size:11px;"></td>` +
+      `<td style="padding:4px;"><input id="tb-c${i}-monto" type="text" placeholder="$0" oninput="formatMonto(this);calcTbill()" style="width:80px;text-align:right;padding:3px 4px;border:1px solid #D3DDE6;border-radius:3px;font-size:11px;"></td>` +
+      `<td id="tb-c${i}-pmesa" style="padding:4px;text-align:right;font-size:11px;">—</td>` +
+      `<td id="tb-c${i}-pcli" style="padding:4px;text-align:right;font-size:11px;">—</td>` +
+      `<td id="tb-c${i}-tit" style="padding:4px;text-align:right;font-size:11px;">—</td>` +
+      `<td id="tb-c${i}-nom" style="padding:4px;text-align:right;font-size:11px;">—</td>` +
+      `<td id="tb-c${i}-pmesa2" style="padding:4px;text-align:right;font-size:11px;">—</td>` +
+      `<td id="tb-c${i}-cpag" style="padding:4px;text-align:right;font-size:11px;">—</td>` +
+      `<td id="tb-c${i}-util" style="padding:4px;text-align:right;font-size:11px;">—</td>` +
+      `<td id="tb-c${i}-saldo" style="padding:4px;text-align:right;font-size:11px;">—</td>`;
+    tbody.appendChild(tr);
+  }
+  calcTbill();
+}
+
+function calcTbill() {
+  const tasaDesc = parseFloat(document.getElementById('tb-tasa-desc').value) / 100 || 0;
+  const diasLiq = parseInt(document.getElementById('tb-dias-liq').value) || 0;
+  const plazo = parseInt(document.getElementById('tb-plazo').value) || 0;
+  const tasaCli = parseFloat(document.getElementById('tb-tasa-cli').value) / 100 || 0;
+
+  const tasaTAS = tasaDesc / (1 - tasaDesc * plazo / 360);
+  const comision = tasaCli / tasaTAS - 1;
+  const precioMesa = 100 * (1 - tasaDesc * plazo / 360);
+  const precioCli = 100 / (1 + tasaCli * plazo / 360);
+
+  document.getElementById('tb-tasa-tas').textContent = (tasaTAS * 100).toFixed(4) + '%';
+  document.getElementById('tb-comision').textContent = (comision * 100).toFixed(2) + '%';
+
+  // Fecha vencimiento
+  const hoy = new Date();
+  const venc = new Date(hoy.getTime() + (plazo + diasLiq) * 86400000);
+  const fmtDate = d => d.toLocaleDateString('es-MX', {day:'2-digit',month:'2-digit',year:'numeric'});
+
+  let totMonto = 0, totTit = 0, totNom = 0, totPagarMesa = 0, totPagarCli = 0, totUtil = 0, totSaldo = 0;
+  const f2 = v => v ? v.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '—';
+
+  for (let i = 0; i < 5; i++) {
+    const monto = parseFloat((document.getElementById(`tb-c${i}-monto`)?.value || '0').replace(/[^0-9.]/g, '')) || 0;
+    if (monto > 0) {
+      const tit = Math.floor(monto / precioCli);
+      const nom = tit * 100;
+      const pagarMesa = precioMesa * tit;
+      const cliPaga = tit * precioCli;
+      const util = cliPaga - pagarMesa;
+      const saldo = monto - cliPaga;
+      document.getElementById(`tb-c${i}-pmesa`).textContent = precioMesa.toFixed(6);
+      document.getElementById(`tb-c${i}-pcli`).textContent = precioCli.toFixed(6);
+      document.getElementById(`tb-c${i}-tit`).textContent = tit.toLocaleString('en-US');
+      document.getElementById(`tb-c${i}-nom`).textContent = nom.toLocaleString('en-US');
+      document.getElementById(`tb-c${i}-pmesa2`).textContent = f2(pagarMesa);
+      document.getElementById(`tb-c${i}-cpag`).textContent = f2(cliPaga);
+      document.getElementById(`tb-c${i}-util`).textContent = f2(util);
+      document.getElementById(`tb-c${i}-saldo`).textContent = f2(saldo);
+      totMonto += monto; totTit += tit; totNom += nom; totPagarMesa += pagarMesa; totPagarCli += cliPaga; totUtil += util; totSaldo += saldo;
+    } else {
+      ['pmesa','pcli','tit','nom','pmesa2','cpag','util','saldo'].forEach(k => {
+        const el = document.getElementById(`tb-c${i}-${k}`);
+        if (el) el.textContent = '—';
+      });
+    }
+  }
+
+  document.getElementById('tb-tot-monto').textContent = totMonto > 0 ? f2(totMonto) : '—';
+  document.getElementById('tb-tot-pmesa').textContent = precioMesa.toFixed(6);
+  document.getElementById('tb-tot-titulos').textContent = totTit > 0 ? totTit.toLocaleString('en-US') : '—';
+  document.getElementById('tb-tot-nominal').textContent = totNom > 0 ? totNom.toLocaleString('en-US') : '—';
+  document.getElementById('tb-tot-pagar-mesa').textContent = totPagarMesa > 0 ? f2(totPagarMesa) : '—';
+  document.getElementById('tb-tot-pagar-cli').textContent = totPagarCli > 0 ? f2(totPagarCli) : '—';
+  document.getElementById('tb-tot-utilidad').textContent = totUtil > 0 ? f2(totUtil) : '—';
+  document.getElementById('tb-tot-saldo').textContent = totSaldo !== 0 ? f2(totSaldo) : '—';
+
+  // Resumen Mesa
+  document.getElementById('tb-rm-plazo').textContent = plazo;
+  document.getElementById('tb-rm-venc').textContent = fmtDate(venc);
+  document.getElementById('tb-rm-td').textContent = (tasaDesc * 100).toFixed(4) + '%';
+  document.getElementById('tb-rm-tr').textContent = (tasaTAS * 100).toFixed(4) + '%';
+  document.getElementById('tb-rm-precio').textContent = precioMesa.toFixed(6);
+  document.getElementById('tb-rm-titulos').textContent = totTit > 0 ? totTit.toLocaleString('en-US') : '—';
+  document.getElementById('tb-rm-nominal').textContent = totNom > 0 ? totNom.toLocaleString('en-US') : '—';
+  document.getElementById('tb-rm-pagar').textContent = totPagarMesa > 0 ? f2(totPagarMesa) : '—';
+
+  // Resumen Cliente
+  document.getElementById('tb-rc-plazo').textContent = plazo;
+  document.getElementById('tb-rc-venc').textContent = fmtDate(venc);
+  document.getElementById('tb-rc-tr').textContent = (tasaCli * 100).toFixed(4) + '%';
+  document.getElementById('tb-rc-precio').textContent = precioCli.toFixed(6);
+  document.getElementById('tb-rc-titulos').textContent = totTit > 0 ? totTit.toLocaleString('en-US') : '—';
+  document.getElementById('tb-rc-nominal').textContent = totNom > 0 ? totNom.toLocaleString('en-US') : '—';
+  document.getElementById('tb-rc-pagar').textContent = totPagarCli > 0 ? f2(totPagarCli) : '—';
 }
 </script>
 
