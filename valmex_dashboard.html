@@ -5623,25 +5623,29 @@ function calcFlujosPension() {
   document.getElementById('fp-res-saldo-sin').textContent = saldoRetiroSin != null ? _fpFmt(saldoRetiroSin) : '—';
   const _sinLbl = document.getElementById('fp-edad-consulta-sin-lbl'); if (_sinLbl) _sinLbl.textContent = edadConsulta;
   updateFpEdadConsulta();
-  document.getElementById('fp-res-edad-fin-sin').textContent = edadFinSin != null ? edadFinSin + ' años' : '> 100 años';
-  document.getElementById('fp-res-edad-fin-inv').textContent = edadFinInv != null ? edadFinInv + ' años' : '> 100 años';
-  document.getElementById('fp-res-max-sin').textContent = maxSinEdad != null ? _fpFmt(maxSinMonto) + ' — ' + maxSinEdad + ' años' : '—';
-  document.getElementById('fp-res-max-inv').textContent = maxInvEdad != null ? _fpFmt(maxInvMonto) + ' — ' + maxInvEdad + ' años' : '—';
+  const _finLabel = e => (e == null || e > 100) ? '> 100 años' : e + ' años';
+  document.getElementById('fp-res-edad-fin-sin').textContent = _finLabel(edadFinSin);
+  document.getElementById('fp-res-edad-fin-inv').textContent = _finLabel(edadFinInv);
+  const _maxEdadLabel = e => e > 100 ? '> 100 años' : e + ' años';
+  document.getElementById('fp-res-max-sin').textContent = maxSinEdad != null ? _fpFmt(maxSinMonto) + ' — ' + _maxEdadLabel(maxSinEdad) : '—';
+  document.getElementById('fp-res-max-inv').textContent = maxInvEdad != null ? _fpFmt(maxInvMonto) + ' — ' + _maxEdadLabel(maxInvEdad) : '—';
   // +/- Saldo al retiro
   const _diff = (saldoRetiroInv || 0) - (saldoRetiroSin || 0);
   const _diffEl = document.getElementById('fp-res-diff');
   _diffEl.textContent = (_diff >= 0 ? '+' : '') + _fpFmt(_diff);
 
-  // +/- Se termina a los
+  // +/- Se termina a los (treat > 100 as equivalent)
   const _finDiffEl = document.getElementById('fp-res-diff-fin');
-  if (edadFinInv == null && edadFinSin == null) {
+  const _finInvCap = (edadFinInv == null || edadFinInv > 100) ? null : edadFinInv;
+  const _finSinCap = (edadFinSin == null || edadFinSin > 100) ? null : edadFinSin;
+  if (_finInvCap == null && _finSinCap == null) {
     _finDiffEl.textContent = '=';
-  } else if (edadFinInv == null) {
+  } else if (_finInvCap == null) {
     _finDiffEl.textContent = '+\u221e';
-  } else if (edadFinSin == null) {
+  } else if (_finSinCap == null) {
     _finDiffEl.textContent = '-\u221e';
   } else {
-    const _fd = edadFinInv - edadFinSin;
+    const _fd = _finInvCap - _finSinCap;
     _finDiffEl.textContent = (_fd >= 0 ? '+' : '') + _fd + ' a\xF1os';
   }
 
