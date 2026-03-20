@@ -5626,12 +5626,12 @@ function calcFlujosPension() {
   _diffEl.textContent = (_diff >= 0 ? '+' : '') + _fpFmt(_diff);
   _diffEl.style.color = 'var(--navy)';
 
-  // Trim chart: stop shortly after last depletion, max horizon = age 100
+  // Trim chart: stop shortly after last depletion, or show full simulation horizon
   const finInvNum = typeof edadFinInv === 'number' ? edadFinInv : null;
   const finSinNum = typeof edadFinSin === 'number' ? edadFinSin : null;
   let maxChartAge = (finInvNum || finSinNum)
-    ? Math.min(Math.max(finInvNum || 0, finSinNum || 0) + 2, 100)
-    : 100;
+    ? Math.max(finInvNum || 0, finSinNum || 0) + 2
+    : edadActual + 70;
   const cutIdx = chartEdades.findIndex(e => e > maxChartAge);
   const trimIdx = cutIdx > 0 ? cutIdx : chartEdades.length;
   const cEdades = chartEdades.slice(0, trimIdx);
