@@ -1483,22 +1483,25 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
             <div style="padding:6px 16px;overflow-x:auto;">
               <table style="width:100%;border-collapse:collapse;font-size:12px;font-family:'Montserrat',sans-serif;color:var(--navy);">
                 <thead><tr style="background:var(--navy);color:#fff;font-size:11px;">
-                  <th style="padding:6px 4px;text-align:left;">No. Contrato</th>
+                  <th style="padding:6px 4px;text-align:left;"># Cto</th>
                   <th style="padding:6px 4px;text-align:left;">Nombre</th>
-                  <th style="padding:6px 4px;text-align:right;">Monto</th>
+                  <th style="padding:6px 4px;text-align:right;">Monto a invertir</th>
+                  <th style="padding:6px 4px;text-align:right;">Tasa Descuento</th>
+                  <th style="padding:6px 4px;text-align:right;">Plazo</th>
                   <th style="padding:6px 4px;text-align:right;">Precio Mesa</th>
                   <th style="padding:6px 4px;text-align:right;">Precio Cliente</th>
                   <th style="padding:6px 4px;text-align:right;">T&iacute;tulos</th>
                   <th style="padding:6px 4px;text-align:right;">Monto Nominal</th>
-                  <th style="padding:6px 4px;text-align:right;">Pagar Mesa</th>
-                  <th style="padding:6px 4px;text-align:right;">Cliente Pagar&aacute;</th>
+                  <th style="padding:6px 4px;text-align:right;">Saldo Mesa</th>
+                  <th style="padding:6px 4px;text-align:right;">Saldo Cliente</th>
                   <th style="padding:6px 4px;text-align:right;">Utilidad</th>
-                  <th style="padding:6px 4px;text-align:right;">Saldo</th>
+                  <th style="padding:6px 4px;text-align:right;">Sobrante</th>
                 </tr></thead>
                 <tbody id="tb-clientes-body"></tbody>
                 <tfoot><tr style="font-weight:700;border-top:2px solid var(--navy);">
                   <td style="padding:6px 4px;">Total</td><td></td>
                   <td id="tb-tot-monto" style="padding:6px 4px;text-align:right;">—</td>
+                  <td></td><td></td>
                   <td id="tb-tot-pmesa" style="padding:6px 4px;text-align:right;"></td>
                   <td></td>
                   <td id="tb-tot-titulos" style="padding:6px 4px;text-align:right;">—</td>
@@ -5831,9 +5834,11 @@ function _tbInitClientes() {
   for (let i = 0; i < 5; i++) {
     const tr = document.createElement('tr');
     tr.style.borderBottom = '1px solid #E8EEF4';
-    tr.innerHTML = `<td style="padding:4px;"><input id="tb-c${i}-contrato" type="text" placeholder="Contrato" oninput="calcTbill()" style="width:70px;padding:3px 4px;border:1px solid #D3DDE6;border-radius:3px;font-size:12px;"></td>` +
-      `<td style="padding:4px;"><input id="tb-c${i}-nombre" type="text" placeholder="Nombre" oninput="calcTbill()" style="width:80px;padding:3px 4px;border:1px solid #D3DDE6;border-radius:3px;font-size:12px;"></td>` +
-      `<td style="padding:4px;"><input id="tb-c${i}-monto" type="text" placeholder="$0" oninput="formatMonto(this);calcTbill()" style="width:80px;text-align:right;padding:3px 4px;border:1px solid #D3DDE6;border-radius:3px;font-size:12px;"></td>` +
+    tr.innerHTML = `<td style="padding:4px;"><input id="tb-c${i}-contrato" type="text" placeholder="" autocomplete="off" oninput="calcTbill()" style="width:60px;padding:3px 4px;border:1px solid #D3DDE6;border-radius:3px;font-size:12px;"></td>` +
+      `<td style="padding:4px;"><input id="tb-c${i}-nombre" type="text" placeholder="" autocomplete="off" oninput="calcTbill()" style="width:80px;padding:3px 4px;border:1px solid #D3DDE6;border-radius:3px;font-size:12px;"></td>` +
+      `<td style="padding:4px;"><input id="tb-c${i}-monto" type="text" placeholder="$" autocomplete="off" oninput="formatMonto(this);calcTbill()" style="width:80px;text-align:right;padding:3px 4px;border:1px solid #D3DDE6;border-radius:3px;font-size:12px;"></td>` +
+      `<td id="tb-c${i}-td" style="padding:4px;text-align:right;font-size:12px;">—</td>` +
+      `<td id="tb-c${i}-plazo" style="padding:4px;text-align:right;font-size:12px;">—</td>` +
       `<td id="tb-c${i}-pmesa" style="padding:4px;text-align:right;font-size:12px;">—</td>` +
       `<td id="tb-c${i}-pcli" style="padding:4px;text-align:right;font-size:12px;">—</td>` +
       `<td id="tb-c${i}-tit" style="padding:4px;text-align:right;font-size:12px;">—</td>` +
@@ -5878,6 +5883,8 @@ function calcTbill() {
       const cliPaga = tit * precioCli;
       const util = cliPaga - pagarMesa;
       const saldo = monto - cliPaga;
+      document.getElementById(`tb-c${i}-td`).textContent = (tasaDesc * 100).toFixed(2) + '%';
+      document.getElementById(`tb-c${i}-plazo`).textContent = plazo;
       document.getElementById(`tb-c${i}-pmesa`).textContent = precioMesa.toFixed(6);
       document.getElementById(`tb-c${i}-pcli`).textContent = precioCli.toFixed(6);
       document.getElementById(`tb-c${i}-tit`).textContent = tit.toLocaleString('en-US');
@@ -5888,7 +5895,7 @@ function calcTbill() {
       document.getElementById(`tb-c${i}-saldo`).textContent = f2(saldo);
       totMonto += monto; totTit += tit; totNom += nom; totPagarMesa += pagarMesa; totPagarCli += cliPaga; totUtil += util; totSaldo += saldo;
     } else {
-      ['pmesa','pcli','tit','nom','pmesa2','cpag','util','saldo'].forEach(k => {
+      ['td','plazo','pmesa','pcli','tit','nom','pmesa2','cpag','util','saldo'].forEach(k => {
         const el = document.getElementById(`tb-c${i}-${k}`);
         if (el) el.textContent = '—';
       });
