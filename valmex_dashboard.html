@@ -5559,40 +5559,54 @@ function calcFlujosPension() {
   let montoEdadInv = null, montoEdadSin = null;
   const chartEdades = [], chartInv = [], chartSin = [];
 
+  // Excel-exact simulation: G=saldoSin(prev), H=saldoInv(prev)
+  // S = H + I + L + M + O + P + Q (con inversión)
+  // T = G + I + L + O + P + M     (sin inversión)
+  // Q = (H + I + P + M + L) * tasaMensual
+  let H = capitalInicial, G = capitalInicial;
+  const _simData = {}; // edad → {inv, sin} for consulta
+
   for (let m = 0; m <= maxMeses; m++) {
     if (mes === 1) edad = edadActual + anio;
+
+    const I = edad <= edadJub ? ahorroMensual : 0;
+    const J = edad >= edadJub ? gastoMensual : 0;
+    const pension = edad >= edadJub ? pensionMensual : 0;
+    const K = edad >= edadRecurrente ? ingRecurrente : 0;
+    const L = (edad === edadAdicional && !ingAdicionalUsado && mes === 1) ? ingAdicional : 0;
+    if (L > 0) ingAdicionalUsado = true;
+    const M = (edad === edadJub && !liquidacionUsada && mes === 1) ? liquidacion : 0;
+    if (M > 0) liquidacionUsada = true;
+    const N = pension;
+    const O = (N + K - J) < 0 ? (N + K - J) : 0;
+    const P = (N + K - J) > 0 ? (N + K - J) : 0;
+    const baseQ = H + I + P + M + L;
+    const Q = baseQ > 0 ? baseQ * tasaMensual : 0;
+    saldoInv = H + I + L + M + O + P + Q;
+    saldoSin = G + I + L + O + P + M;
+
+    // Record at start of each year (after first month calc)
     if (mes === 1) {
       chartEdades.push(edad);
       chartInv.push(Math.max(saldoInv, 0));
       chartSin.push(Math.max(saldoSin, 0));
+      _simData[edad] = { inv: Math.max(saldoInv, 0), sin: Math.max(saldoSin, 0) };
     }
     if (edad === edadJub && mes === 1) { saldoRetiroInv = saldoInv; saldoRetiroSin = saldoSin; }
     if (edad === edadConsulta && mes === 1) { montoEdadInv = Math.max(saldoInv, 0); montoEdadSin = Math.max(saldoSin, 0); }
     if (edadFinInv == null && saldoInv <= 0 && edad > edadJub) edadFinInv = edad;
     if (edadFinSin == null && saldoSin <= 0 && edad > edadJub) edadFinSin = edad;
+
     if (m === maxMeses) break;
 
-    const ahorro = edad <= edadJub ? ahorroMensual : 0;
-    const gasto = edad >= edadJub ? gastoMensual : 0;
-    const pension = edad >= edadJub ? pensionMensual : 0;
-    const recurrente = edad >= edadRecurrente ? ingRecurrente : 0;
-    const adicional = (edad === edadAdicional && !ingAdicionalUsado && mes === 1) ? ingAdicional : 0;
-    if (adicional > 0) ingAdicionalUsado = true;
-    const liq = (edad === edadJub && !liquidacionUsada && mes === 1) ? liquidacion : 0;
-    if (liq > 0) liquidacionUsada = true;
-
-    const netoIngGasto = pension + recurrente - gasto;
-    const cargoNeg = netoIngGasto < 0 ? netoIngGasto : 0;
-    const cargoPos = netoIngGasto > 0 ? netoIngGasto : 0;
-
-    const baseInv = saldoInv + ahorro + cargoPos + liq + adicional;
-    const intereses = baseInv > 0 ? baseInv * tasaMensual : 0;
-    saldoInv = saldoInv + ahorro + cargoNeg + cargoPos + liq + adicional + intereses;
-    saldoSin = saldoSin + ahorro + cargoNeg + cargoPos + liq + adicional;
+    // Next month: H=S(prev), G=T(prev)
+    H = saldoInv;
+    G = saldoSin;
 
     mes++;
     if (mes > 12) { mes = 1; anio++; }
   }
+  _fpSimData = _simData;
 
   // Nullify chart points: keep depletion year + 1 yr at $0, then null
   if (edadFinSin != null) {
