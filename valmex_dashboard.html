@@ -1393,48 +1393,47 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
             <canvas id="fp-chart" height="220"></canvas>
           </div>
 
-          <!-- Resultados (BOTTOM) — tabla 4 filas x 3 columnas -->
+          <!-- Resultados (BOTTOM) — tabla 5 filas x 4 columnas -->
           <div style="border-radius:8px;overflow:hidden;border:1px solid #D3DDE6;font-family:'Montserrat',sans-serif;">
 
             <!-- Fila 1: títulos -->
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;">
+            <div style="display:grid;grid-template-columns:1.6fr 1fr 1fr 0.8fr;">
               <div style="background:var(--navy);color:#fff;padding:10px 16px;font-weight:700;font-size:14px;">Resultados</div>
               <div style="background:var(--navy);color:#fff;padding:10px 16px;font-weight:800;font-size:14px;text-align:center;letter-spacing:.5px;text-transform:uppercase;border-left:2px solid rgba(255,255,255,0.2);">Sin inversi&oacute;n</div>
               <div style="background:var(--navy);color:#fff;padding:10px 16px;font-weight:800;font-size:14px;text-align:center;letter-spacing:.5px;text-transform:uppercase;border-left:2px solid rgba(255,255,255,0.2);">Con inversi&oacute;n</div>
+              <div style="background:var(--navy);color:#fff;padding:10px 16px;font-weight:800;font-size:14px;text-align:center;letter-spacing:.5px;border-left:2px solid rgba(255,255,255,0.2);">+/-</div>
             </div>
 
             <!-- Fila 2: Saldo al retiro -->
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid #D3DDE6;">
+            <div style="display:grid;grid-template-columns:1.6fr 1fr 1fr 0.8fr;border-top:1px solid #D3DDE6;">
               <div style="padding:10px 16px;font-size:14px;color:var(--navy);font-weight:600;">Saldo al retiro (<span id="fp-res-edad-jub">—</span> a&ntilde;os)</div>
               <div style="padding:10px 16px;font-size:14px;color:#C0392B;font-weight:700;text-align:center;border-left:1px solid #D3DDE6;"><span id="fp-res-saldo-sin">—</span></div>
               <div style="padding:10px 16px;font-size:14px;color:#1A7A4A;font-weight:700;text-align:center;border-left:1px solid #D3DDE6;"><span id="fp-res-saldo-inv">—</span></div>
+              <div style="padding:10px 16px;font-size:14px;color:var(--navy);font-weight:700;text-align:center;border-left:1px solid #D3DDE6;"><span id="fp-res-diff">—</span></div>
             </div>
 
             <!-- Fila 3: Saldo a los X años -->
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid #D3DDE6;background:#F8FAFC;">
+            <div style="display:grid;grid-template-columns:1.6fr 1fr 1fr 0.8fr;border-top:1px solid #D3DDE6;background:#F8FAFC;">
               <div style="padding:10px 16px;font-size:14px;color:var(--navy);font-weight:600;">Saldo a los <input id="fp-edad-consulta-inv" type="number" value="0" min="0" max="120" oninput="updateFpEdadConsulta()" style="width:48px;text-align:center;padding:2px 6px;border:1px solid var(--navy);border-radius:4px;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);"> a&ntilde;os</div>
               <div style="padding:10px 16px;font-size:14px;color:#C0392B;font-weight:700;text-align:center;border-left:1px solid #D3DDE6;"><span id="fp-res-monto-sin">—</span></div>
               <div style="padding:10px 16px;font-size:14px;color:#1A7A4A;font-weight:700;text-align:center;border-left:1px solid #D3DDE6;"><span id="fp-res-monto-inv">—</span></div>
+              <div style="padding:10px 16px;font-size:14px;color:var(--navy);font-weight:700;text-align:center;border-left:1px solid #D3DDE6;"><span id="fp-res-diff-edad">—</span></div>
             </div>
 
             <!-- Fila 4: Se termina a los -->
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid #D3DDE6;background:#F8FAFC;">
+            <div style="display:grid;grid-template-columns:1.6fr 1fr 1fr 0.8fr;border-top:1px solid #D3DDE6;background:#F8FAFC;">
               <div style="padding:10px 16px;font-size:14px;color:var(--navy);font-weight:600;">Se termina a los</div>
               <div style="padding:10px 16px;font-size:14px;color:#C0392B;font-weight:700;text-align:center;border-left:1px solid #D3DDE6;"><span id="fp-res-edad-fin-sin">—</span></div>
               <div style="padding:10px 16px;font-size:14px;color:#1A7A4A;font-weight:700;text-align:center;border-left:1px solid #D3DDE6;"><span id="fp-res-edad-fin-inv">—</span></div>
+              <div style="padding:10px 16px;font-size:14px;color:var(--navy);font-weight:700;text-align:center;border-left:1px solid #D3DDE6;"><span id="fp-res-diff-fin">—</span></div>
             </div>
 
             <!-- Fila 5: Monto Máx. Patrimonio -->
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid #D3DDE6;">
-              <div style="padding:10px 16px;font-size:14px;color:var(--navy);font-weight:600;">Monto Máx. Patrimonio</div>
+            <div style="display:grid;grid-template-columns:1.6fr 1fr 1fr 0.8fr;border-top:1px solid #D3DDE6;border-radius:0 0 8px 8px;">
+              <div style="padding:10px 16px;font-size:14px;color:var(--navy);font-weight:600;">Monto M&aacute;x. Patrimonio</div>
               <div style="padding:10px 16px;font-size:14px;color:#C0392B;font-weight:700;text-align:center;border-left:1px solid #D3DDE6;"><span id="fp-res-max-sin">—</span></div>
               <div style="padding:10px 16px;font-size:14px;color:#1A7A4A;font-weight:700;text-align:center;border-left:1px solid #D3DDE6;"><span id="fp-res-max-inv">—</span></div>
-            </div>
-
-            <!-- Fila 6: Diferencial +/- -->
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-top:2px solid var(--navy);background:#E8EEF4;border-radius:0 0 8px 8px;">
-              <div style="padding:10px 16px;font-size:14px;color:var(--navy);font-weight:700;">+/-</div>
-              <div style="grid-column:2/span 2;padding:10px 16px;font-size:14px;font-weight:700;text-align:center;border-left:1px solid #D3DDE6;"><span id="fp-res-diff">—</span></div>
+              <div style="padding:10px 16px;font-size:14px;color:var(--navy);font-weight:700;text-align:center;border-left:1px solid #D3DDE6;"><span id="fp-res-diff-max">—</span></div>
             </div>
 
           </div>
@@ -5506,6 +5505,13 @@ function updateFpEdadConsulta() {
   const entry = _fpSimData[edad];
   document.getElementById('fp-res-monto-sin').textContent = entry ? _fpFmt(entry.sin) : '—';
   document.getElementById('fp-res-monto-inv').textContent = entry ? _fpFmt(entry.inv) : '—';
+  const _de = document.getElementById('fp-res-diff-edad');
+  if (entry) {
+    const _d = entry.inv - entry.sin;
+    _de.textContent = (_d >= 0 ? '+' : '') + _fpFmt(_d);
+  } else {
+    _de.textContent = '—';
+  }
 }
 function _fpInitEmptyChart() {
   if (_fpChartInited) return;
@@ -5621,10 +5627,28 @@ function calcFlujosPension() {
   document.getElementById('fp-res-edad-fin-inv').textContent = edadFinInv != null ? edadFinInv + ' años' : '> 100 años';
   document.getElementById('fp-res-max-sin').textContent = maxSinEdad != null ? _fpFmt(maxSinMonto) + ' — ' + maxSinEdad + ' años' : '—';
   document.getElementById('fp-res-max-inv').textContent = maxInvEdad != null ? _fpFmt(maxInvMonto) + ' — ' + maxInvEdad + ' años' : '—';
+  // +/- Saldo al retiro
   const _diff = (saldoRetiroInv || 0) - (saldoRetiroSin || 0);
   const _diffEl = document.getElementById('fp-res-diff');
   _diffEl.textContent = (_diff >= 0 ? '+' : '') + _fpFmt(_diff);
-  _diffEl.style.color = 'var(--navy)';
+
+  // +/- Se termina a los
+  const _finDiffEl = document.getElementById('fp-res-diff-fin');
+  if (edadFinInv == null && edadFinSin == null) {
+    _finDiffEl.textContent = '=';
+  } else if (edadFinInv == null) {
+    _finDiffEl.textContent = '+\u221e';
+  } else if (edadFinSin == null) {
+    _finDiffEl.textContent = '-\u221e';
+  } else {
+    const _fd = edadFinInv - edadFinSin;
+    _finDiffEl.textContent = (_fd >= 0 ? '+' : '') + _fd + ' a\xF1os';
+  }
+
+  // +/- Monto Máx. Patrimonio
+  const _diffMaxEl = document.getElementById('fp-res-diff-max');
+  const _diffMax = maxInvMonto - maxSinMonto;
+  _diffMaxEl.textContent = (_diffMax >= 0 ? '+' : '') + _fpFmt(_diffMax);
 
   // Trim chart: stop shortly after last depletion, or show full simulation horizon
   const finInvNum = typeof edadFinInv === 'number' ? edadFinInv : null;
