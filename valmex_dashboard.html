@@ -5624,7 +5624,7 @@ function calcFlujosPension() {
   const _diff = (saldoRetiroInv || 0) - (saldoRetiroSin || 0);
   const _diffEl = document.getElementById('fp-res-diff');
   _diffEl.textContent = (_diff >= 0 ? '+' : '') + _fpFmt(_diff);
-  _diffEl.style.color = _diff >= 0 ? '#1A7A4A' : '#C0392B';
+  _diffEl.style.color = 'var(--navy)';
 
   // Trim chart: stop shortly after last depletion, max horizon = age 100
   const finInvNum = typeof edadFinInv === 'number' ? edadFinInv : null;
