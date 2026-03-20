@@ -5583,7 +5583,7 @@ function calcFlujosPension() {
   document.getElementById('fp-res-monto-inv').textContent = _fpFmt(montoEdadInv || 0);
   document.getElementById('fp-res-saldo-sin').textContent = saldoRetiroSin != null ? _fpFmt(saldoRetiroSin) : '—';
   document.getElementById('fp-res-edad-fin-sin').textContent = edadFinSin;
-  document.getElementById('fp-edad-consulta-sin-lbl').textContent = edadConsulta;
+  const _sinLbl = document.getElementById('fp-edad-consulta-sin-lbl'); if (_sinLbl) _sinLbl.textContent = edadConsulta;
   document.getElementById('fp-res-monto-sin').textContent = _fpFmt(montoEdadSin || 0);
 
   // Trim chart to max age where money runs out (+ 2 years buffer)
