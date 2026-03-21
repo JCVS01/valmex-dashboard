@@ -5899,9 +5899,9 @@ function calcTbill() {
       document.getElementById(`tb-c${i}-pcli`).textContent = '$' + precioCli.toFixed(6);
       document.getElementById(`tb-c${i}-tit`).textContent = tit.toLocaleString('en-US');
       document.getElementById(`tb-c${i}-nom`).textContent = nom.toLocaleString('en-US');
-      document.getElementById(`tb-c${i}-pmesa2`).textContent = '$' + f2(pagarMesa);
-      document.getElementById(`tb-c${i}-cpag`).textContent = '$' + f2(cliPaga);
-      document.getElementById(`tb-c${i}-util`).textContent = '$' + f2(util);
+      document.getElementById(`tb-c${i}-pmesa2`).textContent = pagarMesa ? '$' + f2(pagarMesa) : '—';
+      document.getElementById(`tb-c${i}-cpag`).textContent = cliPaga ? '$' + f2(cliPaga) : '—';
+      document.getElementById(`tb-c${i}-util`).textContent = util ? '$' + f2(util) : '—';
       totMonto += monto; totTit += tit; totNom += nom; totPagarMesa += pagarMesa; totPagarCli += cliPaga; totUtil += util;
     } else {
       ['td','plazo','pmesa','pcli','tit','nom','pmesa2','cpag','util'].forEach(k => {
@@ -5912,7 +5912,7 @@ function calcTbill() {
   }
 
   document.getElementById('tb-tot-monto').textContent = totMonto > 0 ? '$' + f2(totMonto) : '—';
-  document.getElementById('tb-tot-pmesa').textContent = '—';
+  document.getElementById('tb-tot-pmesa').textContent = hasInputs ? '$' + precioMesa.toFixed(6) : '—';
   document.getElementById('tb-tot-titulos').textContent = totTit > 0 ? totTit.toLocaleString('en-US') : '—';
   document.getElementById('tb-tot-nominal').textContent = totNom > 0 ? totNom.toLocaleString('en-US') : '—';
   document.getElementById('tb-tot-pagar-mesa').textContent = totPagarMesa > 0 ? '$' + f2(totPagarMesa) : '—';
