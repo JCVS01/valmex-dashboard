@@ -5866,7 +5866,7 @@ function calcTbill() {
 
   const hasInputs = tasaDesc > 0 && plazo > 0;
   const tasaTAS = hasInputs ? tasaDesc / (1 - tasaDesc * plazo / 360) : 0;
-  const comision = (hasInputs && tasaCli > 0 && tasaTAS > 0) ? tasaCli / tasaTAS - 1 : null;
+  const comision = (hasInputs && tasaCli > 0 && tasaTAS > 0) ? (1 - tasaCli / tasaTAS) : null;
   const precioMesa = hasInputs ? 100 * (1 - tasaDesc * plazo / 360) : 100;
   const precioCli = (hasInputs && tasaCli > 0) ? 100 / (1 + tasaCli * plazo / 360) : 100;
 
