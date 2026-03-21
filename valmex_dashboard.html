@@ -1474,7 +1474,7 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
             <div style="padding:10px 16px;display:grid;grid-template-columns:repeat(6,auto);gap:6px 14px;align-items:center;font-size:14px;font-family:'Montserrat',sans-serif;color:var(--navy);">
               <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">Tasa Descuento</div><input id="tb-tasa-desc" type="text" value="" placeholder="%" autocomplete="nope" oninput="fpFormatPct(this);calcTbill()" style="width:80px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;"></div>
               <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">D&iacute;as Liq (T+)</div><input id="tb-dias-liq" type="number" value="" placeholder="—" autocomplete="nope" oninput="calcTbill()" style="width:50px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;"></div>
-              <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">Plazo</div><input id="tb-plazo" type="number" value="" placeholder="—" autocomplete="nope" oninput="calcTbill()" style="width:60px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;"></div>
+              <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">Plazo (d&iacute;as)</div><input id="tb-plazo" type="number" value="" placeholder="—" autocomplete="nope" oninput="calcTbill()" style="width:60px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;"></div>
               <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;color:var(--sky);">Tasa Cliente</div><input id="tb-tasa-cli" type="text" value="" placeholder="%" autocomplete="nope" oninput="fpFormatPct(this);calcTbill()" style="width:80px;text-align:right;padding:4px 6px;border:1px solid var(--sky);border-radius:4px;font-size:14px;background:rgba(65,187,201,0.1);"></div>
               <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">Tasa TAS</div><span id="tb-tasa-tas" style="font-weight:700;font-size:14px;">—</span></div>
               <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">Comisi&oacute;n</div><span id="tb-comision" style="font-weight:700;font-size:14px;">—</span></div>
@@ -1484,17 +1484,17 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
             <div style="padding:4px 8px;">
               <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);table-layout:fixed;">
                 <thead><tr style="background:var(--navy);color:#fff;font-size:12px;">
-                  <th style="padding:6px 4px;text-align:left;width:68px;"># Cto</th>
-                  <th style="padding:6px 4px;text-align:right;width:90px;">Mto a invertir</th>
-                  <th style="padding:6px 4px;text-align:right;width:56px;">T. Desc</th>
-                  <th style="padding:6px 4px;text-align:right;width:40px;">Plazo</th>
-                  <th style="padding:6px 4px;text-align:right;width:52px;">T&iacute;tulos</th>
-                  <th style="padding:6px 4px;text-align:right;width:72px;">Mto Nominal</th>
-                  <th style="padding:6px 4px;text-align:right;width:74px;">Precio Mesa</th>
-                  <th style="padding:6px 4px;text-align:right;width:74px;">Saldo Mesa</th>
-                  <th style="padding:6px 4px;text-align:right;width:74px;">Precio Cliente</th>
-                  <th style="padding:6px 4px;text-align:right;width:74px;">Saldo Cliente</th>
-                  <th style="padding:6px 4px;text-align:right;width:70px;color:#1A7A4A;">Utilidad</th>
+                  <th style="padding:6px 4px;text-align:center;width:68px;"># Cto</th>
+                  <th style="padding:6px 4px;text-align:center;width:90px;">Monto a invertir</th>
+                  <th style="padding:6px 4px;text-align:center;width:56px;">Tasa Descuento</th>
+                  <th style="padding:6px 4px;text-align:center;width:40px;">Plazo</th>
+                  <th style="padding:6px 4px;text-align:center;width:52px;">T&iacute;tulos</th>
+                  <th style="padding:6px 4px;text-align:center;width:72px;">Monto Nominal</th>
+                  <th style="padding:6px 4px;text-align:center;width:74px;">Precio Mesa</th>
+                  <th style="padding:6px 4px;text-align:center;width:74px;">Saldo Mesa</th>
+                  <th style="padding:6px 4px;text-align:center;width:74px;">Precio Cliente</th>
+                  <th style="padding:6px 4px;text-align:center;width:74px;">Saldo Cliente</th>
+                  <th style="padding:6px 4px;text-align:center;width:70px;">Utilidad</th>
                 </tr></thead>
                 <tbody id="tb-clientes-body"></tbody>
                 <tfoot><tr style="font-weight:700;border-top:2px solid var(--navy);font-size:13px;">
@@ -5895,13 +5895,13 @@ function calcTbill() {
       const util = cliPaga - pagarMesa;
       document.getElementById(`tb-c${i}-td`).textContent = (tasaDesc * 100).toFixed(2) + '%';
       document.getElementById(`tb-c${i}-plazo`).textContent = plazo;
-      document.getElementById(`tb-c${i}-pmesa`).textContent = precioMesa.toFixed(6);
-      document.getElementById(`tb-c${i}-pcli`).textContent = precioCli.toFixed(6);
+      document.getElementById(`tb-c${i}-pmesa`).textContent = '$' + precioMesa.toFixed(6);
+      document.getElementById(`tb-c${i}-pcli`).textContent = '$' + precioCli.toFixed(6);
       document.getElementById(`tb-c${i}-tit`).textContent = tit.toLocaleString('en-US');
       document.getElementById(`tb-c${i}-nom`).textContent = nom.toLocaleString('en-US');
-      document.getElementById(`tb-c${i}-pmesa2`).textContent = f2(pagarMesa);
-      document.getElementById(`tb-c${i}-cpag`).textContent = f2(cliPaga);
-      document.getElementById(`tb-c${i}-util`).textContent = f2(util);
+      document.getElementById(`tb-c${i}-pmesa2`).textContent = '$' + f2(pagarMesa);
+      document.getElementById(`tb-c${i}-cpag`).textContent = '$' + f2(cliPaga);
+      document.getElementById(`tb-c${i}-util`).textContent = '$' + f2(util);
       totMonto += monto; totTit += tit; totNom += nom; totPagarMesa += pagarMesa; totPagarCli += cliPaga; totUtil += util;
     } else {
       ['td','plazo','pmesa','pcli','tit','nom','pmesa2','cpag','util'].forEach(k => {
@@ -5911,13 +5911,13 @@ function calcTbill() {
     }
   }
 
-  document.getElementById('tb-tot-monto').textContent = totMonto > 0 ? f2(totMonto) : '—';
-  document.getElementById('tb-tot-pmesa').textContent = hasInputs ? precioMesa.toFixed(6) : '—';
+  document.getElementById('tb-tot-monto').textContent = totMonto > 0 ? '$' + f2(totMonto) : '—';
+  document.getElementById('tb-tot-pmesa').textContent = hasInputs ? '$' + precioMesa.toFixed(6) : '—';
   document.getElementById('tb-tot-titulos').textContent = totTit > 0 ? totTit.toLocaleString('en-US') : '—';
   document.getElementById('tb-tot-nominal').textContent = totNom > 0 ? totNom.toLocaleString('en-US') : '—';
-  document.getElementById('tb-tot-pagar-mesa').textContent = totPagarMesa > 0 ? f2(totPagarMesa) : '—';
-  document.getElementById('tb-tot-pagar-cli').textContent = totPagarCli > 0 ? f2(totPagarCli) : '—';
-  document.getElementById('tb-tot-utilidad').textContent = totUtil > 0 ? f2(totUtil) : '—';
+  document.getElementById('tb-tot-pagar-mesa').textContent = totPagarMesa > 0 ? '$' + f2(totPagarMesa) : '—';
+  document.getElementById('tb-tot-pagar-cli').textContent = totPagarCli > 0 ? '$' + f2(totPagarCli) : '—';
+  document.getElementById('tb-tot-utilidad').textContent = totUtil > 0 ? '$' + f2(totUtil) : '—';
 
   // Resumen Mesa
   document.getElementById('tb-rm-plazo').textContent = plazo;
