@@ -1482,8 +1482,8 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
             <!-- Lista de clientes -->
             <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:14px;color:var(--navy);font-family:'Montserrat',sans-serif;">Clientes</div>
             <div style="padding:4px 8px;">
-              <table style="width:100%;border-collapse:collapse;font-size:11px;font-family:'Montserrat',sans-serif;color:var(--navy);table-layout:fixed;">
-                <thead><tr style="background:var(--navy);color:#fff;font-size:10px;">
+              <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);table-layout:fixed;">
+                <thead><tr style="background:var(--navy);color:#fff;font-size:12px;">
                   <th style="padding:6px 4px;text-align:left;width:68px;"># Cto</th>
                   <th style="padding:6px 4px;text-align:right;width:90px;">Mto a invertir</th>
                   <th style="padding:6px 4px;text-align:right;width:56px;">T. Desc</th>
@@ -1494,11 +1494,10 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
                   <th style="padding:6px 4px;text-align:right;width:74px;">Saldo Mesa</th>
                   <th style="padding:6px 4px;text-align:right;width:74px;">Precio Cliente</th>
                   <th style="padding:6px 4px;text-align:right;width:74px;">Saldo Cliente</th>
-                  <th style="padding:6px 4px;text-align:right;width:60px;">Utilidad</th>
-                  <th style="padding:6px 4px;text-align:right;width:60px;">Sobrante</th>
+                  <th style="padding:6px 4px;text-align:right;width:70px;color:#1A7A4A;">Utilidad</th>
                 </tr></thead>
                 <tbody id="tb-clientes-body"></tbody>
-                <tfoot><tr style="font-weight:700;border-top:2px solid var(--navy);font-size:11px;">
+                <tfoot><tr style="font-weight:700;border-top:2px solid var(--navy);font-size:13px;">
                   <td style="padding:5px 4px;">Total</td>
                   <td id="tb-tot-monto" style="padding:5px 4px;text-align:right;">—</td>
                   <td style="padding:5px 4px;"></td>
@@ -1509,8 +1508,7 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
                   <td id="tb-tot-pagar-mesa" style="padding:5px 4px;text-align:right;">—</td>
                   <td style="padding:5px 4px;"></td>
                   <td id="tb-tot-pagar-cli" style="padding:5px 4px;text-align:right;">—</td>
-                  <td id="tb-tot-utilidad" style="padding:5px 4px;text-align:right;">—</td>
-                  <td id="tb-tot-saldo" style="padding:5px 4px;text-align:right;">—</td>
+                  <td id="tb-tot-utilidad" style="padding:5px 4px;text-align:right;color:#1A7A4A;">—</td>
                 </tr></tfoot>
               </table>
             </div>
@@ -5841,18 +5839,17 @@ function _tbInitClientes() {
     const tr = document.createElement('tr');
     tr.style.borderBottom = '1px solid #E8EEF4';
     tr.innerHTML =
-      `<td style="padding:3px 4px;"><input id="tb-c${i}-contrato" type="text" placeholder="" autocomplete="nope" oninput="calcTbill()" style="width:60px;padding:3px 4px;border:1px solid #D3DDE6;border-radius:3px;font-size:11px;font-family:'Montserrat',sans-serif;"></td>` +
-      `<td style="padding:3px 4px;"><input id="tb-c${i}-monto" type="text" placeholder="$" autocomplete="nope" oninput="formatMonto(this);calcTbill()" style="width:82px;text-align:right;padding:3px 4px;border:1px solid #D3DDE6;border-radius:3px;font-size:11px;font-family:'Montserrat',sans-serif;"></td>` +
-      `<td id="tb-c${i}-td" style="padding:3px 4px;text-align:right;font-size:11px;color:var(--navy);font-weight:600;">—</td>` +
-      `<td id="tb-c${i}-plazo" style="padding:3px 4px;text-align:right;font-size:11px;">—</td>` +
-      `<td id="tb-c${i}-tit" style="padding:3px 4px;text-align:right;font-size:11px;">—</td>` +
-      `<td id="tb-c${i}-nom" style="padding:3px 4px;text-align:right;font-size:11px;">—</td>` +
-      `<td id="tb-c${i}-pmesa" style="padding:3px 4px;text-align:right;font-size:11px;">—</td>` +
-      `<td id="tb-c${i}-pmesa2" style="padding:3px 4px;text-align:right;font-size:11px;">—</td>` +
-      `<td id="tb-c${i}-pcli" style="padding:3px 4px;text-align:right;font-size:11px;">—</td>` +
-      `<td id="tb-c${i}-cpag" style="padding:3px 4px;text-align:right;font-size:11px;">—</td>` +
-      `<td id="tb-c${i}-util" style="padding:3px 4px;text-align:right;font-size:11px;">—</td>` +
-      `<td id="tb-c${i}-saldo" style="padding:3px 4px;text-align:right;font-size:11px;">—</td>`;
+      `<td style="padding:3px 4px;"><input id="tb-c${i}-contrato" type="text" placeholder="" autocomplete="nope" oninput="calcTbill()" style="width:60px;padding:3px 4px;border:1px solid #D3DDE6;border-radius:3px;font-size:13px;font-family:'Montserrat',sans-serif;"></td>` +
+      `<td style="padding:3px 4px;"><input id="tb-c${i}-monto" type="text" placeholder="$" autocomplete="nope" oninput="formatMonto(this);calcTbill()" style="width:82px;text-align:right;padding:3px 4px;border:1px solid #D3DDE6;border-radius:3px;font-size:13px;font-family:'Montserrat',sans-serif;"></td>` +
+      `<td id="tb-c${i}-td" style="padding:3px 4px;text-align:right;font-size:13px;color:var(--navy);font-weight:600;">—</td>` +
+      `<td id="tb-c${i}-plazo" style="padding:3px 4px;text-align:right;font-size:13px;">—</td>` +
+      `<td id="tb-c${i}-tit" style="padding:3px 4px;text-align:right;font-size:13px;">—</td>` +
+      `<td id="tb-c${i}-nom" style="padding:3px 4px;text-align:right;font-size:13px;">—</td>` +
+      `<td id="tb-c${i}-pmesa" style="padding:3px 4px;text-align:right;font-size:13px;">—</td>` +
+      `<td id="tb-c${i}-pmesa2" style="padding:3px 4px;text-align:right;font-size:13px;">—</td>` +
+      `<td id="tb-c${i}-pcli" style="padding:3px 4px;text-align:right;font-size:13px;">—</td>` +
+      `<td id="tb-c${i}-cpag" style="padding:3px 4px;text-align:right;font-size:13px;">—</td>` +
+      `<td id="tb-c${i}-util" style="padding:3px 4px;text-align:right;font-size:13px;color:#1A7A4A;font-weight:600;">—</td>`;
     tbody.appendChild(tr);
   }
   calcTbill();
@@ -5878,7 +5875,7 @@ function calcTbill() {
   const venc = new Date(hoy.getTime() + (plazo + diasLiq) * 86400000);
   const fmtDate = d => d.toLocaleDateString('es-MX', {day:'2-digit',month:'2-digit',year:'numeric'});
 
-  let totMonto = 0, totTit = 0, totNom = 0, totPagarMesa = 0, totPagarCli = 0, totUtil = 0, totSaldo = 0;
+  let totMonto = 0, totTit = 0, totNom = 0, totPagarMesa = 0, totPagarCli = 0, totUtil = 0;
   const f2 = v => v ? v.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : '—';
 
   for (let i = 0; i < 5; i++) {
@@ -5889,7 +5886,6 @@ function calcTbill() {
       const pagarMesa = precioMesa * tit;
       const cliPaga = tit * precioCli;
       const util = cliPaga - pagarMesa;
-      const saldo = monto - cliPaga;
       document.getElementById(`tb-c${i}-td`).textContent = (tasaDesc * 100).toFixed(2) + '%';
       document.getElementById(`tb-c${i}-plazo`).textContent = plazo;
       document.getElementById(`tb-c${i}-pmesa`).textContent = precioMesa.toFixed(6);
@@ -5899,10 +5895,9 @@ function calcTbill() {
       document.getElementById(`tb-c${i}-pmesa2`).textContent = f2(pagarMesa);
       document.getElementById(`tb-c${i}-cpag`).textContent = f2(cliPaga);
       document.getElementById(`tb-c${i}-util`).textContent = f2(util);
-      document.getElementById(`tb-c${i}-saldo`).textContent = f2(saldo);
-      totMonto += monto; totTit += tit; totNom += nom; totPagarMesa += pagarMesa; totPagarCli += cliPaga; totUtil += util; totSaldo += saldo;
+      totMonto += monto; totTit += tit; totNom += nom; totPagarMesa += pagarMesa; totPagarCli += cliPaga; totUtil += util;
     } else {
-      ['td','plazo','pmesa','pcli','tit','nom','pmesa2','cpag','util','saldo'].forEach(k => {
+      ['td','plazo','pmesa','pcli','tit','nom','pmesa2','cpag','util'].forEach(k => {
         const el = document.getElementById(`tb-c${i}-${k}`);
         if (el) el.textContent = '—';
       });
@@ -5916,7 +5911,6 @@ function calcTbill() {
   document.getElementById('tb-tot-pagar-mesa').textContent = totPagarMesa > 0 ? f2(totPagarMesa) : '—';
   document.getElementById('tb-tot-pagar-cli').textContent = totPagarCli > 0 ? f2(totPagarCli) : '—';
   document.getElementById('tb-tot-utilidad').textContent = totUtil > 0 ? f2(totUtil) : '—';
-  document.getElementById('tb-tot-saldo').textContent = totSaldo !== 0 ? f2(totSaldo) : '—';
 
   // Resumen Mesa
   document.getElementById('tb-rm-plazo').textContent = plazo;
