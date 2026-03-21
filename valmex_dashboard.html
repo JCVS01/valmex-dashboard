@@ -1518,25 +1518,25 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
                 <div style="background:var(--navy);color:#fff;padding:6px 12px;font-weight:700;font-size:14px;font-family:'Montserrat',sans-serif;">Resumen Mesa</div>
                 <div style="padding:6px 12px;display:grid;grid-template-columns:1fr auto;gap:3px 8px;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);">
                   <span>Plazo</span><span id="tb-rm-plazo" style="text-align:right;font-weight:600;">—</span>
-                  <span>Fecha Vencimiento</span><span id="tb-rm-venc" style="text-align:right;font-weight:600;">—</span>
+                  <span style="color:var(--sky);font-weight:700;">Fecha Vencimiento</span><span id="tb-rm-venc" style="text-align:right;font-weight:700;color:var(--sky);">—</span>
                   <span>Tasa Descuento</span><span id="tb-rm-td" style="text-align:right;font-weight:600;">—</span>
-                  <span>Tasa Rendimiento</span><span id="tb-rm-tr" style="text-align:right;font-weight:600;">—</span>
-                  <span>Precio Mesa</span><span id="tb-rm-precio" style="text-align:right;font-weight:600;">—</span>
+                  <span style="color:var(--sky);font-weight:700;">Tasa Rendimiento</span><span id="tb-rm-tr" style="text-align:right;font-weight:700;color:var(--sky);">—</span>
+                  <span>Precio</span><span id="tb-rm-precio" style="text-align:right;font-weight:600;">—</span>
                   <span>T&iacute;tulos</span><span id="tb-rm-titulos" style="text-align:right;font-weight:700;">—</span>
-                  <span style="color:#C0392B;font-weight:700;">Monto Nominal</span><span id="tb-rm-nominal" style="text-align:right;font-weight:700;color:#C0392B;">—</span>
-                  <span>Monto a Pagar</span><span id="tb-rm-pagar" style="text-align:right;font-weight:600;">—</span>
+                  <span style="color:var(--sky);font-weight:700;">Monto Nominal</span><span id="tb-rm-nominal" style="text-align:right;font-weight:700;color:var(--sky);">—</span>
+                  <span style="color:#C0392B;font-weight:700;">Monto a Pagar</span><span id="tb-rm-pagar" style="text-align:right;font-weight:700;color:#C0392B;">—</span>
                 </div>
               </div>
               <div style="border:1px solid #D3DDE6;border-radius:6px;overflow:hidden;">
                 <div style="background:var(--navy);color:#fff;padding:6px 12px;font-weight:700;font-size:14px;font-family:'Montserrat',sans-serif;">Resumen Cliente</div>
                 <div style="padding:6px 12px;display:grid;grid-template-columns:1fr auto;gap:3px 8px;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);">
                   <span>Plazo</span><span id="tb-rc-plazo" style="text-align:right;font-weight:600;">—</span>
-                  <span>Fecha Vencimiento</span><span id="tb-rc-venc" style="text-align:right;font-weight:600;">—</span>
-                  <span>Tasa Rendimiento</span><span id="tb-rc-tr" style="text-align:right;font-weight:600;">—</span>
+                  <span style="color:var(--sky);font-weight:700;">Fecha Vencimiento</span><span id="tb-rc-venc" style="text-align:right;font-weight:700;color:var(--sky);">—</span>
+                  <span style="color:var(--sky);font-weight:700;">Tasa Rendimiento</span><span id="tb-rc-tr" style="text-align:right;font-weight:700;color:var(--sky);">—</span>
                   <span>Precio</span><span id="tb-rc-precio" style="text-align:right;font-weight:600;">—</span>
                   <span>T&iacute;tulos</span><span id="tb-rc-titulos" style="text-align:right;font-weight:700;">—</span>
-                  <span>Monto Nominal</span><span id="tb-rc-nominal" style="text-align:right;font-weight:600;">—</span>
-                  <span>Monto a Pagar</span><span id="tb-rc-pagar" style="text-align:right;font-weight:600;">—</span>
+                  <span style="color:var(--sky);font-weight:700;">Monto Nominal</span><span id="tb-rc-nominal" style="text-align:right;font-weight:700;color:var(--sky);">—</span>
+                  <span style="color:#C0392B;font-weight:700;">Monto a Pagar</span><span id="tb-rc-pagar" style="text-align:right;font-weight:700;color:#C0392B;">—</span>
                 </div>
               </div>
             </div>
@@ -5912,7 +5912,7 @@ function calcTbill() {
   }
 
   document.getElementById('tb-tot-monto').textContent = totMonto > 0 ? '$' + f2(totMonto) : '—';
-  document.getElementById('tb-tot-pmesa').textContent = '—';
+  document.getElementById('tb-tot-pmesa').textContent = '';
   document.getElementById('tb-tot-titulos').textContent = totTit > 0 ? totTit.toLocaleString('en-US') : '—';
   document.getElementById('tb-tot-nominal').textContent = totNom > 0 ? totNom.toLocaleString('en-US') : '—';
   document.getElementById('tb-tot-pagar-mesa').textContent = totPagarMesa > 0 ? '$' + f2(totPagarMesa) : '—';
