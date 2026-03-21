@@ -5924,19 +5924,19 @@ function calcTbill() {
   document.getElementById('tb-rm-venc').textContent = fmtDate(venc);
   document.getElementById('tb-rm-td').textContent = (tasaDesc * 100).toFixed(4) + '%';
   document.getElementById('tb-rm-tr').textContent = (tasaTAS * 100).toFixed(4) + '%';
-  document.getElementById('tb-rm-precio').textContent = precioMesa.toFixed(6);
+  document.getElementById('tb-rm-precio').textContent = '$' + precioMesa.toFixed(6);
   document.getElementById('tb-rm-titulos').textContent = totTit > 0 ? totTit.toLocaleString('en-US') : '—';
   document.getElementById('tb-rm-nominal').textContent = totNom > 0 ? totNom.toLocaleString('en-US') : '—';
-  document.getElementById('tb-rm-pagar').textContent = totPagarMesa > 0 ? f2(totPagarMesa) : '—';
+  document.getElementById('tb-rm-pagar').textContent = totPagarMesa > 0 ? '$' + f2(totPagarMesa) : '—';
 
   // Resumen Cliente
   document.getElementById('tb-rc-plazo').textContent = plazo;
   document.getElementById('tb-rc-venc').textContent = fmtDate(venc);
   document.getElementById('tb-rc-tr').textContent = (tasaCli * 100).toFixed(4) + '%';
-  document.getElementById('tb-rc-precio').textContent = precioCli.toFixed(6);
+  document.getElementById('tb-rc-precio').textContent = '$' + precioCli.toFixed(6);
   document.getElementById('tb-rc-titulos').textContent = totTit > 0 ? totTit.toLocaleString('en-US') : '—';
   document.getElementById('tb-rc-nominal').textContent = totNom > 0 ? totNom.toLocaleString('en-US') : '—';
-  document.getElementById('tb-rc-pagar').textContent = totPagarCli > 0 ? f2(totPagarCli) : '—';
+  document.getElementById('tb-rc-pagar').textContent = totPagarCli > 0 ? '$' + f2(totPagarCli) : '—';
 }
 </script>
 
