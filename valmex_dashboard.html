@@ -5912,7 +5912,7 @@ function calcTbill() {
   }
 
   document.getElementById('tb-tot-monto').textContent = totMonto > 0 ? '$' + f2(totMonto) : '—';
-  document.getElementById('tb-tot-pmesa').textContent = (hasInputs && totTit > 0) ? '$' + precioMesa.toFixed(6) : '—';
+  document.getElementById('tb-tot-pmesa').textContent = '—';
   document.getElementById('tb-tot-titulos').textContent = totTit > 0 ? totTit.toLocaleString('en-US') : '—';
   document.getElementById('tb-tot-nominal').textContent = totNom > 0 ? totNom.toLocaleString('en-US') : '—';
   document.getElementById('tb-tot-pagar-mesa').textContent = totPagarMesa > 0 ? '$' + f2(totPagarMesa) : '—';
