@@ -1567,7 +1567,6 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
             <option value="0.32">32%</option>
             <option value="0.34">34%</option>
             <option value="0.35" selected>35%</option>
-            <option value="0.36">36%</option>
           </select>
         </div>
       </div>
@@ -6062,7 +6061,7 @@ async function ceInit() {
     }
     const vlmxetf = {};
     if (qfr.ok !== false) {
-      const fund = qfr.funds?.find(f => f.name === 'VLMXETF');
+      const fund = qfr.assets?.find(f => f.name === 'VLMXETF');
       if (fund) Object.entries(fund.returns).forEach(([y,v]) => { vlmxetf[y] = v / 100; });
     }
     // Determine available years (intersection, min 2020)
