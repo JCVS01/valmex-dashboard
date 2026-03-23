@@ -4307,7 +4307,15 @@ def _get_retencion_vigente():
     if _retencion_cache["year"] == current_year and _retencion_cache["rate"] is not None:
         return _retencion_cache["rate"]
     try:
-        from pypdf import PdfReader; import io, re as _re
+        import io, re as _re
+        try:
+            from pypdf import PdfReader
+        except ImportError:
+            try:
+                from PyPDF2 import PdfReader
+            except ImportError:
+                print("[RETENCION] No PDF library available, using fallback")
+                raise ImportError("No PDF reader")
         url = f"https://www.diputados.gob.mx/LeyesBiblio/pdf/LIF_{current_year}.pdf"
         r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=20, verify=False)
         r.raise_for_status()
