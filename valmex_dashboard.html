@@ -1600,7 +1600,8 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
             <span style="color:#C0392B;font-weight:700;">Pago Total ISR</span><span id="ce-c-isr" style="text-align:right;font-weight:700;color:#C0392B;">—</span>
             <div style="grid-column:1/-1;border-top:2px solid var(--navy);margin:6px 0 2px;"></div>
             <div style="grid-column:1/-1;background:linear-gradient(135deg,var(--navy),#0D3A7A);border-radius:6px;padding:8px 12px;display:grid;grid-template-columns:1fr auto;gap:4px 10px;">
-              <span style="color:#fff;font-weight:700;font-size:13px;">Rend. después de ISR</span><span id="ce-c-rneto" style="text-align:right;font-weight:700;color:#fff;font-size:15px;">—</span>
+              <span id="ce-c-rneto-label" style="color:#fff;font-weight:700;font-size:13px;">Rend. después de ISR</span><span id="ce-c-rneto" style="text-align:right;font-weight:700;color:#fff;font-size:15px;">—</span>
+              <span id="ce-c-rneto-ann-label" style="color:rgba(255,255,255,0.7);font-weight:600;font-size:12px;display:none;">Rend. Anualizado después de ISR</span><span id="ce-c-rneto-ann" style="text-align:right;font-weight:600;color:rgba(255,255,255,0.7);font-size:13px;display:none;">—</span>
               <span style="color:#fff;font-weight:700;font-size:13px;">Ganancia Neta</span><span id="ce-c-gneta" style="text-align:right;font-weight:700;color:#fff;font-size:15px;">—</span>
             </div>
           </div>
@@ -1623,7 +1624,8 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
             <span style="color:#C0392B;font-weight:700;">Pago Total ISR 10%</span><span id="ce-e-isr" style="text-align:right;font-weight:700;color:#C0392B;">—</span>
             <div style="grid-column:1/-1;border-top:2px solid var(--sky);margin:6px 0 2px;"></div>
             <div style="grid-column:1/-1;background:linear-gradient(135deg,#058B97,#41BBC9);border-radius:6px;padding:8px 12px;display:grid;grid-template-columns:1fr auto;gap:4px 10px;">
-              <span style="color:#fff;font-weight:700;font-size:13px;">Rend. después de ISR</span><span id="ce-e-rneto" style="text-align:right;font-weight:700;color:#fff;font-size:15px;">—</span>
+              <span id="ce-e-rneto-label" style="color:#fff;font-weight:700;font-size:13px;">Rend. después de ISR</span><span id="ce-e-rneto" style="text-align:right;font-weight:700;color:#fff;font-size:15px;">—</span>
+              <span id="ce-e-rneto-ann-label" style="color:rgba(255,255,255,0.7);font-weight:600;font-size:12px;display:none;">Rend. Anualizado después de ISR</span><span id="ce-e-rneto-ann" style="text-align:right;font-weight:600;color:rgba(255,255,255,0.7);font-size:13px;display:none;">—</span>
               <span style="color:#fff;font-weight:700;font-size:13px;">Ganancia Neta</span><span id="ce-e-gneta" style="text-align:right;font-weight:700;color:#fff;font-size:15px;">—</span>
             </div>
           </div>
@@ -6231,7 +6233,14 @@ function ceCalc() {
   $('ce-c-ret', fmtM(retProvC));
   $('ce-c-comp', fmtM(compC));
   $('ce-c-isr', fmtM(isrTotalC));
+  const isMultiYear = yFrom !== yTo;
+  // CETES: rend neto acumulado vs anualizado
+  $('ce-c-rneto-label', isMultiYear ? 'Rend. Acumulado después de ISR' : 'Rend. después de ISR');
   $('ce-c-rneto', fmtP(rNetoC));
+  const rNetoAnnC = n > 0 ? Math.pow(1 + rNetoC, 1/n) - 1 : 0;
+  document.getElementById('ce-c-rneto-ann-label').style.display = isMultiYear ? '' : 'none';
+  document.getElementById('ce-c-rneto-ann').style.display = isMultiYear ? '' : 'none';
+  $('ce-c-rneto-ann', fmtP(rNetoAnnC));
   $('ce-c-gneta', fmtM(gNetaC));
 
   // VLMXETF card
@@ -6245,7 +6254,12 @@ function ceCalc() {
   $('ce-e-ret', fmtM(retProvE));
   $('ce-e-comp', fmtM(compE));
   $('ce-e-isr', fmtM(isrTotalE));
+  $('ce-e-rneto-label', isMultiYear ? 'Rend. Acumulado después de ISR' : 'Rend. después de ISR');
   $('ce-e-rneto', fmtP(rNetoE));
+  const rNetoAnnE = n > 0 ? Math.pow(1 + rNetoE, 1/n) - 1 : 0;
+  document.getElementById('ce-e-rneto-ann-label').style.display = isMultiYear ? '' : 'none';
+  document.getElementById('ce-e-rneto-ann').style.display = isMultiYear ? '' : 'none';
+  $('ce-e-rneto-ann', fmtP(rNetoAnnE));
   $('ce-e-gneta', fmtM(gNetaE));
 
   // Ahorro
