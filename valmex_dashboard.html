@@ -6112,48 +6112,58 @@ function ceCalc() {
     return;
   }
 
-  // Compute cumulative and annualized returns
-  let cumC = 1, cumE = 1, cumI = 1, n = 0;
+  // Compute cumulative and annualized returns (separate counters per series)
+  let cumC = 1, cumE = 1, cumI = 1, nC = 0, nE = 0, nI = 0, n = 0;
   const rows = [];
   for (let y = yFrom; y <= yTo; y++) {
     const sy = String(y);
     const rc = _ceData.cetes[sy];
     const re = _ceData.vlmxetf[sy];
     const ri = _ceData.infl[sy];
-    if (rc != null) cumC *= (1 + rc);
-    if (re != null) cumE *= (1 + re);
-    if (ri != null) cumI *= (1 + ri);
+    if (rc != null) { cumC *= (1 + rc); nC++; }
+    if (re != null) { cumE *= (1 + re); nE++; }
+    if (ri != null) { cumI *= (1 + ri); nI++; }
     n++;
     rows.push({ year: y, cetes: rc, vlmxetf: re, infl: ri });
   }
 
-  const rendC = n > 0 ? Math.pow(cumC, 1/n) - 1 : 0;   // annualized CETES
-  const rendE = n > 0 ? Math.pow(cumE, 1/n) - 1 : 0;   // annualized VLMXETF
-  const inflAnn = n > 0 ? Math.pow(cumI, 1/n) - 1 : 0;  // annualized inflation
+  const rendC = nC > 0 ? Math.pow(cumC, 1/nC) - 1 : 0;   // annualized CETES
+  const rendE = nE > 0 ? Math.pow(cumE, 1/nE) - 1 : 0;   // annualized VLMXETF
+  const inflAnn = nI > 0 ? Math.pow(cumI, 1/nI) - 1 : 0;  // annualized inflation
   const cumRendC = cumC - 1;  // cumulative
   const cumRendE = cumE - 1;
   const cumInfl = cumI - 1;
 
-  // Use cumulative for fiscal calc (actual returns over the full period)
-  const sfC = monto * (1 + cumRendC);
+  // Fiscal calc using cumulative returns (matches Excel formulas)
+  // Excel: Saldo Final = Monto * (1 + Rend - RetProv%)
+  // Excel: Ganancia Bruta = Monto * Rendimiento
+  // Excel: Ganancia Gravable = Monto * Tasa Real
+  // Excel: Tasa Real = (1+Rend)/(1+Infl) - 1
+  // Excel: ISR CETES = MAX(Gravable * tasa%, 0), ISR ETF = MAX(Gravable * 10%, 0)
+  // Excel: Pago Complementario = ISR Total - Retención Prov
+  // Excel: Ahorro = MAX(Gravable_ETF * tasa% - Gravable_ETF * 10%, 0)
+
+  const retProvPctC = 0.009 * n;  // 0.9% por año acumulado
+  const sfC = monto * (1 + cumRendC - retProvPctC);  // neto de retención
   const sfE = monto * (1 + cumRendE);
   const trealC = (1 + cumRendC) / (1 + cumInfl) - 1;
   const trealE = (1 + cumRendE) / (1 + cumInfl) - 1;
-  const gBrutaC = sfC - monto;
-  const gBrutaE = sfE - monto;
+  const gBrutaC = monto * cumRendC;   // ganancia total sin deducir retención
+  const gBrutaE = monto * cumRendE;
   const gGravC = Math.max(0, monto * trealC);  // intereses reales
   const gGravE = Math.max(0, monto * trealE);
-  const retProvC = monto * 0.009 * n;  // 0.9% anual * años
+  const retProvC = monto * retProvPctC;  // retención $ acumulada
   const retProvE = 0;
-  const isrTotalC = gGravC * isrRate;
-  const isrTotalE = gGravE * 0.10;
+  const isrTotalC = Math.max(0, gGravC * isrRate);
+  const isrTotalE = Math.max(0, gGravE * 0.10);
   const compC = Math.max(0, isrTotalC - retProvC);
-  const compE = Math.max(0, isrTotalE - retProvE);
+  const compE = isrTotalE;  // ETF no tiene retención, todo es complementario
   const gNetaC = gBrutaC - isrTotalC;
   const gNetaE = gBrutaE - isrTotalE;
   const rNetoC = monto > 0 ? gNetaC / monto : 0;
   const rNetoE = monto > 0 ? gNetaE / monto : 0;
-  const ahorro = isrTotalC - isrTotalE;
+  // Ahorro: lo que pagarías si ETF tributara a tasa CETES - lo que realmente pagas al 10%
+  const ahorro = Math.max(0, gGravE * isrRate - isrTotalE);
 
   // CETES card
   $('ce-c-si', fmtM(monto));
