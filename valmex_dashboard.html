@@ -1655,6 +1655,18 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
         </table>
       </div>
       <p id="ce-note" style="font-size:11px;color:#888;margin-top:8px;font-family:'Montserrat',sans-serif;"></p>
+
+      <!-- Charts -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:18px;">
+        <div style="border:1px solid #D3DDE6;border-radius:8px;padding:14px;">
+          <div style="font-weight:700;font-size:13px;color:var(--navy);margin-bottom:8px;font-family:'Montserrat',sans-serif;">Rendimiento por Año (%)</div>
+          <canvas id="ce-chart-rend" height="220"></canvas>
+        </div>
+        <div style="border:1px solid #D3DDE6;border-radius:8px;padding:14px;">
+          <div style="font-weight:700;font-size:13px;color:var(--navy);margin-bottom:8px;font-family:'Montserrat',sans-serif;">Ganancia Neta vs Pago ISR ($)</div>
+          <canvas id="ce-chart-fiscal" height="220"></canvas>
+        </div>
+      </div>
     </div>
 
     </div><!-- end prop-dash-scaler -->
@@ -6294,7 +6306,68 @@ function ceCalc() {
 
   // Note
   document.getElementById('ce-note').textContent = `Rendimientos brutos anuales. CETES 28d: promedio de tasa Banxico. VLMXETF: NAV Morningstar (serie seleccionada). ISR CETES: ${(isrRate*100).toFixed(0)}% sobre intereses reales. Retención provisional: Art. 21 LIF / Art. 54 y 135 LISR (tasa por año del SAT). ISR VLMXETF: 10% sobre intereses reales. Inflación: INPC Banxico.`;
+
+  // Charts
+  ceDrawCharts(rows, gNetaC, gNetaE, isrTotalC, isrTotalE);
 }
+
+let _ceChartRend = null, _ceChartFiscal = null;
+function ceDrawCharts(rows, gNetaC, gNetaE, isrC, isrE) {
+  const labels = rows.map(r => String(r.year));
+  const cetesData = rows.map(r => r.cetes != null ? +(r.cetes*100).toFixed(2) : 0);
+  const etfData = rows.map(r => r.vlmxetf != null ? +(r.vlmxetf*100).toFixed(2) : 0);
+
+  // Chart 1: Returns bar chart
+  if (_ceChartRend) _ceChartRend.destroy();
+  const ctx1 = document.getElementById('ce-chart-rend')?.getContext('2d');
+  if (ctx1) {
+    _ceChartRend = new Chart(ctx1, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label: 'CETES 28d', data: cetesData, backgroundColor: '#00205C', borderRadius: 4, barPercentage: 0.7 },
+          { label: 'VLMXETF', data: etfData, backgroundColor: '#41BBC9', borderRadius: 4, barPercentage: 0.7 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { family: 'Montserrat', size: 11 }, usePointStyle: true, pointStyle: 'rectRounded' } }
+        },
+        scales: {
+          y: { ticks: { callback: v => v + '%', font: { family: 'Montserrat', size: 11 } }, grid: { color: '#E8ECF0' } },
+          x: { ticks: { font: { family: 'Montserrat', size: 11 } }, grid: { display: false } }
+        }
+      }
+    });
+  }
+
+  // Chart 2: Fiscal comparison (Ganancia Neta vs ISR)
+  if (_ceChartFiscal) _ceChartFiscal.destroy();
+  const ctx2 = document.getElementById('ce-chart-fiscal')?.getContext('2d');
+  if (ctx2) {
+    _ceChartFiscal = new Chart(ctx2, {
+      type: 'bar',
+      data: {
+        labels: ['CETES 28d', 'VLMXETF'],
+        datasets: [
+          { label: 'Ganancia Neta', data: [gNetaC, gNetaE], backgroundColor: ['#00205C', '#41BBC9'], borderRadius: 4 },
+          { label: 'Pago ISR', data: [isrC, isrE], backgroundColor: ['#C0392B', '#E74C3C'], borderRadius: 4 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { family: 'Montserrat', size: 11 }, usePointStyle: true, pointStyle: 'rectRounded' } }
+        },
+        scales: {
+          y: { ticks: { callback: v => '$' + (v/1000).toFixed(0) + 'k', font: { family: 'Montserrat', size: 11 } }, grid: { color: '#E8ECF0' } },
+          x: { ticks: { font: { family: 'Montserrat', size: 12, weight: 700 } }, grid: { display: false } }
+        }
+      }
+    });
+  }
 </script>
 
 <!-- Modal cambiar contraseña -->
