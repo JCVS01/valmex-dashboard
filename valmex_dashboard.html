@@ -6155,6 +6155,11 @@ function ceCalc() {
   }
 
   // Compute cumulative and annualized returns (separate counters per series)
+  // For the current (incomplete) year, use fractional year instead of 1
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1; // 1-12
+  const fracYear = currentMonth / 12; // e.g. March = 3/12 = 0.25
+
   let cumC = 1, cumE = 1, cumI = 1, nC = 0, nE = 0, nI = 0, n = 0;
   const rows = [];
   for (let y = yFrom; y <= yTo; y++) {
@@ -6162,10 +6167,11 @@ function ceCalc() {
     const rc = _ceData.cetes[sy];
     const re = _ceData.vlmxetf[sy];
     const ri = _ceData.infl[sy];
-    if (rc != null) { cumC *= (1 + rc); nC++; }
-    if (re != null) { cumE *= (1 + re); nE++; }
-    if (ri != null) { cumI *= (1 + ri); nI++; }
-    n++;
+    const yFrac = (y === currentYear) ? fracYear : 1;
+    if (rc != null) { cumC *= (1 + rc); nC += yFrac; }
+    if (re != null) { cumE *= (1 + re); nE += yFrac; }
+    if (ri != null) { cumI *= (1 + ri); nI += yFrac; }
+    n += yFrac;
     const rp = _ceData.retencion[sy];
     rows.push({ year: y, cetes: rc, vlmxetf: re, infl: ri, retProv: rp });
   }
@@ -6186,11 +6192,12 @@ function ceCalc() {
   // Excel: Pago Complementario = ISR Total - Retención Prov
   // Excel: Ahorro = MAX(Gravable_ETF * tasa% - Gravable_ETF * 10%, 0)
 
-  // Retención provisional acumulada: suma de tasa por año (de LIF/SAT)
+  // Retención provisional acumulada: suma de tasa por año (pro-rata para año parcial)
   let retProvPctC = 0;
   for (let y = yFrom; y <= yTo; y++) {
     const rp = _ceData.retencion[String(y)];
-    retProvPctC += rp != null ? rp : 0;
+    const yFrac = (y === currentYear) ? fracYear : 1;
+    retProvPctC += rp != null ? rp * yFrac : 0;
   }
   const sfC = monto * (1 + cumRendC - retProvPctC);  // neto de retención
   const sfE = monto * (1 + cumRendE);
