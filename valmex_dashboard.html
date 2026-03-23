@@ -6131,7 +6131,7 @@ function ceCalc() {
   const fmtP = v => v == null || isNaN(v) ? '—' : (v * 100).toFixed(2) + '%';
 
   // Update ISR label for CETES
-  const isrLabel = document.querySelector('#ce-c-isr')?.parentElement?.querySelector('span:first-child');
+  const isrLabel = document.getElementById('ce-c-isr')?.previousElementSibling;
   if (isrLabel) isrLabel.textContent = `Pago Total ISR ${(isrRate*100).toFixed(0)}%`;
 
   if (yFrom > yTo || monto <= 0) {
