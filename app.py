@@ -4307,11 +4307,11 @@ def _get_retencion_vigente():
     if _retencion_cache["year"] == current_year and _retencion_cache["rate"] is not None:
         return _retencion_cache["rate"]
     try:
-        import PyPDF2, io, re as _re
+        from pypdf import PdfReader; import io, re as _re
         url = f"https://www.diputados.gob.mx/LeyesBiblio/pdf/LIF_{current_year}.pdf"
         r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=20, verify=False)
         r.raise_for_status()
-        reader = PyPDF2.PdfReader(io.BytesIO(r.content))
+        reader = PdfReader(io.BytesIO(r.content))
         text = "".join(p.extract_text() or "" for p in reader.pages)
         m = _re.search(
             r"art[ií]culos?\s*54\s*y\s*135.*?(\d+\.?\d*)\s*por\s*ciento",
