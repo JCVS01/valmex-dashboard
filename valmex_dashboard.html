@@ -675,7 +675,7 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
       <nav class="nav">
         <button class="nav-tab" onclick="showPage('configuracion',this)">Configuración</button>
         <button class="nav-tab" onclick="showPage('propuesta',this)">Propuesta</button>
-        <button class="nav-tab" onclick="showPage('comparativa2',this)">Comparativa</button>
+        <button class="nav-tab" onclick="showPage('comparativa2',this)">Portafolios</button>
         <button class="nav-tab" onclick="showPage('elite',this)">VALMEX Elite</button>
         <button class="nav-tab" onclick="showPage('recursos',this)">Recursos</button>
       </nav>
@@ -703,7 +703,7 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
     <button class="mobile-tab" onclick="showPage('presentacion',this);closeMobileNav()">Presentación</button>
     <button class="mobile-tab" onclick="showPage('configuracion',this);closeMobileNav()">Configuración</button>
     <button class="mobile-tab" onclick="showPage('propuesta',this);closeMobileNav()">Propuesta</button>
-    <button class="mobile-tab" onclick="showPage('comparativa2',this);closeMobileNav()">Comparativa</button>
+    <button class="mobile-tab" onclick="showPage('comparativa2',this);closeMobileNav()">Portafolios</button>
     <button class="mobile-tab" onclick="showPage('elite',this);closeMobileNav()">VALMEX Elite</button>
     <button class="mobile-tab" onclick="showPage('recursos',this);closeMobileNav()">Recursos</button>
     <button class="mobile-tab" onclick="openChangePwModal();closeMobileNav()">Cambiar contraseña</button>
@@ -1327,6 +1327,7 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
     <div style="display:flex;justify-content:center;gap:0;margin:10px 20px 0;font-family:'Montserrat',sans-serif;">
       <button class="cmp2-vf-btn active" data-rtab="flujos" onclick="showRecursosTab('flujos',this)" style="font-size:14px;padding:8px 20px;">Flujos Pensión</button>
       <button class="cmp2-vf-btn" data-rtab="bonos" onclick="showRecursosTab('bonos',this)" style="font-size:14px;padding:8px 20px;">Calculadora de Bonos</button>
+      <button class="cmp2-vf-btn" data-rtab="cetesetf" onclick="showRecursosTab('cetesetf',this)" style="font-size:14px;padding:8px 20px;">CETES vs VLMXETF</button>
     </div>
 
     <div class="prop-dash-scaler">
@@ -1544,6 +1545,103 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
         </div>
       </div>
     </div>
+    <!-- Sub-tab: CETES vs VLMXETF -->
+    <div id="rtab-cetesetf" style="display:none;">
+      <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;margin-bottom:18px;">
+        <div>
+          <div style="font-weight:700;font-size:12px;margin-bottom:2px;color:var(--navy);">Monto</div>
+          <input id="ce-monto" type="text" value="" placeholder="$" autocomplete="nope" readonly onfocus="this.removeAttribute('readonly')" oninput="ceFormatMoney(this);ceCalc()" style="width:150px;text-align:right;padding:6px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
+        </div>
+        <div>
+          <div style="font-weight:700;font-size:12px;margin-bottom:2px;color:var(--navy);">Año Inicio</div>
+          <select id="ce-year-from" onchange="ceCalc()" style="padding:6px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;min-width:80px;"></select>
+        </div>
+        <div>
+          <div style="font-weight:700;font-size:12px;margin-bottom:2px;color:var(--navy);">Año Fin</div>
+          <select id="ce-year-to" onchange="ceCalc()" style="padding:6px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;min-width:80px;"></select>
+        </div>
+        <div>
+          <div style="font-weight:700;font-size:12px;margin-bottom:2px;color:var(--navy);">Tasa ISR</div>
+          <select id="ce-isr-rate" onchange="ceCalc()" style="padding:6px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;min-width:80px;">
+            <option value="0.30">30%</option>
+            <option value="0.32">32%</option>
+            <option value="0.34">34%</option>
+            <option value="0.35" selected>35%</option>
+            <option value="0.36">36%</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Comparison cards -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:18px;">
+        <!-- CETES Card -->
+        <div style="border:1px solid #D3DDE6;border-radius:8px;overflow:hidden;">
+          <div style="background:var(--navy);color:#fff;padding:8px 14px;font-weight:700;font-size:15px;font-family:'Montserrat',sans-serif;">CETES 28 Días</div>
+          <div style="padding:10px 14px;display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);">
+            <span>Saldo Inicial</span><span id="ce-c-si" style="text-align:right;font-weight:600;">—</span>
+            <span style="font-weight:700;">Saldo Final</span><span id="ce-c-sf" style="text-align:right;font-weight:700;">—</span>
+            <span style="color:var(--sky);font-weight:700;">Rendimiento Anualizado</span><span id="ce-c-rend" style="text-align:right;font-weight:700;color:var(--sky);">—</span>
+            <span>Inflación</span><span id="ce-c-infl" style="text-align:right;font-weight:600;">—</span>
+            <span>Tasa Real</span><span id="ce-c-treal" style="text-align:right;font-weight:600;">—</span>
+            <div style="grid-column:1/-1;border-top:1px solid #D3DDE6;margin:4px 0;"></div>
+            <span style="font-weight:700;">Pago de Impuestos</span><span></span>
+            <span>Ganancia Bruta</span><span id="ce-c-gbruta" style="text-align:right;font-weight:600;">—</span>
+            <span>Ganancia Gravable</span><span id="ce-c-ggrav" style="text-align:right;font-weight:600;">—</span>
+            <span>Retención Provisional</span><span id="ce-c-ret" style="text-align:right;font-weight:600;">—</span>
+            <span>Pago Complementario</span><span id="ce-c-comp" style="text-align:right;font-weight:600;">—</span>
+            <span style="color:#C0392B;font-weight:700;">Pago Total ISR</span><span id="ce-c-isr" style="text-align:right;font-weight:700;color:#C0392B;">—</span>
+            <div style="grid-column:1/-1;border-top:1px solid #D3DDE6;margin:4px 0;"></div>
+            <span style="font-weight:700;">Rend. después de ISR</span><span id="ce-c-rneto" style="text-align:right;font-weight:700;">—</span>
+            <span style="font-weight:700;">Ganancia Neta</span><span id="ce-c-gneta" style="text-align:right;font-weight:700;">—</span>
+          </div>
+        </div>
+        <!-- VLMXETF Card -->
+        <div style="border:1px solid #D3DDE6;border-radius:8px;overflow:hidden;">
+          <div style="background:var(--sky);color:#fff;padding:8px 14px;font-weight:700;font-size:15px;font-family:'Montserrat',sans-serif;">VLMXETF</div>
+          <div style="padding:10px 14px;display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);">
+            <span>Saldo Inicial</span><span id="ce-e-si" style="text-align:right;font-weight:600;">—</span>
+            <span style="font-weight:700;">Saldo Final</span><span id="ce-e-sf" style="text-align:right;font-weight:700;">—</span>
+            <span style="color:var(--sky);font-weight:700;">Rendimiento Anualizado</span><span id="ce-e-rend" style="text-align:right;font-weight:700;color:var(--sky);">—</span>
+            <span>Inflación</span><span id="ce-e-infl" style="text-align:right;font-weight:600;">—</span>
+            <span>Tasa Real</span><span id="ce-e-treal" style="text-align:right;font-weight:600;">—</span>
+            <div style="grid-column:1/-1;border-top:1px solid #D3DDE6;margin:4px 0;"></div>
+            <span style="font-weight:700;">Pago de Impuestos</span><span></span>
+            <span>Ganancia Bruta</span><span id="ce-e-gbruta" style="text-align:right;font-weight:600;">—</span>
+            <span>Ganancia Gravable</span><span id="ce-e-ggrav" style="text-align:right;font-weight:600;">—</span>
+            <span>Retención Provisional</span><span id="ce-e-ret" style="text-align:right;font-weight:600;">—</span>
+            <span>Pago Complementario</span><span id="ce-e-comp" style="text-align:right;font-weight:600;">—</span>
+            <span style="color:#7CC677;font-weight:700;">Pago Total ISR 10%</span><span id="ce-e-isr" style="text-align:right;font-weight:700;color:#7CC677;">—</span>
+            <div style="grid-column:1/-1;border-top:1px solid #D3DDE6;margin:4px 0;"></div>
+            <span style="font-weight:700;">Rend. después de ISR</span><span id="ce-e-rneto" style="text-align:right;font-weight:700;">—</span>
+            <span style="font-weight:700;">Ganancia Neta</span><span id="ce-e-gneta" style="text-align:right;font-weight:700;">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ahorro box -->
+      <div style="background:linear-gradient(135deg,var(--navy),#0D3A7A);border-radius:8px;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
+        <span style="color:#fff;font-weight:700;font-size:15px;font-family:'Montserrat',sans-serif;">Ahorro en ISR con VLMXETF</span>
+        <span id="ce-ahorro" style="color:#7CC677;font-weight:700;font-size:22px;font-family:'Montserrat',sans-serif;">—</span>
+      </div>
+
+      <!-- Year-by-year table -->
+      <div style="font-weight:700;font-size:14px;color:var(--navy);margin-bottom:6px;font-family:'Montserrat',sans-serif;">Rendimientos por Año</div>
+      <div style="overflow-x:auto;">
+        <table id="ce-year-table" style="width:100%;border-collapse:collapse;font-size:13px;font-family:'Montserrat',sans-serif;">
+          <thead>
+            <tr style="background:var(--navy);color:#fff;">
+              <th style="padding:6px 10px;text-align:left;">Año</th>
+              <th style="padding:6px 10px;text-align:right;">CETES 28d</th>
+              <th style="padding:6px 10px;text-align:right;">VLMXETF</th>
+              <th style="padding:6px 10px;text-align:right;">Inflación</th>
+            </tr>
+          </thead>
+          <tbody id="ce-year-tbody"></tbody>
+        </table>
+      </div>
+      <p id="ce-note" style="font-size:11px;color:#888;margin-top:8px;font-family:'Montserrat',sans-serif;"></p>
+    </div>
+
     </div><!-- end prop-dash-scaler -->
   </div>
 
@@ -2414,7 +2512,7 @@ function showPage(name, el) {
   if (el && (el.classList.contains('nav-tab') || el.classList.contains('mobile-tab'))) {
     el.classList.add('active');
   }
-  const nameMap = {'presentacion':'presentación','configuracion':'configuración','propuesta':'propuesta','comparativa2':'comparativa','elite':'valmex elite','recursos':'recursos'};
+  const nameMap = {'presentacion':'presentación','configuracion':'configuración','propuesta':'propuesta','comparativa2':'portafolios','elite':'valmex elite','recursos':'recursos'};
   const label = nameMap[name] || name;
   if (el && el.classList.contains('nav-tab')) {
     document.querySelectorAll('.mobile-tab').forEach(b => { if(b.textContent.trim().toLowerCase()===label) b.classList.add('active'); });
@@ -5573,10 +5671,11 @@ function showRecursosTab(tab, btn) {
   document.getElementById('rtab-' + tab).style.display = '';
   document.querySelectorAll('#page-recursos .cmp2-vf-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
-  const titles = { flujos: 'Flujo de Pensión', bonos: 'Calculadora de Bonos' };
+  const titles = { flujos: 'Flujo de Pensión', bonos: 'Calculadora de Bonos', cetesetf: 'CETES 28d vs VLMXETF' };
   const titleEl = document.getElementById('recursos-page-title');
   if (titleEl) titleEl.textContent = titles[tab] || '';
   if (tab === 'bonos') { _tbInitClientes(); calcCetes(); }
+  if (tab === 'cetesetf') { ceInit(); }
 }
 
 function fpFormatPct(el) {
@@ -5937,6 +6036,183 @@ function calcTbill() {
   document.getElementById('tb-rc-titulos').textContent = totTit > 0 ? totTit.toLocaleString('en-US') : '—';
   document.getElementById('tb-rc-nominal').textContent = totNom > 0 ? totNom.toLocaleString('en-US') : '—';
   document.getElementById('tb-rc-pagar').textContent = totPagarCli > 0 ? '$' + f2(totPagarCli) : '—';
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+// ██ CETES vs VLMXETF — Comparativo Fiscal
+// ══════════════════════════════════════════════════════════════════════════
+
+let _ceData = null; // { cetes: {year: pct}, vlmxetf: {year: pct}, infl: {year: pct}, years: [] }
+
+async function ceInit() {
+  if (_ceData) { ceCalc(); return; }
+  // Fetch quilt (CETES + Inflación) and quilt_fondos (VLMXETF) in parallel
+  try {
+    const [qr, qfr] = await Promise.all([
+      fetch('/api/quilt').then(r => r.json()),
+      fetch('/api/quilt_fondos').then(r => r.json())
+    ]);
+    const cetes = {};
+    const infl = {};
+    if (qr.ok) {
+      const dcp = qr.assets.find(a => a.name === 'Deuda Corto Plazo');
+      if (dcp) Object.entries(dcp.returns).forEach(([y,v]) => { cetes[y] = v / 100; });
+      const inflRef = qr.reference?.find(r => r.name === 'Inflación');
+      if (inflRef) Object.entries(inflRef.values).forEach(([y,v]) => { infl[y] = v / 100; });
+    }
+    const vlmxetf = {};
+    if (qfr.ok !== false) {
+      const fund = qfr.funds?.find(f => f.name === 'VLMXETF');
+      if (fund) Object.entries(fund.returns).forEach(([y,v]) => { vlmxetf[y] = v / 100; });
+    }
+    // Determine available years (intersection, min 2020)
+    const allYears = new Set([...Object.keys(cetes), ...Object.keys(vlmxetf)]);
+    const years = [...allYears].map(Number).filter(y => y >= 2020).sort();
+    _ceData = { cetes, vlmxetf, infl, years };
+    // Populate selects
+    const selFrom = document.getElementById('ce-year-from');
+    const selTo = document.getElementById('ce-year-to');
+    selFrom.innerHTML = '';
+    selTo.innerHTML = '';
+    years.forEach(y => {
+      selFrom.innerHTML += `<option value="${y}">${y}</option>`;
+      selTo.innerHTML += `<option value="${y}">${y}</option>`;
+    });
+    selTo.value = years[years.length - 1];
+    ceCalc();
+  } catch (e) {
+    console.error('[CE] Error fetching data:', e);
+  }
+}
+
+function ceFormatMoney(el) {
+  let v = el.value.replace(/[^0-9]/g, '');
+  if (!v) { el.value = ''; return; }
+  el.value = '$' + parseInt(v).toLocaleString('en-US');
+}
+
+function ceCalc() {
+  if (!_ceData) return;
+  const montoRaw = document.getElementById('ce-monto').value.replace(/[^0-9]/g, '');
+  const monto = parseFloat(montoRaw) || 0;
+  const yFrom = parseInt(document.getElementById('ce-year-from').value);
+  const yTo = parseInt(document.getElementById('ce-year-to').value);
+  const isrRate = parseFloat(document.getElementById('ce-isr-rate').value);
+  const $ = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  const fmtM = v => v == null || isNaN(v) ? '—' : '$' + v.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  const fmtP = v => v == null || isNaN(v) ? '—' : (v * 100).toFixed(2) + '%';
+
+  // Update ISR label for CETES
+  const isrLabel = document.querySelector('#ce-c-isr')?.parentElement?.querySelector('span:first-child');
+  if (isrLabel) isrLabel.textContent = `Pago Total ISR ${(isrRate*100).toFixed(0)}%`;
+
+  if (yFrom > yTo || monto <= 0) {
+    ['ce-c-si','ce-c-sf','ce-c-rend','ce-c-infl','ce-c-treal','ce-c-gbruta','ce-c-ggrav','ce-c-ret','ce-c-comp','ce-c-isr','ce-c-rneto','ce-c-gneta',
+     'ce-e-si','ce-e-sf','ce-e-rend','ce-e-infl','ce-e-treal','ce-e-gbruta','ce-e-ggrav','ce-e-ret','ce-e-comp','ce-e-isr','ce-e-rneto','ce-e-gneta','ce-ahorro'].forEach(id => $(id, '—'));
+    document.getElementById('ce-year-tbody').innerHTML = '';
+    return;
+  }
+
+  // Compute cumulative and annualized returns
+  let cumC = 1, cumE = 1, cumI = 1, n = 0;
+  const rows = [];
+  for (let y = yFrom; y <= yTo; y++) {
+    const sy = String(y);
+    const rc = _ceData.cetes[sy];
+    const re = _ceData.vlmxetf[sy];
+    const ri = _ceData.infl[sy];
+    if (rc != null) cumC *= (1 + rc);
+    if (re != null) cumE *= (1 + re);
+    if (ri != null) cumI *= (1 + ri);
+    n++;
+    rows.push({ year: y, cetes: rc, vlmxetf: re, infl: ri });
+  }
+
+  const rendC = n > 0 ? Math.pow(cumC, 1/n) - 1 : 0;   // annualized CETES
+  const rendE = n > 0 ? Math.pow(cumE, 1/n) - 1 : 0;   // annualized VLMXETF
+  const inflAnn = n > 0 ? Math.pow(cumI, 1/n) - 1 : 0;  // annualized inflation
+  const cumRendC = cumC - 1;  // cumulative
+  const cumRendE = cumE - 1;
+  const cumInfl = cumI - 1;
+
+  // Use cumulative for fiscal calc (actual returns over the full period)
+  const sfC = monto * (1 + cumRendC);
+  const sfE = monto * (1 + cumRendE);
+  const trealC = (1 + cumRendC) / (1 + cumInfl) - 1;
+  const trealE = (1 + cumRendE) / (1 + cumInfl) - 1;
+  const gBrutaC = sfC - monto;
+  const gBrutaE = sfE - monto;
+  const gGravC = Math.max(0, monto * trealC);  // intereses reales
+  const gGravE = Math.max(0, monto * trealE);
+  const retProvC = monto * 0.009 * n;  // 0.9% anual * años
+  const retProvE = 0;
+  const isrTotalC = gGravC * isrRate;
+  const isrTotalE = gGravE * 0.10;
+  const compC = Math.max(0, isrTotalC - retProvC);
+  const compE = Math.max(0, isrTotalE - retProvE);
+  const gNetaC = gBrutaC - isrTotalC;
+  const gNetaE = gBrutaE - isrTotalE;
+  const rNetoC = monto > 0 ? gNetaC / monto : 0;
+  const rNetoE = monto > 0 ? gNetaE / monto : 0;
+  const ahorro = isrTotalC - isrTotalE;
+
+  // CETES card
+  $('ce-c-si', fmtM(monto));
+  $('ce-c-sf', fmtM(sfC));
+  $('ce-c-rend', fmtP(rendC));
+  $('ce-c-infl', fmtP(inflAnn));
+  $('ce-c-treal', fmtP(trealC));
+  $('ce-c-gbruta', fmtM(gBrutaC));
+  $('ce-c-ggrav', fmtM(gGravC));
+  $('ce-c-ret', fmtM(retProvC));
+  $('ce-c-comp', fmtM(compC));
+  $('ce-c-isr', fmtM(isrTotalC));
+  $('ce-c-rneto', fmtP(rNetoC));
+  $('ce-c-gneta', fmtM(gNetaC));
+
+  // VLMXETF card
+  $('ce-e-si', fmtM(monto));
+  $('ce-e-sf', fmtM(sfE));
+  $('ce-e-rend', fmtP(rendE));
+  $('ce-e-infl', fmtP(inflAnn));
+  $('ce-e-treal', fmtP(trealE));
+  $('ce-e-gbruta', fmtM(gBrutaE));
+  $('ce-e-ggrav', fmtM(gGravE));
+  $('ce-e-ret', fmtM(retProvE));
+  $('ce-e-comp', fmtM(compE));
+  $('ce-e-isr', fmtM(isrTotalE));
+  $('ce-e-rneto', fmtP(rNetoE));
+  $('ce-e-gneta', fmtM(gNetaE));
+
+  // Ahorro
+  $('ce-ahorro', fmtM(ahorro));
+
+  // Year table
+  const tbody = document.getElementById('ce-year-tbody');
+  tbody.innerHTML = rows.map(r =>
+    `<tr style="border-bottom:1px solid #E8ECF0;">
+      <td style="padding:5px 10px;font-weight:600;color:var(--navy);">${r.year}</td>
+      <td style="padding:5px 10px;text-align:right;">${r.cetes != null ? (r.cetes*100).toFixed(2)+'%' : '—'}</td>
+      <td style="padding:5px 10px;text-align:right;">${r.vlmxetf != null ? (r.vlmxetf*100).toFixed(2)+'%' : '—'}</td>
+      <td style="padding:5px 10px;text-align:right;">${r.infl != null ? (r.infl*100).toFixed(2)+'%' : '—'}</td>
+    </tr>`
+  ).join('');
+  // Add cumulative/annualized rows
+  tbody.innerHTML += `<tr style="border-top:2px solid var(--navy);background:#F0F4F8;font-weight:700;">
+    <td style="padding:5px 10px;color:var(--navy);">Acumulado</td>
+    <td style="padding:5px 10px;text-align:right;">${(cumRendC*100).toFixed(2)}%</td>
+    <td style="padding:5px 10px;text-align:right;">${(cumRendE*100).toFixed(2)}%</td>
+    <td style="padding:5px 10px;text-align:right;">${(cumInfl*100).toFixed(2)}%</td>
+  </tr>
+  <tr style="background:#F0F4F8;font-weight:700;">
+    <td style="padding:5px 10px;color:var(--sky);">Anualizado</td>
+    <td style="padding:5px 10px;text-align:right;color:var(--sky);">${(rendC*100).toFixed(2)}%</td>
+    <td style="padding:5px 10px;text-align:right;color:var(--sky);">${(rendE*100).toFixed(2)}%</td>
+    <td style="padding:5px 10px;text-align:right;color:var(--sky);">${(inflAnn*100).toFixed(2)}%</td>
+  </tr>`;
+
+  // Note
+  document.getElementById('ce-note').textContent = `Rendimientos brutos anuales. CETES 28d: promedio de tasa Banxico. VLMXETF: NAV Serie A Morningstar. ISR CETES: ${(isrRate*100).toFixed(0)}% sobre intereses reales con retención provisional 0.9%. ISR VLMXETF: 10% sobre intereses reales sin retención. Inflación: INPC Banxico.`;
 }
 </script>
 
