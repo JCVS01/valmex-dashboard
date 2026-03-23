@@ -6127,7 +6127,7 @@ async function ceChangeSerie() {
 function ceFormatMoney(el) {
   let v = el.value.replace(/[^0-9]/g, '');
   if (!v) { el.value = ''; return; }
-  el.value = '$' + parseInt(v).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+  el.value = '$' + parseInt(v).toLocaleString('en-US');
 }
 
 function ceCalc() {
