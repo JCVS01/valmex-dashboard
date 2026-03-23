@@ -6134,7 +6134,7 @@ function ceFormatMoney(el) {
 
 function ceCalc() {
   if (!_ceData) return;
-  const montoRaw = document.getElementById('ce-monto').value.replace(/[^0-9]/g, '');
+  const montoRaw = document.getElementById('ce-monto').value.replace(/[^0-9.]/g, '');
   const monto = parseFloat(montoRaw) || 0;
   const yFrom = parseInt(document.getElementById('ce-year-from').value);
   const yTo = parseInt(document.getElementById('ce-year-to').value);
