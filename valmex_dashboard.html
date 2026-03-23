@@ -1670,6 +1670,7 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
     </div>
 
     </div><!-- end prop-dash-scaler -->
+
   </div>
 
   <div id="page-elite" class="page">
@@ -6308,7 +6309,7 @@ function ceCalc() {
   document.getElementById('ce-note').textContent = `Rendimientos brutos anuales. CETES 28d: promedio de tasa Banxico. VLMXETF: NAV Morningstar (serie seleccionada). ISR CETES: ${(isrRate*100).toFixed(0)}% sobre intereses reales. Retención provisional: Art. 21 LIF / Art. 54 y 135 LISR (tasa por año del SAT). ISR VLMXETF: 10% sobre intereses reales. Inflación: INPC Banxico.`;
 
   // Charts
-  ceDrawCharts(rows, gNetaC, gNetaE, isrTotalC, isrTotalE);
+  try { ceDrawCharts(rows, gNetaC, gNetaE, isrTotalC, isrTotalE); } catch(e) { console.error('[CE] Chart error:', e); }
 }
 
 let _ceChartRend = null, _ceChartFiscal = null;
