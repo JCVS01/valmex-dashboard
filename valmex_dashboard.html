@@ -1598,9 +1598,11 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
             <span>Retención Provisional</span><span id="ce-c-ret" style="text-align:right;font-weight:600;">—</span>
             <span>Pago Complementario</span><span id="ce-c-comp" style="text-align:right;font-weight:600;">—</span>
             <span style="color:#C0392B;font-weight:700;">Pago Total ISR</span><span id="ce-c-isr" style="text-align:right;font-weight:700;color:#C0392B;">—</span>
-            <div style="grid-column:1/-1;border-top:1px solid #D3DDE6;margin:4px 0;"></div>
-            <span style="font-weight:700;">Rend. después de ISR</span><span id="ce-c-rneto" style="text-align:right;font-weight:700;">—</span>
-            <span style="font-weight:700;">Ganancia Neta</span><span id="ce-c-gneta" style="text-align:right;font-weight:700;">—</span>
+            <div style="grid-column:1/-1;border-top:2px solid var(--navy);margin:6px 0 2px;"></div>
+            <div style="grid-column:1/-1;background:linear-gradient(135deg,var(--navy),#0D3A7A);border-radius:6px;padding:8px 12px;display:grid;grid-template-columns:1fr auto;gap:4px 10px;">
+              <span style="color:#fff;font-weight:700;font-size:13px;">Rend. después de ISR</span><span id="ce-c-rneto" style="text-align:right;font-weight:700;color:#41BBC9;font-size:15px;">—</span>
+              <span style="color:#fff;font-weight:700;font-size:13px;">Ganancia Neta</span><span id="ce-c-gneta" style="text-align:right;font-weight:700;color:#7CC677;font-size:15px;">—</span>
+            </div>
           </div>
         </div>
         <!-- VLMXETF Card -->
@@ -1619,9 +1621,11 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
             <span>Retención Provisional</span><span id="ce-e-ret" style="text-align:right;font-weight:600;">—</span>
             <span>Pago Complementario</span><span id="ce-e-comp" style="text-align:right;font-weight:600;">—</span>
             <span style="color:#7CC677;font-weight:700;">Pago Total ISR 10%</span><span id="ce-e-isr" style="text-align:right;font-weight:700;color:#7CC677;">—</span>
-            <div style="grid-column:1/-1;border-top:1px solid #D3DDE6;margin:4px 0;"></div>
-            <span style="font-weight:700;">Rend. después de ISR</span><span id="ce-e-rneto" style="text-align:right;font-weight:700;">—</span>
-            <span style="font-weight:700;">Ganancia Neta</span><span id="ce-e-gneta" style="text-align:right;font-weight:700;">—</span>
+            <div style="grid-column:1/-1;border-top:2px solid var(--sky);margin:6px 0 2px;"></div>
+            <div style="grid-column:1/-1;background:linear-gradient(135deg,#058B97,#41BBC9);border-radius:6px;padding:8px 12px;display:grid;grid-template-columns:1fr auto;gap:4px 10px;">
+              <span style="color:#fff;font-weight:700;font-size:13px;">Rend. después de ISR</span><span id="ce-e-rneto" style="text-align:right;font-weight:700;color:#fff;font-size:15px;">—</span>
+              <span style="color:#fff;font-weight:700;font-size:13px;">Ganancia Neta</span><span id="ce-e-gneta" style="text-align:right;font-weight:700;color:#7CC677;font-size:15px;">—</span>
+            </div>
           </div>
         </div>
       </div>
@@ -1642,6 +1646,7 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
               <th style="padding:6px 10px;text-align:right;">CETES 28d</th>
               <th style="padding:6px 10px;text-align:right;">VLMXETF</th>
               <th style="padding:6px 10px;text-align:right;">Inflación</th>
+              <th style="padding:6px 10px;text-align:right;">Ret. Prov.</th>
             </tr>
           </thead>
           <tbody id="ce-year-tbody"></tbody>
@@ -6050,15 +6055,16 @@ function calcTbill() {
 // ██ CETES vs VLMXETF — Comparativo Fiscal
 // ══════════════════════════════════════════════════════════════════════════
 
-let _ceData = null; // { cetes: {year: pct}, vlmxetf: {year: pct}, infl: {year: pct}, years: [] }
+let _ceData = null; // { cetes, vlmxetf, infl, retencion, years }
 
 async function ceInit() {
   if (_ceData) { ceCalc(); return; }
-  // Fetch quilt (CETES + Inflación) and quilt_fondos (VLMXETF) in parallel
+  // Fetch quilt, quilt_fondos, and retention rates in parallel
   try {
-    const [qr, qfr] = await Promise.all([
+    const [qr, qfr, rr] = await Promise.all([
       fetch('/api/quilt').then(r => r.json()),
-      fetch('/api/quilt_fondos').then(r => r.json())
+      fetch('/api/quilt_fondos').then(r => r.json()),
+      fetch('/api/retencion').then(r => r.json())
     ]);
     const cetes = {};
     const infl = {};
@@ -6073,10 +6079,15 @@ async function ceInit() {
       const fund = qfr.assets?.find(f => f.name === 'VLMXETF');
       if (fund) Object.entries(fund.returns).forEach(([y,v]) => { vlmxetf[y] = v / 100; });
     }
-    // Determine available years (intersection, min 2020)
+    // Retention rates by year (from SAT/LIF via backend)
+    const retencion = {};
+    if (rr.ok) {
+      Object.entries(rr.rates).forEach(([y,v]) => { retencion[y] = v / 100; }); // e.g. 0.90 -> 0.009
+    }
+    // Determine available years (min 2020)
     const allYears = new Set([...Object.keys(cetes), ...Object.keys(vlmxetf)]);
     const years = [...allYears].map(Number).filter(y => y >= 2020).sort();
-    _ceData = { cetes, vlmxetf, infl, years };
+    _ceData = { cetes, vlmxetf, infl, retencion, years };
     // Populate selects
     const selFrom = document.getElementById('ce-year-from');
     const selTo = document.getElementById('ce-year-to');
@@ -6116,7 +6127,7 @@ async function ceChangeSerie() {
 function ceFormatMoney(el) {
   let v = el.value.replace(/[^0-9]/g, '');
   if (!v) { el.value = ''; return; }
-  el.value = '$' + parseInt(v).toLocaleString('en-US');
+  el.value = '$' + parseInt(v).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
 }
 
 function ceCalc() {
@@ -6153,7 +6164,8 @@ function ceCalc() {
     if (re != null) { cumE *= (1 + re); nE++; }
     if (ri != null) { cumI *= (1 + ri); nI++; }
     n++;
-    rows.push({ year: y, cetes: rc, vlmxetf: re, infl: ri });
+    const rp = _ceData.retencion[sy];
+    rows.push({ year: y, cetes: rc, vlmxetf: re, infl: ri, retProv: rp });
   }
 
   const rendC = nC > 0 ? Math.pow(cumC, 1/nC) - 1 : 0;   // annualized CETES
@@ -6172,7 +6184,12 @@ function ceCalc() {
   // Excel: Pago Complementario = ISR Total - Retención Prov
   // Excel: Ahorro = MAX(Gravable_ETF * tasa% - Gravable_ETF * 10%, 0)
 
-  const retProvPctC = 0.009 * n;  // 0.9% por año acumulado
+  // Retención provisional acumulada: suma de tasa por año (de LIF/SAT)
+  let retProvPctC = 0;
+  for (let y = yFrom; y <= yTo; y++) {
+    const rp = _ceData.retencion[String(y)];
+    retProvPctC += rp != null ? rp : 0;
+  }
   const sfC = monto * (1 + cumRendC - retProvPctC);  // neto de retención
   const sfE = monto * (1 + cumRendE);
   const trealC = (1 + cumRendC) / (1 + cumInfl) - 1;
@@ -6233,6 +6250,7 @@ function ceCalc() {
       <td style="padding:5px 10px;text-align:right;">${r.cetes != null ? (r.cetes*100).toFixed(2)+'%' : '—'}</td>
       <td style="padding:5px 10px;text-align:right;">${r.vlmxetf != null ? (r.vlmxetf*100).toFixed(2)+'%' : '—'}</td>
       <td style="padding:5px 10px;text-align:right;">${r.infl != null ? (r.infl*100).toFixed(2)+'%' : '—'}</td>
+      <td style="padding:5px 10px;text-align:right;color:#888;">${r.retProv != null ? (r.retProv*100).toFixed(2)+'%' : '—'}</td>
     </tr>`
   ).join('');
   // Add cumulative/annualized rows
@@ -6241,16 +6259,18 @@ function ceCalc() {
     <td style="padding:5px 10px;text-align:right;">${(cumRendC*100).toFixed(2)}%</td>
     <td style="padding:5px 10px;text-align:right;">${(cumRendE*100).toFixed(2)}%</td>
     <td style="padding:5px 10px;text-align:right;">${(cumInfl*100).toFixed(2)}%</td>
+    <td style="padding:5px 10px;text-align:right;color:#888;">${(retProvPctC*100).toFixed(2)}%</td>
   </tr>
   <tr style="background:#F0F4F8;font-weight:700;">
     <td style="padding:5px 10px;color:var(--sky);">Anualizado</td>
     <td style="padding:5px 10px;text-align:right;color:var(--sky);">${(rendC*100).toFixed(2)}%</td>
     <td style="padding:5px 10px;text-align:right;color:var(--sky);">${(rendE*100).toFixed(2)}%</td>
     <td style="padding:5px 10px;text-align:right;color:var(--sky);">${(inflAnn*100).toFixed(2)}%</td>
+    <td></td>
   </tr>`;
 
   // Note
-  document.getElementById('ce-note').textContent = `Rendimientos brutos anuales. CETES 28d: promedio de tasa Banxico. VLMXETF: NAV Serie A Morningstar. ISR CETES: ${(isrRate*100).toFixed(0)}% sobre intereses reales con retención provisional 0.9%. ISR VLMXETF: 10% sobre intereses reales sin retención. Inflación: INPC Banxico.`;
+  document.getElementById('ce-note').textContent = `Rendimientos brutos anuales. CETES 28d: promedio de tasa Banxico. VLMXETF: NAV Morningstar (serie seleccionada). ISR CETES: ${(isrRate*100).toFixed(0)}% sobre intereses reales. Retención provisional: Art. 21 LIF / Art. 54 y 135 LISR (tasa por año del SAT). ISR VLMXETF: 10% sobre intereses reales. Inflación: INPC Banxico.`;
 }
 </script>
 

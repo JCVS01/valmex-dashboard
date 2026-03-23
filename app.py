@@ -4293,6 +4293,56 @@ def _compute_quilt_fondos():
     }
 
 
+# ── Tasa de retención provisional (Art. 54 y 135 LISR) ──────────────────
+# Historical rates (SAT/DOF, fixed — these years are closed)
+_RETENCION_HISTORICA = {
+    2018: 0.46, 2019: 1.04, 2020: 1.45, 2021: 0.97,
+    2022: 0.08, 2023: 0.15, 2024: 0.50, 2025: 0.50,
+}
+_retencion_cache = {"year": None, "rate": None}
+
+def _get_retencion_vigente():
+    """Fetch current year retention rate from LIF PDF on diputados.gob.mx."""
+    current_year = date.today().year
+    if _retencion_cache["year"] == current_year and _retencion_cache["rate"] is not None:
+        return _retencion_cache["rate"]
+    try:
+        import PyPDF2, io, re as _re
+        url = f"https://www.diputados.gob.mx/LeyesBiblio/pdf/LIF_{current_year}.pdf"
+        r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=20, verify=False)
+        r.raise_for_status()
+        reader = PyPDF2.PdfReader(io.BytesIO(r.content))
+        text = "".join(p.extract_text() or "" for p in reader.pages)
+        m = _re.search(
+            r"art[ií]culos?\s*54\s*y\s*135.*?(\d+\.?\d*)\s*por\s*ciento",
+            text, _re.IGNORECASE | _re.DOTALL
+        )
+        if m:
+            rate = float(m.group(1))
+            _retencion_cache["year"] = current_year
+            _retencion_cache["rate"] = rate
+            print(f"[RETENCION] LIF {current_year}: {rate}%")
+            return rate
+    except Exception as e:
+        print(f"[RETENCION] Error fetching LIF: {e}")
+    # Fallback: use last known historical rate
+    fallback = _RETENCION_HISTORICA.get(current_year)
+    if fallback:
+        return fallback
+    return list(_RETENCION_HISTORICA.values())[-1]
+
+
+@app.route("/api/retencion")
+def api_retencion():
+    """Return retention rates by year (historical + current from LIF)."""
+    if "usuario" not in session:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    current_year = date.today().year
+    rates = dict(_RETENCION_HISTORICA)
+    rates[current_year] = _get_retencion_vigente()
+    return jsonify({"ok": True, "rates": {str(k): v for k, v in rates.items()}})
+
+
 @app.route("/api/fund_returns")
 def api_fund_returns():
     """Annual returns for a specific fund+series by ISIN (for CETES vs ETF tab)."""
