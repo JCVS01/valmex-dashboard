@@ -4293,6 +4293,50 @@ def _compute_quilt_fondos():
     }
 
 
+@app.route("/api/fund_returns")
+def api_fund_returns():
+    """Annual returns for a specific fund+series by ISIN (for CETES vs ETF tab)."""
+    if "usuario" not in session:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    fund = request.args.get("fund", "")
+    serie = request.args.get("serie", "A")
+    isin_series = ISIN_MAP.get(fund)
+    if not isin_series:
+        return jsonify({"ok": False, "error": f"Fondo {fund} no encontrado"}), 404
+    isin = isin_series.get(serie)
+    if not isin:
+        return jsonify({"ok": False, "error": f"Serie {serie} no encontrada para {fund}"}), 404
+    navs = get_ms_nav(isin, start="2015-12-01")
+    if not navs:
+        return jsonify({"ok": False, "error": "Sin datos de Morningstar"}), 502
+    s = pd.Series(
+        {datetime.strptime(n["fecha"], "%Y-%m-%d"): n["nav"] for n in navs}
+    ).sort_index()
+    today = date.today()
+    current_year = today.year
+    years = list(range(2017, current_year + 1))
+    rets = {}
+    for y in years:
+        sub_start = s[s.index.year == y - 1]
+        if len(sub_start) == 0:
+            continue
+        start_nav = float(sub_start.iloc[-1])
+        sub_next = s[s.index.year == y + 1]
+        sub_curr = s[s.index.year == y]
+        if y < current_year and len(sub_next) > 0:
+            end_nav = float(sub_next.iloc[0])
+        elif len(sub_curr) > 0:
+            end_nav = float(sub_curr.iloc[-1])
+        else:
+            continue
+        if start_nav > 0:
+            ret = round((end_nav / start_nav - 1) * 100, 2)
+            if -200 <= ret <= 200:
+                rets[str(y)] = ret
+    return jsonify({"ok": True, "fund": fund, "serie": serie, "returns": rets,
+                    "series_available": list(isin_series.keys())})
+
+
 @app.route("/api/quilt_fondos")
 def api_quilt_fondos():
     if "usuario" not in session:

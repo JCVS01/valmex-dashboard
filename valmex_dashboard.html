@@ -1561,6 +1561,15 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
           <select id="ce-year-to" onchange="ceCalc()" style="padding:6px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;min-width:80px;"></select>
         </div>
         <div>
+          <div style="font-weight:700;font-size:12px;margin-bottom:2px;color:var(--navy);">Serie VLMXETF</div>
+          <select id="ce-serie" onchange="ceChangeSerie()" style="padding:6px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;min-width:80px;">
+            <option value="A" selected>A</option>
+            <option value="B0FI">B0FI</option>
+            <option value="B1CO">B1CO</option>
+            <option value="B1FI">B1FI</option>
+          </select>
+        </div>
+        <div>
           <div style="font-weight:700;font-size:12px;margin-bottom:2px;color:var(--navy);">Tasa ISR</div>
           <select id="ce-isr-rate" onchange="ceCalc()" style="padding:6px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;min-width:80px;">
             <option value="0.30">30%</option>
@@ -6081,6 +6090,26 @@ async function ceInit() {
     ceCalc();
   } catch (e) {
     console.error('[CE] Error fetching data:', e);
+  }
+}
+
+async function ceChangeSerie() {
+  const serie = document.getElementById('ce-serie').value;
+  if (!_ceData) return;
+  try {
+    const r = await fetch(`/api/fund_returns?fund=VLMXETF&serie=${serie}`);
+    const d = await r.json();
+    if (d.ok) {
+      const vlmxetf = {};
+      Object.entries(d.returns).forEach(([y,v]) => { vlmxetf[y] = v / 100; });
+      _ceData.vlmxetf = vlmxetf;
+      // Update available years
+      const allYears = new Set([...Object.keys(_ceData.cetes), ...Object.keys(vlmxetf)]);
+      _ceData.years = [...allYears].map(Number).filter(y => y >= 2020).sort();
+      ceCalc();
+    }
+  } catch (e) {
+    console.error('[CE] Error fetching serie:', e);
   }
 }
 
