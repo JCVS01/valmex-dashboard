@@ -317,15 +317,18 @@ input,textarea,select{-webkit-user-select:text;-moz-user-select:text;-ms-user-se
 }
 
 /* ── ELITE ── */
-.elite-hero{background:linear-gradient(130deg,var(--navy) 0%,#0A3580 100%);border-radius:14px;padding:36px 40px;display:flex;align-items:center;gap:28px;box-shadow:0 8px 32px rgba(0,32,92,.22);}
-.elite-icon{width:58px;height:58px;background:#C9A84C;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.elite-hero{background:linear-gradient(130deg,#ED8A56 0%,#D4713E 100%);border-radius:14px;padding:36px 40px;display:flex;align-items:center;gap:28px;box-shadow:0 8px 32px rgba(245,158,11,.22);}
+.elite-icon{width:58px;height:58px;background:rgba(255,255,255,.25);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
 .elite-text h2{font-size:20px;font-weight:800;color:#fff;margin-bottom:6px;}
 .elite-text p{font-size:13px;color:rgba(255,255,255,.76);font-family:'Montserrat',sans-serif;line-height:1.6;}
 .elite-features{margin-top:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
-.ef-card{background:#fff;border:1px solid var(--silver);border-radius:10px;padding:16px;}
-.ef-icon{width:34px;height:34px;border-radius:8px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:8px;}
-.ef-card h4{font-size:11px;font-weight:700;color:var(--navy);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;}
+.ef-card{background:#fff;border:1px solid var(--silver);border-radius:10px;padding:16px;border-top:3px solid #ED8A56;}
+.ef-icon{width:34px;height:34px;border-radius:8px;background:rgba(245,158,11,.1);display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:8px;}
+.ef-card h4{font-size:11px;font-weight:700;color:#D97706;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;}
 .ef-card p{font-size:11px;color:var(--gray);font-family:'Montserrat',sans-serif;line-height:1.5;}
+#page-elite .cmp2-vf-btn{border-color:#ED8A56;color:#ED8A56;}
+#page-elite .cmp2-vf-btn.active{background:#ED8A56;color:#fff;}
+#page-elite .cmp2-vf-btn:hover:not(.active){background:rgba(245,158,11,.08);}
 
 /* ══ TABLET PORTRAIT (≤1024px vertical) ══ */
 @media(max-width:1024px) and (orientation:portrait){
@@ -643,17 +646,6 @@ input,textarea,select{-webkit-user-select:text;-moz-user-select:text;-ms-user-se
   // Console warning
   console.log('%c⚠️ ALTO','font-size:48px;color:red;font-weight:bold;');
   console.log('%cEste es un sistema privado de VALMEX Asset Management.\nEl acceso no autorizado será perseguido conforme a la ley.','font-size:16px;color:#00205C;');
-  // DevTools detection via debugger timing
-  var _dt=false;
-  setInterval(function(){
-    var t0=performance.now();
-    debugger;
-    if(performance.now()-t0>100&&!_dt){
-      _dt=true;
-      document.body.innerHTML='<div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:Montserrat,sans-serif;color:#00205C;font-size:24px;text-align:center;padding:40px;">⚠️ Herramientas de desarrollo detectadas.<br>Sesión terminada por seguridad.</div>';
-      fetch('/logout');
-    }
-  },2000);
 })();
 </script>
 </head>
@@ -1445,14 +1437,14 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
 
         <!-- LEFT: CETES NOMINALES -->
         <div>
-          <div style="background:var(--sky);color:#fff;padding:10px 16px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:14px;border-radius:8px 8px 0 0;">F&oacute;rmula de Bonos MXN</div>
+          <div style="background:var(--sky);color:#fff;padding:10px 16px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:14px;border-radius:8px 8px 0 0;">Bono Cup&oacute;n Cero</div>
           <div style="border:1px solid #D3DDE6;border-top:none;border-radius:0 0 8px 8px;padding:0;">
             <div style="padding:10px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:14px;font-family:'Montserrat',sans-serif;color:var(--navy);">
-              <span style="font-weight:700;">Instrumento</span><input id="ct-instrumento" type="text" value="" placeholder="Ej: CETE" autocomplete="nope" style="width:120px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
-              <span style="font-weight:700;">Monto Nominal</span><input id="ct-monto" type="text" value="" placeholder="$" autocomplete="nope" oninput="formatMonto(this);calcCetes()" style="width:120px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
-              <span style="font-weight:700;">Plazo (d&iacute;as)</span><input id="ct-plazo" type="number" value="" placeholder="0" autocomplete="nope" oninput="calcCetes()" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
-              <span style="font-weight:700;">Tasa de rendimiento</span><input id="ct-tasa-rend" type="text" value="" placeholder="%" autocomplete="nope" oninput="fpFormatPct(this);calcCetes()" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
-              <span style="font-weight:700;">Valor Nominal</span><input id="ct-vn" type="number" value="10" placeholder="10" autocomplete="nope" oninput="calcCetes()" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
+              <span style="font-weight:700;">Instrumento</span><input id="ct-instrumento" type="text" value="" placeholder="Ej: CETE" autocomplete="one-time-code" style="width:120px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
+              <span style="font-weight:700;">Monto Nominal</span><input id="ct-monto" type="text" value="" placeholder="$" autocomplete="one-time-code" oninput="formatMonto(this);calcCetes()" style="width:120px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
+              <span style="font-weight:700;">Plazo (d&iacute;as)</span><input id="ct-plazo" type="number" value="" placeholder="0" autocomplete="one-time-code" oninput="calcCetes()" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
+              <span style="font-weight:700;">Tasa de rendimiento</span><input id="ct-tasa-rend" type="text" value="" placeholder="%" autocomplete="one-time-code" oninput="fpFormatPct(this);calcCetes()" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
+              <span style="font-weight:700;">Valor Nominal</span><input id="ct-vn" type="number" value="10" placeholder="10" autocomplete="one-time-code" oninput="calcCetes()" style="width:80px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
             </div>
             <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:14px;color:var(--navy);font-family:'Montserrat',sans-serif;">Resultados</div>
             <div style="padding:10px 16px;display:grid;grid-template-columns:1fr auto;gap:5px 12px;align-items:center;font-size:14px;font-family:'Montserrat',sans-serif;color:var(--navy);">
@@ -1462,6 +1454,31 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
               <span>Monto en miles</span><span id="ct-res-miles" style="text-align:right;font-weight:600;">—</span>
               <span style="font-weight:700;">Monto real</span><span id="ct-res-real" style="text-align:right;font-weight:700;color:#1A7A4A;">—</span>
             </div>
+          </div>
+
+          <!-- BONO CUPONADO -->
+          <div style="margin-top:16px;">
+            <div style="background:var(--sky);color:#fff;padding:10px 16px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:14px;border-radius:8px 8px 0 0;">Bono Cuponado</div>
+            <div style="border:1px solid #D3DDE6;border-top:none;border-radius:0 0 8px 8px;padding:0;">
+              <div style="padding:10px 16px;display:grid;grid-template-columns:1fr auto;gap:6px 12px;align-items:center;font-size:14px;font-family:'Montserrat',sans-serif;color:var(--navy);">
+                <span style="font-weight:700;">Fecha compra</span><input id="bc-fecha" type="date" oninput="calcBonoCuponado()" style="width:120px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
+                <span style="font-weight:700;">Precio</span><input id="bc-precio" type="text" value="100" oninput="calcBonoCuponado()" style="width:120px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
+                <span style="font-weight:700;">Plazo a&ntilde;os</span><input id="bc-plazo" type="text" value="5" oninput="calcBonoCuponado()" style="width:120px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
+                <span style="font-weight:700;">Tasa</span><input id="bc-tasa" type="text" value="" placeholder="%" oninput="fpFormatPct(this);calcBonoCuponado()" style="width:120px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
+                <span style="font-weight:700;">Tasa cup&oacute;n</span><input id="bc-cupon" type="text" value="" placeholder="%" oninput="fpFormatPct(this);calcBonoCuponado()" style="width:120px;text-align:right;padding:4px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
+                <span style="font-weight:700;">Precio</span><span id="bc-res-precio-calc" style="text-align:right;font-weight:700;">—</span>
+              </div>
+              <div style="background:#E8EEF4;padding:6px 16px;font-weight:700;font-size:14px;color:var(--navy);font-family:'Montserrat',sans-serif;">Movimientos del precio</div>
+              <div style="padding:10px 16px;display:grid;grid-template-columns:1fr auto;gap:5px 12px;align-items:center;font-size:14px;font-family:'Montserrat',sans-serif;color:var(--navy);">
+                <span style="font-weight:700;">Precio compra</span><span id="bc-res-pcompra" style="text-align:right;font-weight:700;">—</span>
+                <span style="font-weight:700;">Precio mercado</span><span id="bc-res-precio" style="text-align:right;font-weight:700;">—</span>
+                <span style="font-weight:700;">Diferencia precios</span><span id="bc-res-diff" style="text-align:right;font-weight:700;color:#1A7A4A;">—</span>
+              </div>
+            </div>
+          </div>
+          <!-- GRÁFICA FLUJOS (full width below) -->
+          <div id="bc-chart-wrap" style="margin-top:16px;border:1px solid #D3DDE6;border-radius:8px;padding:14px;display:none;">
+            <div style="position:relative;height:260px;"><canvas id="bc-chart-flujos"></canvas></div>
           </div>
         </div>
 
@@ -1473,10 +1490,10 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
           <div style="border:1px solid #D3DDE6;border-top:none;border-radius:0 0 8px 8px;padding:0;">
             <!-- Inputs principales -->
             <div style="padding:10px 16px;display:grid;grid-template-columns:repeat(6,auto);gap:6px 14px;align-items:center;font-size:14px;font-family:'Montserrat',sans-serif;color:var(--navy);">
-              <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">Tasa Descuento</div><input id="tb-tasa-desc" type="text" value="" placeholder="%" autocomplete="nope" oninput="fpFormatPct(this);calcTbill()" style="width:80px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;"></div>
-              <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">D&iacute;as Liq (T+)</div><input id="tb-dias-liq" type="number" value="" placeholder="—" autocomplete="nope" oninput="calcTbill()" style="width:50px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;"></div>
-              <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">Plazo (d&iacute;as)</div><input id="tb-plazo" type="number" value="" placeholder="—" autocomplete="nope" oninput="calcTbill()" style="width:60px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;"></div>
-              <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;color:var(--sky);">Tasa Cliente</div><input id="tb-tasa-cli" type="text" value="" placeholder="%" autocomplete="nope" oninput="fpFormatPct(this);calcTbill()" style="width:80px;text-align:right;padding:4px 6px;border:1px solid var(--sky);border-radius:4px;font-size:14px;background:rgba(65,187,201,0.1);"></div>
+              <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">Tasa Descuento</div><input id="tb-tasa-desc" type="text" value="" placeholder="%" autocomplete="one-time-code" oninput="fpFormatPct(this);calcTbill()" style="width:80px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;"></div>
+              <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">D&iacute;as Liq (T+)</div><input id="tb-dias-liq" type="number" value="" placeholder="—" autocomplete="one-time-code" oninput="calcTbill()" style="width:50px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;"></div>
+              <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">Plazo (d&iacute;as)</div><input id="tb-plazo" type="number" value="" placeholder="—" autocomplete="one-time-code" oninput="calcTbill()" style="width:60px;text-align:right;padding:4px 6px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;"></div>
+              <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;color:var(--sky);">Tasa Cliente</div><input id="tb-tasa-cli" type="text" value="" placeholder="%" autocomplete="one-time-code" oninput="fpFormatPct(this);calcTbill()" style="width:80px;text-align:right;padding:4px 6px;border:1px solid var(--sky);border-radius:4px;font-size:14px;background:rgba(65,187,201,0.1);"></div>
               <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">Tasa TAS</div><span id="tb-tasa-tas" style="font-weight:700;font-size:14px;">—</span></div>
               <div><div style="font-weight:700;font-size:12px;margin-bottom:2px;">Comisi&oacute;n</div><span id="tb-comision" style="font-weight:700;font-size:14px;">—</span></div>
             </div>
@@ -1544,13 +1561,14 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
           </div>
         </div>
       </div>
+
     </div>
     <!-- Sub-tab: CETES vs VLMXETF -->
     <div id="rtab-cetesetf" style="display:none;">
       <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;margin-bottom:18px;">
         <div>
           <div style="font-weight:700;font-size:12px;margin-bottom:2px;color:var(--navy);">Monto</div>
-          <input id="ce-monto" type="text" value="" placeholder="$" autocomplete="nope" readonly onfocus="this.removeAttribute('readonly')" oninput="ceFormatMoney(this);ceCalc()" style="width:150px;text-align:right;padding:6px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
+          <input id="ce-monto" type="text" value="" placeholder="$" autocomplete="one-time-code" readonly onfocus="this.removeAttribute('readonly')" oninput="ceFormatMoney(this);ceCalc()" style="width:150px;text-align:right;padding:6px 8px;border:1px solid #D3DDE6;border-radius:4px;font-size:14px;">
         </div>
         <div>
           <div style="font-weight:700;font-size:12px;margin-bottom:2px;color:var(--navy);">Año Inicio</div>
@@ -1634,7 +1652,7 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
 
       <!-- Ahorro box -->
       <div style="background:linear-gradient(135deg,var(--navy),#0D3A7A);border-radius:8px;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;">
-        <span style="color:#fff;font-weight:700;font-size:15px;font-family:'Montserrat',sans-serif;">Ahorro en ISR con VLMXETF</span>
+        <span style="color:#fff;font-weight:700;font-size:15px;font-family:'Montserrat',sans-serif;">Ahorro Total con VLMXETF</span>
         <span id="ce-ahorro" style="color:#fff;font-weight:700;font-size:22px;font-family:'Montserrat',sans-serif;">—</span>
       </div>
 
@@ -1660,11 +1678,11 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:18px;">
         <div style="border:1px solid #D3DDE6;border-radius:8px;padding:14px;">
           <div style="font-weight:700;font-size:13px;color:var(--navy);margin-bottom:8px;font-family:'Montserrat',sans-serif;">Rendimiento por Año (%)</div>
-          <canvas id="ce-chart-rend" height="220"></canvas>
+          <div style="position:relative;height:220px;"><canvas id="ce-chart-rend"></canvas></div>
         </div>
         <div style="border:1px solid #D3DDE6;border-radius:8px;padding:14px;">
-          <div style="font-weight:700;font-size:13px;color:var(--navy);margin-bottom:8px;font-family:'Montserrat',sans-serif;">Ganancia Neta vs Pago ISR ($)</div>
-          <canvas id="ce-chart-fiscal" height="220"></canvas>
+          <div style="font-weight:700;font-size:13px;color:var(--navy);margin-bottom:8px;font-family:'Montserrat',sans-serif;">Proyección del Saldo ($)</div>
+          <div style="position:relative;height:220px;"><canvas id="ce-chart-fiscal"></canvas></div>
         </div>
       </div>
     </div>
@@ -1674,17 +1692,55 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
   </div>
 
   <div id="page-elite" class="page">
-    <div class="elite-hero">
-      <div class="elite-icon">⭐</div>
-      <div class="elite-text">
-        <h2>VALMEX ELITE</h2>
-        <p>Acceso exclusivo a estrategias de inversión de alto impacto, análisis cuantitativo avanzado y reportería personalizada para patrimonios significativos.</p>
+    <!-- Sub-tab filter (same style as Recursos/Portafolios) -->
+    <div style="display:flex;justify-content:center;gap:0;margin:10px 20px 0;font-family:'Montserrat',sans-serif;">
+      <button class="cmp2-vf-btn active" data-etab="presentacion" onclick="showEliteTab('presentacion',this)" style="font-size:14px;padding:8px 20px;">Presentaci&oacute;n</button>
+      <button class="cmp2-vf-btn" data-etab="estrategias" onclick="showEliteTab('estrategias',this)" style="font-size:14px;padding:8px 20px;">Estrategias</button>
+      <button class="cmp2-vf-btn" data-etab="recursos" onclick="showEliteTab('recursos',this)" style="font-size:14px;padding:8px 20px;">Recursos</button>
+    </div>
+
+    <div id="etab-presentacion" style="margin-top:16px;">
+      <!-- Propuesta content will be moved here dynamically -->
+    </div>
+    <div id="etab-estrategias" style="display:none;margin-top:16px;padding:0 20px;overflow-x:auto;">
+      <div style="font-family:'Montserrat',sans-serif;font-size:10px;color:var(--navy);">
+      <table style="width:100%;border-collapse:collapse;min-width:1000px;">
+        <thead>
+          <tr style="background:var(--navy);color:#fff;">
+            <th style="padding:6px 8px;text-align:left;font-size:10px;white-space:nowrap;" rowspan="2">Estrategia</th>
+            <th style="padding:6px 8px;text-align:left;font-size:10px;white-space:nowrap;" rowspan="2">Nombre</th>
+            <th style="padding:4px 4px;text-align:center;font-size:9px;border-bottom:1px solid rgba(255,255,255,.3);" colspan="5">Deuda</th>
+            <th style="padding:4px 4px;text-align:center;font-size:9px;border-bottom:1px solid rgba(255,255,255,.3);" colspan="8">Capitales</th>
+            <th style="padding:4px 4px;text-align:center;font-size:9px;border-bottom:1px solid rgba(255,255,255,.3);" colspan="2">Suma Tipo</th>
+            <th style="padding:4px 4px;text-align:center;font-size:9px;border-bottom:1px solid rgba(255,255,255,.3);" colspan="2">Suma Moneda</th>
+          </tr>
+          <tr style="background:#0A3580;color:rgba(255,255,255,.85);">
+            <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">GUBCP</th>
+            <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">GUBLP</th>
+            <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">DEUDA</th>
+            <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">UDIMP</th>
+            <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">TBILL</th>
+            <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">DME</th>
+            <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">MX20</th>
+            <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">MX28</th>
+            <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">TEC</th>
+            <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">ESG</th>
+            <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">HC</th>
+            <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">ES</th>
+            <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">VL</th>
+            <th style="padding:4px 3px;text-align:center;font-size:8px;">Deuda</th>
+            <th style="padding:4px 3px;text-align:center;font-size:8px;">Cap.</th>
+            <th style="padding:4px 3px;text-align:center;font-size:8px;">MXN</th>
+            <th style="padding:4px 3px;text-align:center;font-size:8px;">Otra</th>
+          </tr>
+        </thead>
+        <tbody id="elite-strat-body" style="font-size:10px;">
+        </tbody>
+      </table>
       </div>
     </div>
-    <div class="elite-features">
-      <div class="ef-card"><div class="ef-icon">📊</div><h4>Análisis Cuantitativo</h4><p>Modelos propietarios con datos de Morningstar y Bloomberg para optimización de portafolios.</p></div>
-      <div class="ef-card"><div class="ef-icon">🌐</div><h4>Acceso Global</h4><p>Más de 10,000 instrumentos en 45 mercados internacionales.</p></div>
-      <div class="ef-card"><div class="ef-icon">📄</div><h4>Reportería Premium</h4><p>Presentaciones ejecutivas automatizadas con tu branding y datos en tiempo real.</p></div>
+    <div id="etab-recursos" style="display:none;margin-top:16px;">
+      <div style="text-align:center;padding:60px 20px;color:var(--gray);font-family:'Montserrat',sans-serif;font-size:14px;">Pr&oacute;ximamente</div>
     </div>
   </div>
 
@@ -1696,7 +1752,7 @@ const ALL_FUNDS = ["VXREPO1", "VXGUBCP", "VXUDIMP", "VXDEUDA", "VXGUBLP", "VXTBI
 document.addEventListener('DOMContentLoaded',()=>{
   // ── Privacidad: sin memoria en inputs + borrado total con selección ──
   document.querySelectorAll('input').forEach(inp => {
-    inp.setAttribute('autocomplete', 'off');
+    inp.setAttribute('autocomplete', 'one-time-code');
     inp.setAttribute('autocorrect', 'off');
     inp.setAttribute('autocapitalize', 'off');
     inp.setAttribute('spellcheck', 'false');
@@ -1965,7 +2021,7 @@ function renderSlotsActual() {
              style="font-size:14px;font-weight:800;color:var(--navy);text-transform:uppercase;text-align:left;padding:5px 7px;height:32px;"
              onblur="commitSlotActual(${i}, this.value)"
              onkeydown="if(event.key==='Enter'){this.blur();}"
-             autocomplete="off">
+             autocomplete="one-time-code">
       ${slot.loading ? '<span style="font-size:11px;color:var(--blue);font-style:italic;display:block;line-height:1.5;">Buscando...</span>' : ''}
       ${slot.nombre && !slot.loading ? `
         <span class="accion-nombre-slot" title="${slot.nombre}">${slot.nombre}</span>
@@ -1978,7 +2034,7 @@ function renderSlotsActual() {
              oninput="onSlotActualTitulosLive(${i}, this)"
              onfocus="fmtTitulosFocus(this)"
              onblur="fmtTitulosBlur(${i}, this, 'act')"
-             autocomplete="off">
+             autocomplete="one-time-code">
       <input class="fondo-input" type="text" placeholder="Monto $"
              value="${slot.monto_fmt || slot.monto || ''}"
              ${!slot.nombre ? 'disabled style="opacity:0.4;font-size:13px;"' : 'style="font-size:13px;"'}
@@ -1986,7 +2042,7 @@ function renderSlotsActual() {
              oninput="onSlotActualMontoLive(${i}, this)"
              onfocus="fmtMontoFocus(this)"
              onblur="fmtMontoBlur(${i}, this, 'act')"
-             autocomplete="off">
+             autocomplete="one-time-code">
       <span class="fondo-pct" id="act-slot-pct-${i}" style="font-size:13px;font-weight:700;">${pct}</span>`;
     grid.appendChild(card);
   });
@@ -2027,7 +2083,7 @@ function renderSlotsProp() {
              style="font-size:14px;font-weight:800;color:var(--navy);text-transform:uppercase;text-align:left;padding:5px 7px;height:32px;"
              onblur="commitSlotProp(${i}, this.value)"
              onkeydown="if(event.key==='Enter'){this.blur();}"
-             autocomplete="off">
+             autocomplete="one-time-code">
       ${slot.loading ? '<span style="font-size:11px;color:var(--blue);font-style:italic;display:block;line-height:1.5;">Buscando...</span>' : ''}
       ${slot.nombre && !slot.loading ? `
         <span class="accion-nombre-slot" title="${slot.nombre}">${slot.nombre}</span>
@@ -2040,7 +2096,7 @@ function renderSlotsProp() {
              oninput="onSlotPropTitulosLive(${i}, this)"
              onfocus="fmtTitulosFocus(this)"
              onblur="fmtTitulosBlur(${i}, this, 'prop')"
-             autocomplete="off">
+             autocomplete="one-time-code">
       <input class="fondo-input" type="text" placeholder="0.00%"
              value="${slot.pct ? slot.pct+'%' : ''}"
              ${!slot.nombre ? 'disabled style="opacity:0.4;font-size:13px;"' : 'style="font-size:13px;"'}
@@ -2048,7 +2104,7 @@ function renderSlotsProp() {
              oninput="onSlotPropPctLive(${i}, this)"
              onfocus="fmtPctFocus(this)"
              onblur="fmtPctBlur(${i}, this)"
-             autocomplete="off">
+             autocomplete="one-time-code">
       <span class="fondo-monto" id="prop-slot-mon-${i}" style="font-size:13px;font-weight:700;">${mon}</span>`;
     grid.appendChild(card);
   });
@@ -4953,7 +5009,10 @@ document.getElementById('btn-pdf-cmp2').addEventListener('click', async () => {
       const removeHdr3 = injectHeader(page2, 'Sensibilidad y Contribución al Riesgo por Instrumento', 'Diagnóstico de Exposición a Factores de los Portafolios');
       const p3rStyle = document.createElement('style'); p3rStyle.id = 'pdf-p3r-fit';
       const cH = targetH - hdrH - 2 - 18;
-      const sensH2 = Math.floor(cH * 0.55);
+      // Count how many fund items are in the risk contrib grid to decide space split
+      const rcItems = document.querySelectorAll('#cmp2-risk-contrib-grid > div > div').length;
+      const rcNeedsBig = rcItems > 12;
+      const sensH2 = Math.floor(cH * (rcNeedsBig ? 0.40 : 0.55));
       const rcH2 = cH - sensH2;
       const sensPanelHdr = 42;
       const sensR2Footer = 28;
@@ -4971,7 +5030,8 @@ document.getElementById('btn-pdf-cmp2').addEventListener('click', async () => {
         #cmp2-sec-sensitivity > div[style*="text-align:right"]{height:${sensR2Footer}px!important;box-sizing:border-box!important;padding:2px 16px 4px!important;}
         #cmp2-risk-contrib-panel{height:${rcH2}px!important;min-height:${rcH2}px!important;max-height:${rcH2}px!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;}
         #cmp2-risk-contrib-panel .cmp2-panel-hdr{font-size:15px!important;padding:10px 20px!important;flex-shrink:0!important;}
-        #cmp2-risk-contrib-grid{flex:1!important;gap:16px!important;padding:12px 20px!important;align-content:start!important;}
+        #cmp2-risk-contrib-grid{flex:1!important;gap:${rcNeedsBig ? 6 : 16}px!important;padding:${rcNeedsBig ? '6px 16px' : '12px 20px'}!important;align-content:start!important;font-size:${rcNeedsBig ? 11 : 14}px!important;}
+        ${rcNeedsBig ? '#cmp2-risk-contrib-grid div[style*="margin-bottom"]{margin-bottom:2px!important;}#cmp2-risk-contrib-grid div[style*="padding:7px"]{padding:4px 8px!important;}' : ''}
         #cmp2-sec-footer-p2{flex-shrink:0!important;}
         #cmp2-sec-footer-p2 p{font-size:10px!important;padding:2px 20px!important;margin:0!important;}
       `;
@@ -5008,23 +5068,29 @@ document.getElementById('btn-pdf-cmp2').addEventListener('click', async () => {
     const removeHdr4 = injectHeader(page3, 'Características y Exposición', 'Desglose de los Portafolios por Clase de Activo');
     const p3Style = document.createElement('style'); p3Style.id = 'pdf-p3-fit';
     p3Style.textContent = `
-      #cmp2-page3{width:${W}px!important;height:${targetH}px!important;overflow:hidden!important;box-sizing:border-box!important;display:flex!important;flex-direction:column!important;gap:4px!important;justify-content:flex-start!important;}
+      #cmp2-page3{width:${W}px!important;height:${targetH}px!important;overflow:hidden!important;box-sizing:border-box!important;display:flex!important;flex-direction:column!important;gap:6px!important;justify-content:flex-start!important;}
       #cmp2-page3 .pdf-hdr-clone{flex-shrink:0!important;}
-      #cmp2-page3 .cmp-header-bar.pdf-hdr-clone{padding:14px 24px 12px!important;height:${hdrH - 2}px!important;box-sizing:border-box!important;}
-      #cmp2-page3 .cmp-header-bar.pdf-hdr-clone img{height:75px!important;}
-      #cmp2-page3 .cmp-header-bar.pdf-hdr-clone .cmp-main-title{font-size:32px!important;color:#00205C!important;}
-      #cmp2-page3 .cmp-header-bar.pdf-hdr-clone .cmp-sub-title{font-size:18px!important;}
+      #cmp2-page3 .cmp-header-bar.pdf-hdr-clone{padding:12px 24px 10px!important;height:${hdrH - 6}px!important;box-sizing:border-box!important;}
+      #cmp2-page3 .cmp-header-bar.pdf-hdr-clone img{height:70px!important;}
+      #cmp2-page3 .cmp-header-bar.pdf-hdr-clone .cmp-main-title{font-size:30px!important;color:#00205C!important;}
+      #cmp2-page3 .cmp-header-bar.pdf-hdr-clone .cmp-sub-title{font-size:16px!important;}
       #cmp2-page3 #cmp2-deuda-expo-panel{margin:0 20px!important;flex-shrink:0!important;}
+      #cmp2-page3 #cmp2-deuda-expo-panel table{font-size:11px!important;}
+      #cmp2-page3 #cmp2-deuda-expo-panel th,#cmp2-page3 #cmp2-deuda-expo-panel td{padding:4px 10px!important;font-size:11px!important;}
+      #cmp2-page3 #cmp2-deuda-expo-panel .cmp2-panel-hdr{font-size:12px!important;padding:6px 14px!important;}
       #cmp2-page3 #cmp2-rv-expo-panel{margin:0 20px!important;flex-shrink:0!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;}
-      #cmp2-page3 #cmp2-rv-expo-panel .cmp2-panel-body{flex-shrink:0!important;padding:10px 0 0 0!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;}
-      #cmp2-page3 #cmp2-rv-legend{flex-shrink:0!important;}
+      #cmp2-page3 #cmp2-rv-expo-panel .cmp2-panel-hdr{font-size:12px!important;padding:6px 14px!important;}
+      #cmp2-page3 #cmp2-rv-expo-panel .cmp2-panel-body{flex-shrink:0!important;padding:6px 0 0 0!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;}
+      #cmp2-page3 #cmp2-rv-legend{flex-shrink:0!important;font-size:11px!important;margin-bottom:6px!important;}
       #cmp2-page3 #cmp2-rv-expo-grid{flex:1!important;}
+      #cmp2-page3 #cmp2-rv-expo-grid table{font-size:11px!important;}
+      #cmp2-page3 #cmp2-rv-expo-grid th,#cmp2-page3 #cmp2-rv-expo-grid td{padding:3px 8px!important;font-size:11px!important;}
       #cmp2-page3 #cmp2-movimientos-panel{margin:0 20px!important;flex-shrink:0!important;}
-      #cmp2-page3 #cmp2-movimientos-panel .cmp2-panel-hdr{font-size:13px!important;padding:8px 16px!important;}
-      #cmp2-page3 #cmp2-movimientos-panel .cmp2-tbl th{font-size:13px!important;padding:7px 10px!important;}
-      #cmp2-page3 #cmp2-movimientos-panel .cmp2-tbl td{font-size:13px!important;padding:6px 10px!important;}
+      #cmp2-page3 #cmp2-movimientos-panel .cmp2-panel-hdr{font-size:12px!important;padding:6px 14px!important;}
+      #cmp2-page3 #cmp2-movimientos-panel .cmp2-tbl th{font-size:11px!important;padding:5px 8px!important;}
+      #cmp2-page3 #cmp2-movimientos-panel .cmp2-tbl td{font-size:11px!important;padding:4px 8px!important;}
       #cmp2-page3 .cmp2-footer{flex-shrink:0!important;padding:4px 20px!important;}
-      #cmp2-page3 .cmp2-footer p{font-size:10px!important;margin:0!important;padding:2px 0!important;}
+      #cmp2-page3 .cmp2-footer p{font-size:9px!important;margin:0!important;padding:2px 0!important;}
     `;
     document.head.appendChild(p3Style);
     page3.style.width = W + 'px';
@@ -5217,7 +5283,16 @@ async function cargarPortafolio() {
   const btFin = document.getElementById('cfg-fecha-fin')?.value || '';
   let body = { tipo_cliente: tipoCliente, bt_fecha_ini: btIni, bt_fecha_fin: btFin };
 
-  if (valor.startsWith('perfil_')) {
+  if (valor.startsWith('elite_')) {
+    const idx = parseInt(valor.replace('elite_', ''));
+    const strat = (typeof ELITE_STRATS !== 'undefined') ? ELITE_STRATS[idx] : null;
+    if (!strat) return;
+    const fundKeys = ['VXGUBCP','VXGUBLP','VXDEUDA','VXUDIMP','VXTBILL','VLMXDME','VALMX20','VALMX28','VLMXTEC','VLMXESG','VALMXHC','VALMXES','VALMXVL'];
+    const fondos = {};
+    strat.w.forEach((w, i) => { if (w > 0) fondos[fundKeys[i]] = w; });
+    body.modo = 'propuesta';
+    body.fondos = fondos;
+  } else if (valor.startsWith('perfil_')) {
     body.modo = 'perfil';
     body.perfil_id = valor.replace('perfil_', '');
   } else if (valor === 'actual') {
@@ -5694,6 +5769,182 @@ function submitChangePw() {
 // ██ RECURSOS — Sub-tabs + Flujos Pensión Calculator
 // ══════════════════════════════════════════════════════════════════════════
 
+// Elite Strategies data (Serie A)
+const ELITE_STRATS = [
+  {id:'DEUDA MX',name:'Deuda MXN',w:[35,15,40,10,0,0,0,0,0,0,0,0,0],sd:100,sc:0,sm:100,so:0},
+  {id:'CAPITALES 20',name:'20 Capitales',w:[24,12,24,6,2,12,8,9,1,0,0.5,0.5,1],sd:80,sc:20,sm:74,so:26},
+  {id:'CAPITALES 40',name:'40 Capitales',w:[18,9,18,4.5,1.5,9,16,18,2,0,1,1,2],sd:60,sc:40,sm:65.5,so:34.5},
+  {id:'CAPITALES 60',name:'60 Capitales',w:[12,6,12,3,1,6,24,27,3,0,1.5,1.5,3],sd:40,sc:60,sm:57,so:43},
+  {id:'Deuda GOB CP',name:'Deuda MXN CP',w:[100,0,0,0,0,0,0,0,0,0,0,0,0],sd:100,sc:0,sm:100,so:0},
+  {id:'Deuda USD CP',name:'Deuda USD CP',w:[0,0,0,0,100,0,0,0,0,0,0,0,0],sd:100,sc:0,sm:0,so:100},
+  {id:'GLOBAL EQ',name:'Capitales globales',w:[0,0,0,0,0,0,0,75,10,0,5,2.5,7.5],sd:0,sc:100,sm:0,so:100},
+  {id:'Capitales MX',name:'Capitales México',w:[0,0,0,0,0,0,100,0,0,0,0,0,0],sd:0,sc:100,sm:100,so:0},
+  {id:'Deuda Global',name:'Deuda mixta',w:[30,15,30,7.5,2.5,15,0,0,0,0,0,0,0],sd:100,sc:0,sm:82.5,so:17.5},
+  {id:'DEUDA USD',name:'Deuda en dólares',w:[0,0,0,0,15,85,0,0,0,0,0,0,0],sd:100,sc:0,sm:0,so:100},
+  {id:'GLO 20 RV',name:'20 Cap. globales',w:[0,0,0,0,12,68,0,16,1.5,0,0.5,0.5,1.5],sd:80,sc:20,sm:0,so:100},
+  {id:'GLO 40 RV',name:'40 Cap. globales',w:[0,0,0,0,9,51,0,32,3,0,1,1,3],sd:60,sc:40,sm:0,so:100},
+  {id:'GLO 60 RV',name:'60 Cap. globales',w:[0,0,0,0,6,34,0,48,4.5,0,1.5,1.5,4.5],sd:40,sc:60,sm:0,so:100},
+];
+(function initEliteStrats(){
+  const tb = document.getElementById('elite-strat-body');
+  if(!tb) return;
+  const colors = ['#F4F7FA','#fff'];
+  ELITE_STRATS.forEach((s,idx) => {
+    const tr = document.createElement('tr');
+    tr.style.background = colors[idx%2];
+    const fmtW = v => v === 0 ? '<span style="color:#D3DDE6;">—</span>' : v.toFixed(1)+'%';
+    const fmtS = v => '<b>'+v.toFixed(1)+'%</b>';
+    tr.innerHTML = `<td style="padding:5px 8px;font-weight:700;white-space:nowrap;">${s.id}</td>`
+      + `<td style="padding:5px 8px;white-space:nowrap;">${s.name}</td>`
+      + s.w.map(v => `<td style="padding:4px 3px;text-align:center;">${fmtW(v)}</td>`).join('')
+      + `<td style="padding:4px 3px;text-align:center;background:rgba(0,32,92,.04);">${fmtS(s.sd)}</td>`
+      + `<td style="padding:4px 3px;text-align:center;background:rgba(0,32,92,.04);">${fmtS(s.sc)}</td>`
+      + `<td style="padding:4px 3px;text-align:center;background:rgba(65,187,201,.06);">${fmtS(s.sm)}</td>`
+      + `<td style="padding:4px 3px;text-align:center;background:rgba(65,187,201,.06);">${fmtS(s.so)}</td>`;
+    tb.appendChild(tr);
+  });
+})();
+
+function showEliteTab(tab, btn) {
+  document.querySelectorAll('#page-elite [id^="etab-"]').forEach(d => d.style.display = 'none');
+  document.getElementById('etab-' + tab).style.display = '';
+  document.querySelectorAll('#page-elite .cmp2-vf-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  if (tab === 'presentacion') {
+    _initElitePresentacion();
+  }
+}
+
+let _elitePresentacionInit = false;
+function _initElitePresentacion() {
+  if (_elitePresentacionInit) return;
+  _elitePresentacionInit = true;
+  const dest = document.getElementById('etab-presentacion');
+  if (!dest) return;
+
+  // Build selector
+  const selHtml = ELITE_STRATS.map((s, i) =>
+    `<option value="elite_${i}">${s.id} — ${s.name}</option>`
+  ).join('');
+
+  dest.innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 20px;font-family:'Montserrat',sans-serif;">
+      <label style="font-weight:700;font-size:14px;color:var(--navy);">Estrategia:</label>
+      <select id="elite-selector" onchange="loadEliteStrategy()" style="padding:6px 12px;border:1px solid #D3DDE6;border-radius:6px;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);min-width:260px;">
+        ${selHtml}
+      </select>
+      <span id="elite-loading" style="display:none;font-size:12px;color:var(--gray);">Cargando...</span>
+    </div>
+    <div id="elite-prop-content" style="padding:0 20px;">
+      <div style="text-align:center;padding:40px;color:var(--gray);font-family:'Montserrat',sans-serif;">Selecciona una estrategia</div>
+    </div>
+  `;
+  loadEliteStrategy();
+}
+
+function loadEliteStrategy() {
+  const sel = document.getElementById('elite-selector');
+  if (!sel) return;
+  const idx = parseInt(sel.value.replace('elite_', ''));
+  const strat = ELITE_STRATS[idx];
+  if (!strat) return;
+
+  const fundKeys = ['VXGUBCP','VXGUBLP','VXDEUDA','VXUDIMP','VXTBILL','VLMXDME','VALMX20','VALMX28','VLMXTEC','VLMXESG','VALMXHC','VALMXES','VALMXVL'];
+  const fondos = {};
+  strat.w.forEach((w, i) => { if (w > 0) fondos[fundKeys[i]] = w; });
+
+  const tipoCliente = document.getElementById('cfg-serie')?.value || 'Serie A';
+  const btIni = document.getElementById('cfg-fecha-ini')?.value || '';
+  const btFin = document.getElementById('cfg-fecha-fin')?.value || '';
+
+  const loading = document.getElementById('elite-loading');
+  if (loading) loading.style.display = '';
+
+  fetch('/api/propuesta', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ modo: 'propuesta', fondos, tipo_cliente: tipoCliente, bt_fecha_ini: btIni, bt_fecha_fin: btFin })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (loading) loading.style.display = 'none';
+    if (data.error) { document.getElementById('elite-prop-content').innerHTML = '<div style="padding:20px;color:red;">'+data.error+'</div>'; return; }
+    renderElitePropuesta(data, strat);
+  })
+  .catch(e => { if (loading) loading.style.display = 'none'; console.error('[Elite]', e); });
+}
+
+function renderElitePropuesta(data, strat) {
+  const dest = document.getElementById('elite-prop-content');
+  if (!dest) return;
+
+  const comp = data.composicion || {};
+  const kpis = data.kpis || {};
+  const bt = data.backtesting || {};
+  const fmtP = v => v != null ? (v*100).toFixed(2) + '%' : '—';
+  const fmtM = v => v != null ? '$' + Number(v).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : '—';
+
+  // Composition table
+  const fondos = Object.entries(comp).filter(([k,v]) => v > 0).sort((a,b) => b[1]-a[1]);
+  let compRows = fondos.map(([f,w]) => `<tr><td style="padding:4px 8px;">${f}</td><td style="padding:4px 8px;text-align:right;font-weight:700;">${w.toFixed(1)}%</td></tr>`).join('');
+
+  // KPIs
+  const kpiRows = [
+    ['Rendimiento', fmtP(kpis.rendimiento)],
+    ['Volatilidad', fmtP(kpis.volatilidad)],
+    ['Sharpe', kpis.sharpe != null ? kpis.sharpe.toFixed(2) : '—'],
+    ['Max Drawdown', fmtP(kpis.max_drawdown)],
+  ].map(([k,v]) => `<tr><td style="padding:4px 8px;">${k}</td><td style="padding:4px 8px;text-align:right;font-weight:700;">${v}</td></tr>`).join('');
+
+  // Backtesting chart data
+  const btLabels = bt.fechas || [];
+  const btValues = bt.valores || [];
+
+  dest.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px;">
+      <div>
+        <div style="background:var(--navy);color:#fff;padding:8px 12px;font-weight:700;font-size:13px;border-radius:6px 6px 0 0;font-family:'Montserrat',sans-serif;">Composici&oacute;n — ${strat.id}</div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);border:1px solid #D3DDE6;border-top:none;">
+          ${compRows}
+        </table>
+      </div>
+      <div>
+        <div style="background:var(--navy);color:#fff;padding:8px 12px;font-weight:700;font-size:13px;border-radius:6px 6px 0 0;font-family:'Montserrat',sans-serif;">KPIs</div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);border:1px solid #D3DDE6;border-top:none;">
+          ${kpiRows}
+        </table>
+      </div>
+    </div>
+    <div style="margin-top:16px;border:1px solid #D3DDE6;border-radius:8px;padding:14px;">
+      <div style="font-weight:700;font-size:13px;color:var(--navy);margin-bottom:8px;font-family:'Montserrat',sans-serif;">Backtesting</div>
+      <div style="position:relative;height:260px;"><canvas id="elite-bt-chart"></canvas></div>
+    </div>
+  `;
+
+  // Render backtesting chart
+  if (btLabels.length > 0) {
+    const ctx = document.getElementById('elite-bt-chart')?.getContext('2d');
+    if (ctx) {
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: btLabels.map(d => d.slice(0,7)),
+          datasets: [{ label: strat.id, data: btValues, borderColor: '#ED8A56', backgroundColor: 'rgba(237,138,86,.06)', fill: true, borderWidth: 1.5, pointRadius: 0, pointHitRadius: 4, tension: 0.35 }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { backgroundColor: '#00205C', cornerRadius: 6 } },
+          scales: {
+            y: { ticks: { font: { size: 12, family: 'Montserrat' }, color: '#00205C' }, grid: { display: false }, border: { display: false } },
+            x: { ticks: { font: { size: 10, family: 'Montserrat' }, color: '#00205C', maxTicksLimit: 8, maxRotation: 0 }, grid: { display: false }, border: { display: false } }
+          }
+        }
+      });
+    }
+  }
+}
+
 function showRecursosTab(tab, btn) {
   document.querySelectorAll('#page-recursos [id^="rtab-"]').forEach(d => d.style.display = 'none');
   document.getElementById('rtab-' + tab).style.display = '';
@@ -5966,8 +6217,8 @@ function _tbInitClientes() {
     const tr = document.createElement('tr');
     tr.style.borderBottom = '1px solid #E8EEF4';
     tr.innerHTML =
-      `<td style="padding:3px 4px;border-right:1px solid #D3DDE6;"><input id="tb-c${i}-contrato" type="text" placeholder="" autocomplete="nope" oninput="calcTbill()" style="width:60px;padding:3px 4px;border:1px solid #D3DDE6;border-radius:3px;font-size:13px;font-family:'Montserrat',sans-serif;"></td>` +
-      `<td style="padding:3px 4px;border-right:1px solid #D3DDE6;"><input id="tb-c${i}-monto" type="text" placeholder="$" autocomplete="nope" oninput="formatMonto(this);calcTbill()" style="width:122px;text-align:right;padding:3px 4px;border:1px solid #D3DDE6;border-radius:3px;font-size:13px;font-family:'Montserrat',sans-serif;"></td>` +
+      `<td style="padding:3px 4px;border-right:1px solid #D3DDE6;"><input id="tb-c${i}-contrato" type="text" placeholder="" autocomplete="one-time-code" oninput="calcTbill()" style="width:60px;padding:3px 4px;border:1px solid #D3DDE6;border-radius:3px;font-size:13px;font-family:'Montserrat',sans-serif;"></td>` +
+      `<td style="padding:3px 4px;border-right:1px solid #D3DDE6;"><input id="tb-c${i}-monto" type="text" placeholder="$" autocomplete="one-time-code" oninput="formatMonto(this);calcTbill()" style="width:122px;text-align:right;padding:3px 4px;border:1px solid #D3DDE6;border-radius:3px;font-size:13px;font-family:'Montserrat',sans-serif;"></td>` +
       `<td id="tb-c${i}-td" style="padding:3px 4px;text-align:right;font-size:13px;color:var(--navy);font-weight:600;border-right:1px solid #D3DDE6;">—</td>` +
       `<td id="tb-c${i}-plazo" style="padding:3px 4px;text-align:right;font-size:13px;border-right:1px solid #D3DDE6;">—</td>` +
       `<td id="tb-c${i}-tit" style="padding:3px 4px;text-align:right;font-size:13px;border-right:1px solid #D3DDE6;">—</td>` +
@@ -5980,7 +6231,7 @@ function _tbInitClientes() {
     tbody.appendChild(tr);
     tr.querySelectorAll('input').forEach(inp => {
       inp.setAttribute('name', 'x' + Math.random().toString(36).slice(2, 8));
-      inp.setAttribute('autocomplete', 'off');
+      inp.setAttribute('autocomplete', 'one-time-code');
       inp.setAttribute('readonly', '');
       inp.addEventListener('focus', function() { this.removeAttribute('readonly'); });
       inp.addEventListener('blur', function() { this.setAttribute('readonly', ''); });
@@ -6198,42 +6449,53 @@ function ceCalc() {
   const cumRendE = cumE - 1;
   const cumInfl = cumI - 1;
 
-  // Fiscal calc using cumulative returns (matches Excel formulas)
-  // Excel: Saldo Final = Monto * (1 + Rend - RetProv%)
-  // Excel: Ganancia Bruta = Monto * Rendimiento
-  // Excel: Ganancia Gravable = Monto * Tasa Real
-  // Excel: Tasa Real = (1+Rend)/(1+Infl) - 1
-  // Excel: ISR CETES = MAX(Gravable * tasa%, 0), ISR ETF = MAX(Gravable * 10%, 0)
-  // Excel: Pago Complementario = ISR Total - Retención Prov
-  // Excel: Ahorro = MAX(Gravable_ETF * tasa% - Gravable_ETF * 10%, 0)
+  // ── Fiscal calc ──
+  // CETES: corte anual — cada año paga ISR sobre intereses reales, saldo neto pasa al siguiente
+  // VLMXETF: acumula bruto todo el periodo, paga 10% ISR sobre intereses reales solo al final
 
-  // Retención provisional acumulada: suma de tasa por año (pro-rata para año parcial)
-  let retProvPctC = 0;
-  for (let y = yFrom; y <= yTo; y++) {
-    const rp = _ceData.retencion[String(y)];
-    const yFrac = (y === currentYear) ? fracYear : 1;
-    retProvPctC += rp != null ? rp * yFrac : 0;
-  }
-  const sfC = monto * (1 + cumRendC - retProvPctC);  // neto de retención
-  const sfE = monto * (1 + cumRendE);
-  const trealC = (1 + cumRendC) / (1 + cumInfl) - 1;
-  const trealE = (1 + cumRendE) / (1 + cumInfl) - 1;
-  const gBrutaC = monto * cumRendC;   // ganancia total sin deducir retención
-  const gBrutaE = monto * cumRendE;
-  const gGravC = Math.max(0, monto * trealC);  // intereses reales
-  const gGravE = Math.max(0, monto * trealE);
-  const retProvC = monto * retProvPctC;  // retención $ acumulada
-  const retProvE = 0;
-  const isrTotalC = Math.max(0, gGravC * isrRate);
-  const isrTotalE = Math.max(0, gGravE * 0.10);
-  const compC = Math.max(0, isrTotalC - retProvC);
-  const compE = isrTotalE;  // ETF no tiene retención, todo es complementario
-  const gNetaC = gBrutaC - isrTotalC;
-  const gNetaE = gBrutaE - isrTotalE;
+  // CETES year-by-year
+  let sC = monto, totalIsrC = 0, totalRetProvC = 0, totalGrossC = 0, totalGravC = 0;
+  rows.forEach(r => {
+    const rc = r.cetes || 0;
+    const ri = r.infl || 0;
+    const rp = r.retProv || 0;
+    const grossGain = sC * rc;
+    const realGain = Math.max(0, sC * ((1 + rc) / (1 + ri) - 1));
+    const isrYear = realGain * isrRate;
+    const retYear = sC * rp;
+    totalGrossC += grossGain;
+    totalGravC += realGain;
+    totalIsrC += isrYear;
+    totalRetProvC += retYear;
+    sC = sC + grossGain - isrYear;
+  });
+  const sfC = sC;
+  const gBrutaC = totalGrossC;
+  const gNetaC = sfC - monto;
   const rNetoC = monto > 0 ? gNetaC / monto : 0;
+  const compC = Math.max(0, totalIsrC - totalRetProvC);
+
+  // VLMXETF — acumula bruto, ISR 10% solo al final
+  let sE = monto, cumInflE = 1;
+  rows.forEach(r => {
+    sE *= (1 + (r.vlmxetf || 0));
+    cumInflE *= (1 + (r.infl || 0));
+  });
+  const gBrutaE = sE - monto;
+  const gGravE = Math.max(0, sE - monto * cumInflE);
+  const isrTotalE = gGravE * 0.10;
+  const sfE = sE - isrTotalE;
+  const gNetaE = sfE - monto;
   const rNetoE = monto > 0 ? gNetaE / monto : 0;
-  // Ahorro: lo que pagarías si ETF tributara a tasa CETES - lo que realmente pagas al 10%
-  const ahorro = Math.max(0, gGravE * isrRate - isrTotalE);
+
+  // Shared
+  const trealCumC = (1 + rNetoC) / (1 + cumInfl) - 1;
+  const trealCumE = (1 + rNetoE) / (1 + cumInfl) - 1;
+  const trealC = n > 0 ? Math.pow(1 + trealCumC, 1/n) - 1 : 0;
+  const trealE = n > 0 ? Math.pow(1 + trealCumE, 1/n) - 1 : 0;
+  // Ahorro total: ganancia neta VLMXETF - ganancia neta CETES
+  const ahorro = gNetaE - gNetaC;
+  const isMultiYear = yFrom !== yTo;
 
   // CETES card
   $('ce-c-si', fmtM(monto));
@@ -6242,12 +6504,10 @@ function ceCalc() {
   $('ce-c-infl', fmtP(inflAnn));
   $('ce-c-treal', fmtP(trealC));
   $('ce-c-gbruta', fmtM(gBrutaC));
-  $('ce-c-ggrav', fmtM(gGravC));
-  $('ce-c-ret', fmtM(retProvC));
+  $('ce-c-ggrav', fmtM(totalGravC));
+  $('ce-c-ret', fmtM(totalRetProvC));
   $('ce-c-comp', fmtM(compC));
-  $('ce-c-isr', fmtM(isrTotalC));
-  const isMultiYear = yFrom !== yTo;
-  // CETES: rend neto acumulado vs anualizado
+  $('ce-c-isr', fmtM(totalIsrC));
   $('ce-c-rneto-label', isMultiYear ? 'Rend. Acumulado después de ISR' : 'Rend. después de ISR');
   $('ce-c-rneto', fmtP(rNetoC));
   const rNetoAnnC = n > 0 ? Math.pow(1 + rNetoC, 1/n) - 1 : 0;
@@ -6264,8 +6524,8 @@ function ceCalc() {
   $('ce-e-treal', fmtP(trealE));
   $('ce-e-gbruta', fmtM(gBrutaE));
   $('ce-e-ggrav', fmtM(gGravE));
-  $('ce-e-ret', fmtM(retProvE));
-  $('ce-e-comp', fmtM(compE));
+  $('ce-e-ret', fmtM(0));
+  $('ce-e-comp', fmtM(isrTotalE));
   $('ce-e-isr', fmtM(isrTotalE));
   $('ce-e-rneto-label', isMultiYear ? 'Rend. Acumulado después de ISR' : 'Rend. después de ISR');
   $('ce-e-rneto', fmtP(rNetoE));
@@ -6295,7 +6555,7 @@ function ceCalc() {
     <td style="padding:5px 10px;text-align:right;">${(cumRendC*100).toFixed(2)}%</td>
     <td style="padding:5px 10px;text-align:right;">${(cumRendE*100).toFixed(2)}%</td>
     <td style="padding:5px 10px;text-align:right;">${(cumInfl*100).toFixed(2)}%</td>
-    <td style="padding:5px 10px;text-align:right;color:#888;">${(retProvPctC*100).toFixed(2)}%</td>
+    <td style="padding:5px 10px;text-align:right;color:#888;">${(rows.reduce((s,r)=>s+(r.retProv||0),0)*100).toFixed(2)}%</td>
   </tr>
   <tr style="background:#F0F4F8;font-weight:700;">
     <td style="padding:5px 10px;color:var(--sky);">Anualizado</td>
@@ -6309,11 +6569,11 @@ function ceCalc() {
   document.getElementById('ce-note').textContent = `Rendimientos brutos anuales. CETES 28d: promedio de tasa Banxico. VLMXETF: NAV Morningstar (serie seleccionada). ISR CETES: ${(isrRate*100).toFixed(0)}% sobre intereses reales. Retención provisional: Art. 21 LIF / Art. 54 y 135 LISR (tasa por año del SAT). ISR VLMXETF: 10% sobre intereses reales. Inflación: INPC Banxico.`;
 
   // Charts
-  try { ceDrawCharts(rows, gNetaC, gNetaE, isrTotalC, isrTotalE); } catch(e) { console.error('[CE] Chart error:', e); }
+  ceDrawCharts(rows, monto, isrRate);
 }
 
 let _ceChartRend = null, _ceChartFiscal = null;
-function ceDrawCharts(rows, gNetaC, gNetaE, isrC, isrE) {
+function ceDrawCharts(rows, monto, isrRate) {
   const labels = rows.map(r => String(r.year));
   const cetesData = rows.map(r => r.cetes != null ? +(r.cetes*100).toFixed(2) : 0);
   const etfData = rows.map(r => r.vlmxetf != null ? +(r.vlmxetf*100).toFixed(2) : 0);
@@ -6327,48 +6587,244 @@ function ceDrawCharts(rows, gNetaC, gNetaE, isrC, isrE) {
       data: {
         labels,
         datasets: [
-          { label: 'CETES 28d', data: cetesData, backgroundColor: '#00205C', borderRadius: 4, barPercentage: 0.7 },
-          { label: 'VLMXETF', data: etfData, backgroundColor: '#41BBC9', borderRadius: 4, barPercentage: 0.7 }
+          { label: 'CETES 28d', data: cetesData, backgroundColor: '#00205C', borderRadius: 4, barPercentage: 0.92, categoryPercentage: 0.88 },
+          { label: 'VLMXETF', data: etfData, backgroundColor: '#41BBC9', borderRadius: 4, barPercentage: 0.92, categoryPercentage: 0.88 }
         ]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
+        layout: { padding: { top: 28 } },
         plugins: {
-          legend: { position: 'bottom', labels: { font: { family: 'Montserrat', size: 11 }, usePointStyle: true, pointStyle: 'rectRounded' } }
+          legend: { position: 'bottom', labels: { boxWidth: 14, boxHeight: 14, font: { size: 13, family: 'Montserrat', weight: '700' }, padding: 16, usePointStyle: true, pointStyle: 'rectRounded', color: '#00205C' } },
+          tooltip: { backgroundColor: '#00205C', titleFont: { size: 13 }, bodyFont: { size: 13 }, padding: 10, cornerRadius: 6, callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + ctx.raw + '%' } }
         },
         scales: {
-          y: { ticks: { callback: v => v + '%', font: { family: 'Montserrat', size: 11 } }, grid: { color: '#E8ECF0' } },
-          x: { ticks: { font: { family: 'Montserrat', size: 11 } }, grid: { display: false } }
+          y: { ticks: { callback: v => v + '%', font: { size: 13, family: 'Montserrat' }, color: '#00205C' }, grid: { color: 'rgba(0,32,92,0.06)' }, border: { display: false } },
+          x: { ticks: { font: { size: 13, family: 'Montserrat', weight: '600' }, color: '#00205C', maxRotation: 0 }, grid: { display: false }, border: { display: false } }
         }
-      }
+      },
+      plugins: [{
+        id: 'ceBarLabels',
+        afterDatasetsDraw(chart) {
+          const { ctx } = chart;
+          ctx.save();
+          chart.data.datasets.forEach((ds, di) => {
+            const meta = chart.getDatasetMeta(di);
+            if (!meta || meta.hidden) return;
+            meta.data.forEach((bar, i) => {
+              const v = ds.data[i];
+              if (v == null) return;
+              ctx.fillStyle = ds.backgroundColor;
+              ctx.font = 'bold 12px Montserrat,sans-serif';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'bottom';
+              ctx.fillText(v + '%', bar.x, bar.y - 3);
+            });
+          });
+          ctx.restore();
+        }
+      }]
     });
   }
 
-  // Chart 2: Fiscal comparison (Ganancia Neta vs ISR)
+  // Chart 2: Projected balance line chart (net of taxes)
+  // CETES: ISR paid each year on real interest (annual cut)
+  // VLMXETF: ISR 10% on real interest paid only at the end
   if (_ceChartFiscal) _ceChartFiscal.destroy();
   const ctx2 = document.getElementById('ce-chart-fiscal')?.getContext('2d');
   if (ctx2) {
+    const lbls2 = [String(rows[0].year - 1), ...labels];
+    let sC = monto, sE = monto;
+    let cumInflE = 1;  // track cumulative inflation for ETF final ISR
+    const balC = [monto], balE = [monto];
+
+    rows.forEach(r => {
+      const rc = r.cetes || 0;
+      const re = r.vlmxetf || 0;
+      const ri = r.infl || 0;
+
+      // CETES: annual cut — pay ISR on real interest each year
+      const grossC = sC * rc;
+      const realC = Math.max(0, sC * ((1 + rc) / (1 + ri) - 1));
+      const isrC = realC * isrRate;
+      sC = sC + grossC - isrC;
+      balC.push(Math.round(sC));
+
+      // VLMXETF: no tax during, accumulate gross
+      sE *= (1 + re);
+      cumInflE *= (1 + ri);
+      balE.push(Math.round(sE));
+    });
+
+    // VLMXETF: deduct ISR 10% on real interest at the very end
+    const realGainE = Math.max(0, sE - monto * cumInflE);
+    const isrE = realGainE * 0.10;
+    balE[balE.length - 1] = Math.round(sE - isrE);
+
+    const fmtVal = v => '$' + (v >= 1e6 ? (v/1e6).toFixed(1)+'M' : (v/1000).toFixed(0)+'k');
     _ceChartFiscal = new Chart(ctx2, {
-      type: 'bar',
+      type: 'line',
       data: {
-        labels: ['CETES 28d', 'VLMXETF'],
+        labels: lbls2,
         datasets: [
-          { label: 'Ganancia Neta', data: [gNetaC, gNetaE], backgroundColor: ['#00205C', '#41BBC9'], borderRadius: 4 },
-          { label: 'Pago ISR', data: [isrC, isrE], backgroundColor: ['#C0392B', '#E74C3C'], borderRadius: 4 }
+          { label: 'CETES 28d (neto ISR)', data: balC, borderColor: '#00205C', backgroundColor: 'rgba(0,32,92,0.06)', fill: true, borderWidth: 1.5, pointRadius: 0, pointHitRadius: 4, pointHoverRadius: 3, tension: 0.35 },
+          { label: 'VLMXETF (neto ISR)', data: balE, borderColor: '#41BBC9', backgroundColor: 'rgba(65,187,201,0.06)', fill: true, borderWidth: 1.5, pointRadius: 0, pointHitRadius: 4, pointHoverRadius: 3, tension: 0.35 }
         ]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        layout: { padding: { right: 70, top: 18 } },
         plugins: {
-          legend: { position: 'bottom', labels: { font: { family: 'Montserrat', size: 11 }, usePointStyle: true, pointStyle: 'rectRounded' } }
+          legend: { position: 'bottom', labels: { boxWidth: 14, boxHeight: 14, font: { size: 13, family: 'Montserrat', weight: '700' }, padding: 16, usePointStyle: true, pointStyle: 'rectRounded', color: '#00205C', generateLabels: chart => chart.data.datasets.map((ds,i) => ({ text: ds.label, fillStyle: ds.borderColor, strokeStyle: ds.borderColor, lineWidth: 0, pointStyle: 'rectRounded', hidden: !chart.isDatasetVisible(i), datasetIndex: i })) } },
+          tooltip: { backgroundColor: '#00205C', titleFont: { size: 13 }, bodyFont: { size: 13 }, padding: 10, cornerRadius: 6, callbacks: { label: ctx => ' ' + ctx.dataset.label + ': $' + ctx.parsed.y.toLocaleString('en-US') } }
         },
         scales: {
-          y: { ticks: { callback: v => '$' + (v/1000).toFixed(0) + 'k', font: { family: 'Montserrat', size: 11 } }, grid: { color: '#E8ECF0' } },
-          x: { ticks: { font: { family: 'Montserrat', size: 12, weight: 700 } }, grid: { display: false } }
+          y: { ticks: { callback: fmtVal, font: { size: 13, family: 'Montserrat' }, color: '#00205C' }, grid: { display: false }, border: { display: false } },
+          x: { ticks: { font: { size: 13, family: 'Montserrat', weight: '600' }, color: '#00205C', maxRotation: 0 }, grid: { display: false }, border: { display: false } }
         }
-      }
+      },
+      plugins: [{
+        id: 'ceEndLabels',
+        afterDatasetsDraw(chart) {
+          const { ctx } = chart;
+          ctx.save();
+          const pts = chart.data.datasets.map((ds, i) => {
+            const meta = chart.getDatasetMeta(i);
+            if (meta.hidden || ds.hidden) return null;
+            const lp = meta.data[meta.data.length - 1];
+            if (!lp || !ds.data.length) return null;
+            return { x: lp.x, y: lp.y, val: fmtVal(ds.data[ds.data.length - 1]), color: ds.borderColor };
+          }).filter(Boolean);
+          pts.sort((a, b) => a.y - b.y);
+          for (let i = 1; i < pts.length; i++) { if (pts[i].y - pts[i-1].y < 16) pts[i].y = pts[i-1].y + 16; }
+          pts.forEach(p => { ctx.fillStyle = p.color; ctx.font = 'bold 14px Montserrat,sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(p.val, p.x + 6, p.y); });
+          ctx.restore();
+        }
+      }]
     });
   }
+}
+
+// ── Bono Cuponado ──
+let _bcChart = null;
+// Set default date to today
+(function(){ const el = document.getElementById('bc-fecha'); if (el && !el.value) el.value = new Date().toISOString().slice(0,10); })();
+
+function calcBonoCuponado() {
+  const precioCompra = parseFloat(document.getElementById('bc-precio').value) || 0;
+  const plazo = parseFloat(document.getElementById('bc-plazo').value) || 0;
+  const tasaRaw = document.getElementById('bc-tasa').value.replace(/[^0-9.]/g, '');
+  const cuponRaw = document.getElementById('bc-cupon').value.replace(/[^0-9.]/g, '');
+  const tasa = (parseFloat(tasaRaw) || 0) / 100;
+  const cupon = (parseFloat(cuponRaw) || 0) / 100;
+  const fechaStr = document.getElementById('bc-fecha').value;
+  const $ = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  const wrap = document.getElementById('bc-chart-wrap');
+
+  if (precioCompra <= 0 || plazo <= 0 || tasa <= 0 || cupon <= 0) {
+    ['bc-res-precio-calc','bc-res-pcompra','bc-res-precio','bc-res-diff'].forEach(id => $(id, '—'));
+    if (wrap) wrap.style.display = 'none';
+    return;
+  }
+
+  const fechaCompra = fechaStr ? new Date(fechaStr + 'T00:00:00') : new Date();
+
+  // Semestral coupons
+  const nCupones = Math.round(plazo) * 2;
+  const cuponSem = +(cupon / 2 * 100).toFixed(4);
+
+  // Build coupon dates and compute precio mercado with exact days
+  const couponDates = [];
+  for (let i = 1; i <= nCupones; i++) {
+    const d = new Date(fechaCompra);
+    d.setMonth(d.getMonth() + i * 6);
+    couponDates.push(d);
+  }
+
+  let precioMercado = 0;
+  for (let i = 0; i < nCupones; i++) {
+    const flujo = i === nCupones - 1 ? cuponSem + 100 : cuponSem;
+    const dias = (couponDates[i] - fechaCompra) / 86400000; // ms to days
+    const t = dias / 182; // semiannual periods (exact days, 182-day convention)
+    precioMercado += flujo / Math.pow(1 + tasa / 2, t);
+  }
+
+  // Build chart data
+  const allFlujos = [];
+  const allLabels = [];
+  const allColors = [];
+
+  // First bar: outflow (negative, red)
+  allLabels.push(String(fechaCompra.getFullYear()));
+  allFlujos.push(+(-precioMercado).toFixed(2));
+  allColors.push('#C0392B');
+
+  // Coupon bars (green)
+  for (let i = 0; i < nCupones; i++) {
+    const flujo = i === nCupones - 1 ? +(cuponSem + 100).toFixed(2) : +cuponSem.toFixed(2);
+    allLabels.push(String(couponDates[i].getFullYear()));
+    allFlujos.push(flujo);
+    allColors.push('#27AE60');
+  }
+
+  const diff = precioMercado - precioCompra;
+
+  $('bc-res-precio-calc', precioMercado.toFixed(2));
+  $('bc-res-pcompra', precioCompra.toFixed(2));
+  $('bc-res-precio', precioMercado.toFixed(2));
+  $('bc-res-diff', diff.toFixed(2));
+
+  // Chart
+  if (wrap) wrap.style.display = '';
+  if (_bcChart) _bcChart.destroy();
+  const ctx = document.getElementById('bc-chart-flujos')?.getContext('2d');
+  if (!ctx) return;
+
+  _bcChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: allLabels,
+      datasets: [{
+        data: allFlujos,
+        backgroundColor: allColors,
+        borderRadius: 2,
+        barPercentage: 0.5,
+        categoryPercentage: 0.7
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 24 } },
+      plugins: {
+        legend: { display: false },
+        tooltip: { backgroundColor: '#00205C', titleFont: { size: 13 }, bodyFont: { size: 13 }, padding: 10, cornerRadius: 6 }
+      },
+      scales: {
+        y: { ticks: { font: { size: 12, family: 'Montserrat' }, color: '#00205C' }, grid: { color: 'rgba(0,32,92,0.08)' }, border: { display: false } },
+        x: { ticks: { font: { size: 13, family: 'Montserrat', weight: '700' }, color: '#00205C' }, grid: { display: false }, border: { display: false } }
+      }
+    },
+    plugins: [{
+      id: 'bcBarLabels',
+      afterDatasetsDraw(chart) {
+        const { ctx } = chart;
+        ctx.save();
+        const meta = chart.getDatasetMeta(0);
+        meta.data.forEach((bar, i) => {
+          const v = chart.data.datasets[0].data[i];
+          if (v == null) return;
+          ctx.fillStyle = '#00205C';
+          ctx.font = 'bold 12px Montserrat,sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = v >= 0 ? 'bottom' : 'top';
+          ctx.fillText(v.toFixed(2), bar.x, v >= 0 ? bar.y - 4 : bar.y + 4);
+        });
+        ctx.restore();
+      }
+    }]
+  });
+}
 </script>
 
 <!-- Modal cambiar contraseña -->
@@ -6376,8 +6832,8 @@ function ceDrawCharts(rows, gNetaC, gNetaE, isrC, isrE) {
   <div style="background:#fff;border-radius:14px;padding:32px 28px;max-width:360px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.18);" onclick="event.stopPropagation()">
     <h3 style="font-family:'Montserrat',sans-serif;font-size:16px;font-weight:700;color:#00205C;margin-bottom:18px;">Cambiar contraseña</h3>
     <input id="pw-current" type="password" placeholder="Contraseña actual" autocomplete="current-password" style="width:100%;padding:10px 12px;border:1.5px solid #D3DDE6;border-radius:8px;font-family:'Montserrat',sans-serif;font-size:13px;margin-bottom:10px;outline:none;" onfocus="this.style.borderColor='#3DA5E0'" onblur="this.style.borderColor='#D3DDE6'">
-    <input id="pw-new" type="password" placeholder="Nueva contraseña (min 8 caracteres)" autocomplete="nope" style="width:100%;padding:10px 12px;border:1.5px solid #D3DDE6;border-radius:8px;font-family:'Montserrat',sans-serif;font-size:13px;margin-bottom:10px;outline:none;" onfocus="this.style.borderColor='#3DA5E0'" onblur="this.style.borderColor='#D3DDE6'">
-    <input id="pw-confirm" type="password" placeholder="Confirmar nueva contraseña" autocomplete="nope" style="width:100%;padding:10px 12px;border:1.5px solid #D3DDE6;border-radius:8px;font-family:'Montserrat',sans-serif;font-size:13px;margin-bottom:14px;outline:none;" onfocus="this.style.borderColor='#3DA5E0'" onblur="this.style.borderColor='#D3DDE6'" onkeydown="if(event.key==='Enter')submitChangePw()">
+    <input id="pw-new" type="password" placeholder="Nueva contraseña (min 8 caracteres)" autocomplete="one-time-code" style="width:100%;padding:10px 12px;border:1.5px solid #D3DDE6;border-radius:8px;font-family:'Montserrat',sans-serif;font-size:13px;margin-bottom:10px;outline:none;" onfocus="this.style.borderColor='#3DA5E0'" onblur="this.style.borderColor='#D3DDE6'">
+    <input id="pw-confirm" type="password" placeholder="Confirmar nueva contraseña" autocomplete="one-time-code" style="width:100%;padding:10px 12px;border:1.5px solid #D3DDE6;border-radius:8px;font-family:'Montserrat',sans-serif;font-size:13px;margin-bottom:14px;outline:none;" onfocus="this.style.borderColor='#3DA5E0'" onblur="this.style.borderColor='#D3DDE6'" onkeydown="if(event.key==='Enter')submitChangePw()">
     <div id="pw-error" style="color:#c0392b;font-size:12px;margin-bottom:8px;font-family:'Montserrat',sans-serif;"></div>
     <div id="pw-success" style="color:#27ae60;font-size:12px;margin-bottom:8px;font-family:'Montserrat',sans-serif;"></div>
     <div style="display:flex;gap:10px;justify-content:flex-end;">

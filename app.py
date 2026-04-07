@@ -3804,6 +3804,8 @@ def _compute_quilt():
             return pd.Series(dtype=float)
 
     def ye(s, y):
+        if len(s) == 0 or not isinstance(s.index, pd.DatetimeIndex):
+            return None
         sub = s[s.index.year == y]
         if len(sub) == 0:
             return None
@@ -3882,6 +3884,8 @@ def _compute_quilt():
     # 6. Deuda Corto Plazo (avg CETES 28d yield)
     dcp = {}
     for y in years:
+        if len(cetes) == 0 or not isinstance(cetes.index, pd.DatetimeIndex):
+            break
         sub = cetes[cetes.index.year == y]
         if len(sub) > 0:
             avg_rate = float(sub.mean())
@@ -3939,6 +3943,8 @@ def _compute_quilt():
     ref_tasa, ref_infl = {}, {}
     for y in years:
         # Tasa de referencia: promedio anual (prorated for current year)
+        if len(tasa) == 0 or not isinstance(tasa.index, pd.DatetimeIndex):
+            break
         sub_tasa = tasa[tasa.index.year == y]
         if len(sub_tasa) > 0:
             avg_tasa = float(sub_tasa.mean())
