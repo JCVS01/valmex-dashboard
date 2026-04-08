@@ -4075,6 +4075,53 @@ def api_diag_apis():
     results["quilt_fondos_cached"] = _quilt_fondos_cache["data"] is not None
     return jsonify(results)
 
+@app.route("/api/diag-nav")
+def api_diag_nav():
+    """Test NAV fetch for a specific ISIN to debug Morningstar issues."""
+    if "usuario" not in session:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    import time as _t
+    isin = request.args.get("isin", "MXP800501001")  # VXGUBCP Serie A default
+    fondo = request.args.get("fondo", "")
+    serie = request.args.get("serie", "")
+    results = {}
+    # 1. Raw NAV call (no validation)
+    try:
+        t0 = _t.time()
+        r = _ms_session.get(
+            f"{MS_NAV_URL}/{isin}",
+            params={"startdate": "2025-01-01", "enddate": "2025-03-31", "accesscode": MS_ACCESS},
+            timeout=15)
+        elapsed = round(_t.time()-t0, 2)
+        results["raw"] = {"status": r.status_code, "time": elapsed, "ok": r.ok, "content_length": len(r.text)}
+        if r.ok:
+            root = ET.fromstring(r.text)
+            data_elem = root.find(".//data")
+            results["raw"]["fundName"] = data_elem.get("fundName", "") if data_elem is not None else "NOT FOUND"
+            navs = [{"d": e.get("d"), "v": e.get("v")} for e in root.iter("r")]
+            results["raw"]["nav_count"] = len(navs)
+            results["raw"]["sample"] = navs[:3] if navs else []
+        else:
+            results["raw"]["body"] = r.text[:500]
+    except Exception as e:
+        results["raw"] = {"error": str(e), "ok": False}
+    # 2. Via get_ms_nav with validation
+    if fondo and serie:
+        try:
+            t0 = _t.time()
+            navs = get_ms_nav(isin, start="2025-01-01", expect_fund=fondo, expect_serie=serie)
+            results["validated"] = {"count": len(navs), "time": round(_t.time()-t0, 2)}
+        except Exception as e:
+            results["validated"] = {"error": str(e)}
+    # 3. Backtesting series
+    if fondo and serie:
+        try:
+            bt = get_fondo_backtesting(fondo, serie)
+            results["backtesting"] = {"points": len(bt), "sample": bt[:3] if bt else []}
+        except Exception as e:
+            results["backtesting"] = {"error": str(e)}
+    return jsonify(results)
+
 @app.route("/api/quilt")
 def api_quilt():
     if "usuario" not in session:
