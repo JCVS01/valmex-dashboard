@@ -3560,8 +3560,9 @@ def api_propuesta():
                                             bt_fecha_ini=body.get("bt_fecha_ini"),
                                             bt_fecha_fin=body.get("bt_fecha_fin")))
     except Exception as e:
-        print(f"[ERROR] api_propuesta: {e}")
-        return jsonify({"ok": False, "error": "Error interno en cálculo"}), 500
+        import traceback; tb = traceback.format_exc()
+        print(f"[ERROR] api_propuesta: {e}\n{tb}")
+        return jsonify({"ok": False, "error": "Error interno en cálculo", "debug": str(e), "trace": tb}), 500
     finally:
         _compute_semaphore.release()
 
