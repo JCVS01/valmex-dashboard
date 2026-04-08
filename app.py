@@ -2886,6 +2886,7 @@ def calcular_portafolio(fondos_pct: dict, tipo_cliente: str,
     bt_portafolio = {}
     bt_repo_filtered = {}
     historical_scenarios = {}
+    fund_risk_contrib = {}
 
     if bt_components:
         # Interpolar series mensuales a diarias para suavizar backtesting
@@ -3560,9 +3561,8 @@ def api_propuesta():
                                             bt_fecha_ini=body.get("bt_fecha_ini"),
                                             bt_fecha_fin=body.get("bt_fecha_fin")))
     except Exception as e:
-        import traceback; tb = traceback.format_exc()
-        print(f"[ERROR] api_propuesta: {e}\n{tb}")
-        return jsonify({"ok": False, "error": "Error interno en cálculo", "debug": str(e), "trace": tb}), 500
+        print(f"[ERROR] api_propuesta: {e}")
+        return jsonify({"ok": False, "error": "Error interno en cálculo"}), 500
     finally:
         _compute_semaphore.release()
 
