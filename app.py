@@ -52,6 +52,29 @@ def _disk_cache_load(name: str):
         return None, 0
 
 
+def _quilt_is_complete(data, kind: str = "quilt") -> bool:
+    """True si el quilt trae datos reales de Morningstar (no vacío/corrupto).
+    Sirve de candado: NUNCA se debe cachear ni servir un quilt incompleto,
+    para que un fallo temporal de Morningstar (o access code caducado) no
+    'envenene' el cache de disco y nos deje sin datos. Ver problema 2026-07-14."""
+    try:
+        if not isinstance(data, dict):
+            return False
+        assets = data.get("assets") or []
+        if not assets:
+            return False
+        with_data = sum(1 for a in assets if (a.get("returns") or {}))
+        if kind == "quilt":
+            # El quilt de clases de activo SIEMPRE debe estar al 100%:
+            # todas las clases con datos. Si falta una sola → incompleto.
+            return with_data == len(assets)
+        # Fondos: tolera a lo más 2 fondos de reciente creación sin año completo,
+        # pero exige que la gran mayoría tenga historia (detecta caída de Morningstar).
+        return with_data >= max(8, len(assets) - 2)
+    except Exception:
+        return False
+
+
 def _cache_expired(ts: float) -> bool:
     """Return True if cache fetched at `ts` (epoch) is stale.
     Caches expire daily after NYSE close (4:00 PM New York).
@@ -539,7 +562,7 @@ SERIE_MAP = {
 _ms_cache = {}
 _ms_cache_ts = 0.0          # epoch timestamp of last fetch
 MS_URL    = os.environ.get("MS_URL", "https://api.morningstar.com/v2/service/mf/hlk0d0zmiy1b898b/universeid/txcm88fa8x3vxapp")
-MS_ACCESS = os.environ.get("MS_ACCESS", "hwg0cty5re7araij32k035091f43wxd0")
+MS_ACCESS = os.environ.get("MS_ACCESS", "hjowuranvftlsxttmswcy0v1w8tqlv7m")
 MS_NAV_URL = os.environ.get("MS_NAV_URL", "https://api.morningstar.com/service/mf/UnadjustedNAV/ISIN")
 _ms_session = requests.Session()          # reuse TCP connections to Morningstar
 
@@ -4034,11 +4057,16 @@ def api_diag_apis():
         return jsonify({"ok": False, "error": "No autenticado"}), 401
     import time as _t
     results = {}
+    # Ventana dinámica reciente (hasta hoy) — NO fechas fijas: los datos se
+    # actualizan a cierre de día conforme avanza el tiempo.
+    _diag_end = date.today().isoformat()
+    _diag_start = (date.today() - timedelta(days=60)).isoformat()
+    results["ventana"] = {"start": _diag_start, "end": _diag_end}
     # 1. Banxico
     try:
         t0 = _t.time()
         r = requests.get(
-            f"https://www.banxico.org.mx/SieAPIRest/service/v1/series/SF43718/datos/2025-01-01/2025-01-31",
+            f"https://www.banxico.org.mx/SieAPIRest/service/v1/series/SF43718/datos/{_diag_start}/{_diag_end}",
             headers={"Bmx-Token": BANXICO_TOKEN, "Accept": "application/json"}, timeout=10)
         results["banxico"] = {"status": r.status_code, "time": round(_t.time()-t0, 2), "ok": r.ok}
     except Exception as e:
@@ -4047,7 +4075,7 @@ def api_diag_apis():
     try:
         t0 = _t.time()
         r = requests.get(FRED_BASE, params={"series_id": "DGS10", "api_key": FRED_API_KEY,
-            "file_type": "json", "observation_start": "2025-01-01", "observation_end": "2025-01-31"}, timeout=10)
+            "file_type": "json", "observation_start": _diag_start, "observation_end": _diag_end}, timeout=10)
         results["fred"] = {"status": r.status_code, "time": round(_t.time()-t0, 2), "ok": r.ok}
     except Exception as e:
         results["fred"] = {"error": str(e), "ok": False}
@@ -4056,7 +4084,7 @@ def api_diag_apis():
         t0 = _t.time()
         r = _ms_session.get(
             "https://api.morningstar.com/service/mf/UnadjustedNAV/TICKER/NAFTRAC",
-            params={"startdate": "2025-01-01", "enddate": "2025-01-31", "accesscode": MS_ACCESS}, timeout=10)
+            params={"startdate": _diag_start, "enddate": _diag_end, "accesscode": MS_ACCESS}, timeout=10)
         results["morningstar"] = {"status": r.status_code, "time": round(_t.time()-t0, 2), "ok": r.ok}
     except Exception as e:
         results["morningstar"] = {"error": str(e), "ok": False}
@@ -4065,7 +4093,7 @@ def api_diag_apis():
         t0 = _t.time()
         r = _ms_session.get(
             "https://api.morningstar.com/service/mf/UnadjustedNAV/TICKER/IAU",
-            params={"startdate": "2025-01-01", "enddate": "2025-01-31", "accesscode": MS_ACCESS}, timeout=10)
+            params={"startdate": _diag_start, "enddate": _diag_end, "accesscode": MS_ACCESS}, timeout=10)
         results["ms_gold_iau"] = {"status": r.status_code, "time": round(_t.time()-t0, 2), "ok": r.ok}
     except Exception as e:
         results["ms_gold_iau"] = {"error": str(e), "ok": False}
@@ -4084,14 +4112,18 @@ def api_diag_nav():
     isin = request.args.get("isin", "MXP800501001")  # VXGUBCP Serie A default
     fondo = request.args.get("fondo", "")
     serie = request.args.get("serie", "")
-    results = {}
+    # Rango ILIMITADO por defecto (hasta hoy): así muestra la última fecha
+    # disponible, que avanza a cierre de día. Se puede acotar con ?start=&end=.
+    _start = request.args.get("start", "2000-01-01")
+    _end = request.args.get("end", date.today().isoformat())
+    results = {"start": _start, "end": _end}
     # 1. Raw NAV call (no validation)
     try:
         t0 = _t.time()
         r = _ms_session.get(
             f"{MS_NAV_URL}/{isin}",
-            params={"startdate": "2025-01-01", "enddate": "2025-03-31", "accesscode": MS_ACCESS},
-            timeout=15)
+            params={"startdate": _start, "enddate": _end, "accesscode": MS_ACCESS},
+            timeout=20)
         elapsed = round(_t.time()-t0, 2)
         results["raw"] = {"status": r.status_code, "time": elapsed, "ok": r.ok, "content_length": len(r.text)}
         if r.ok:
@@ -4100,6 +4132,8 @@ def api_diag_nav():
             results["raw"]["fundName"] = data_elem.get("fundName", "") if data_elem is not None else "NOT FOUND"
             navs = [{"d": e.get("d"), "v": e.get("v")} for e in root.iter("r")]
             results["raw"]["nav_count"] = len(navs)
+            results["raw"]["primera"] = navs[0] if navs else None
+            results["raw"]["ultima"] = navs[-1] if navs else None
             results["raw"]["sample"] = navs[:3] if navs else []
         else:
             results["raw"]["body"] = r.text[:500]
@@ -4109,8 +4143,9 @@ def api_diag_nav():
     if fondo and serie:
         try:
             t0 = _t.time()
-            navs = get_ms_nav(isin, start="2025-01-01", expect_fund=fondo, expect_serie=serie)
-            results["validated"] = {"count": len(navs), "time": round(_t.time()-t0, 2)}
+            navs = get_ms_nav(isin, start=_start, end=_end, expect_fund=fondo, expect_serie=serie)
+            results["validated"] = {"count": len(navs), "time": round(_t.time()-t0, 2),
+                                    "ultima": navs[-1] if navs else None}
         except Exception as e:
             results["validated"] = {"error": str(e)}
     # 3. Backtesting series
@@ -4129,18 +4164,23 @@ def api_quilt():
     # Return cached data immediately if available
     if _quilt_cache["data"] and not _cache_expired(_quilt_cache["ts"]):
         return jsonify(_quilt_cache["data"])
-    # Try disk cache
+    # Try disk cache (solo si está completo — ignora cache envenenado y se recalcula)
     disk_q, disk_q_ts = _disk_cache_load("quilt")
-    if disk_q:
+    if disk_q and _quilt_is_complete(disk_q, "quilt"):
         _quilt_cache["data"] = disk_q
         _quilt_cache["ts"] = disk_q_ts
         return jsonify(disk_q)
+    if disk_q:
+        print("[QUILT] cache de disco incompleto — se ignora y se recalcula")
     # Compute directly (takes ~6s)
     try:
         data = _compute_quilt()
-        _quilt_cache["data"] = data
-        _quilt_cache["ts"] = time.time()
-        _disk_cache_save("quilt", data)
+        if _quilt_is_complete(data, "quilt"):
+            _quilt_cache["data"] = data
+            _quilt_cache["ts"] = time.time()
+            _disk_cache_save("quilt", data)
+        else:
+            print("[QUILT] resultado incompleto (¿Morningstar caído?) — NO se cachea, se reintentará")
         return jsonify(data)
     except Exception as e:
         print(f"[ERROR] api_quilt: {e}")
@@ -4455,18 +4495,23 @@ def api_quilt_fondos():
         return jsonify({"ok": False, "error": "No autenticado"}), 401
     if _quilt_fondos_cache["data"] and not _cache_expired(_quilt_fondos_cache["ts"]):
         return jsonify(_quilt_fondos_cache["data"])
-    # Try disk cache
+    # Try disk cache (solo si está completo — ignora cache envenenado y recalcula)
     disk_qf, disk_qf_ts = _disk_cache_load("quilt_fondos")
-    if disk_qf:
+    if disk_qf and _quilt_is_complete(disk_qf, "quilt_fondos"):
         _quilt_fondos_cache["data"] = disk_qf
         _quilt_fondos_cache["ts"] = disk_qf_ts
         return jsonify(disk_qf)
+    if disk_qf:
+        print("[QUILT FONDOS] cache de disco incompleto — se ignora y se recalcula")
     # Compute directly (takes ~9s)
     try:
         data = _compute_quilt_fondos()
-        _quilt_fondos_cache["data"] = data
-        _quilt_fondos_cache["ts"] = time.time()
-        _disk_cache_save("quilt_fondos", data)
+        if _quilt_is_complete(data, "quilt_fondos"):
+            _quilt_fondos_cache["data"] = data
+            _quilt_fondos_cache["ts"] = time.time()
+            _disk_cache_save("quilt_fondos", data)
+        else:
+            print("[QUILT FONDOS] resultado incompleto (¿Morningstar caído?) — NO se cachea, se reintentará")
         return jsonify(data)
     except Exception as e:
         print(f"[ERROR] api_quilt_fondos: {e}")
@@ -4801,43 +4846,55 @@ def _prewarm_quilts():
 def _prewarm_quilts_inner(_t, _tb, _t0):
     # Try disk cache first (survives Render restarts)
     disk_q, disk_q_ts = _disk_cache_load("quilt")
-    if disk_q:
+    if disk_q and _quilt_is_complete(disk_q, "quilt"):
         _quilt_cache["data"] = disk_q
         _quilt_cache["ts"] = disk_q_ts
         print(f"[PREWARM] Quilt loaded from disk cache")
     else:
-        for _attempt in range(2):
+        if disk_q:
+            print("[PREWARM] Quilt en disco incompleto — se ignora y se recalcula")
+        for _attempt in range(3):
             try:
                 print(f"[PREWARM] Computing quilt (asset classes)... attempt {_attempt+1}")
                 data = _compute_quilt()
-                _quilt_cache["data"] = data
-                _quilt_cache["ts"] = _t.time()
-                _disk_cache_save("quilt", data)
-                print(f"[PREWARM] Quilt done in {_t.time()-_t0:.1f}s")
-                break
+                if _quilt_is_complete(data, "quilt"):
+                    _quilt_cache["data"] = data
+                    _quilt_cache["ts"] = _t.time()
+                    _disk_cache_save("quilt", data)
+                    print(f"[PREWARM] Quilt done in {_t.time()-_t0:.1f}s")
+                    break
+                print(f"[PREWARM] Quilt incompleto (attempt {_attempt+1}) — NO se cachea, reintentando")
             except Exception as e:
                 import traceback
                 print(f"[PREWARM] Quilt error (attempt {_attempt+1}): {e}")
                 traceback.print_exc()
-                if _attempt < 1:
-                    _t.sleep(3)
+            if _attempt < 2:
+                _t.sleep(3)
 
     disk_qf, disk_qf_ts = _disk_cache_load("quilt_fondos")
-    if disk_qf:
+    if disk_qf and _quilt_is_complete(disk_qf, "quilt_fondos"):
         _quilt_fondos_cache["data"] = disk_qf
         _quilt_fondos_cache["ts"] = disk_qf_ts
         print(f"[PREWARM] Quilt fondos loaded from disk cache")
     else:
-        try:
-            _t1 = _t.time()
-            print("[PREWARM] Computing quilt fondos...")
-            data2 = _compute_quilt_fondos()
-            _quilt_fondos_cache["data"] = data2
-            _quilt_fondos_cache["ts"] = _t.time()
-            _disk_cache_save("quilt_fondos", data2)
-            print(f"[PREWARM] Quilt fondos done in {_t.time()-_t1:.1f}s")
-        except Exception as e:
-            print(f"[PREWARM] Quilt fondos error: {e}")
+        if disk_qf:
+            print("[PREWARM] Quilt fondos en disco incompleto — se ignora y se recalcula")
+        for _attempt in range(3):
+            try:
+                _t1 = _t.time()
+                print(f"[PREWARM] Computing quilt fondos... attempt {_attempt+1}")
+                data2 = _compute_quilt_fondos()
+                if _quilt_is_complete(data2, "quilt_fondos"):
+                    _quilt_fondos_cache["data"] = data2
+                    _quilt_fondos_cache["ts"] = _t.time()
+                    _disk_cache_save("quilt_fondos", data2)
+                    print(f"[PREWARM] Quilt fondos done in {_t.time()-_t1:.1f}s")
+                    break
+                print(f"[PREWARM] Quilt fondos incompleto (attempt {_attempt+1}) — NO se cachea, reintentando")
+            except Exception as e:
+                print(f"[PREWARM] Quilt fondos error (attempt {_attempt+1}): {e}")
+            if _attempt < 2:
+                _t.sleep(3)
 
     # ── Mark prewarm done HERE so quilts are available immediately ──
     _prewarm_done.set()
