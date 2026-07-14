@@ -1406,7 +1406,7 @@ def get_accion_yf(ticker: str) -> dict | None:
             p_hoy = float(raw_price)
         precio_cierre = round(p_hoy, 2)
 
-        p_mtd = precio_en(date(today.year, today.month, 1))
+        p_mtd = precio_en(today - timedelta(days=30))   # 1M movil (Yahoo/Bloomberg), no MTD
         p_3m  = precio_en(today - timedelta(days=91))
         p_6m  = precio_en(today - timedelta(days=182))
         p_ytd = precio_en(date(today.year, 1, 1))
@@ -1558,7 +1558,7 @@ def get_accion_yf(ticker: str) -> dict | None:
             "r1y":           rend_efectivo(p_1y),
             "r2y":           rend_efectivo(p_2y),
             "r3y":           rend_efectivo(p_3y),
-            "days_r1m":      (today - date(today.year, today.month, 1)).days or 1,
+            "days_r1m":      30,
             "days_r3m":      91,
             "days_r6m":      182,
             "days_ytd":      (today - date(today.year, 1, 1)).days or 1,
