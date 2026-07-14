@@ -1406,13 +1406,21 @@ def get_accion_yf(ticker: str) -> dict | None:
             p_hoy = float(raw_price)
         precio_cierre = round(p_hoy, 2)
 
-        p_mtd = precio_en(today - timedelta(days=30))   # 1M movil (Yahoo/Bloomberg), no MTD
-        p_3m  = precio_en(today - timedelta(days=91))
-        p_6m  = precio_en(today - timedelta(days=182))
-        p_ytd = precio_en(date(today.year, 1, 1))
-        p_1y  = precio_en(today - timedelta(days=365))
-        p_2y  = precio_en(today - timedelta(days=730))
-        p_3y  = precio_en(today - timedelta(days=1095))
+        import calendar as _cal
+        def _fecha_atras(meses=0, anios=0):
+            y = today.year - anios
+            m = today.month - meses
+            while m <= 0:
+                m += 12; y -= 1
+            d = min(today.day, _cal.monthrange(y, m)[1])
+            return date(y, m, d)
+        p_mtd = precio_en(_fecha_atras(meses=1))
+        p_3m  = precio_en(_fecha_atras(meses=3))
+        p_6m  = precio_en(_fecha_atras(meses=6))
+        p_ytd = precio_en(date(today.year - 1, 12, 31))
+        p_1y  = precio_en(_fecha_atras(anios=1))
+        p_2y  = precio_en(_fecha_atras(anios=2))
+        p_3y  = precio_en(_fecha_atras(anios=3))
 
         def rend_efectivo(p_ini):
             if p_ini and p_ini > 0:
