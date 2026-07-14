@@ -1569,6 +1569,10 @@ def get_accion_yf(ticker: str) -> dict | None:
             "geo":           geo_etf,
             "historico":     historico_bt,
             "historico_usd": historico_usd,
+            "industria":     (info.get("industry") or "").strip(),
+            "pe":            (round(float(info["trailingPE"]), 1) if info.get("trailingPE") not in (None, "", 0) else None),
+            "market_cap":    (info.get("marketCap") or None),
+            "div_yield":     (round(float(info["dividendYield"]), 2) if info.get("dividendYield") not in (None, "") else None),
         }
 
         _accion_cache[ticker]    = result
