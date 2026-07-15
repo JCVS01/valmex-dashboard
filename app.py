@@ -863,8 +863,13 @@ def get_accion_db(emisora_serie: str) -> dict | None:
     precios: list[tuple[date, float]] = []
     for fecha_str, vals in hist_raw.items():
         try:
-            d = date.fromisoformat(fecha_str[:10])
-            p = float(vals.get("precio", 0) if isinstance(vals, dict) else vals)
+            d = date.fromisoformat(fecha_str[:10].replace("/", "-"))
+            if isinstance(vals, dict):
+                p = float(vals.get("precio", 0) or 0)
+            elif isinstance(vals, (list, tuple)):
+                p = float(vals[0]) if vals else 0.0
+            else:
+                p = float(vals)
             if p > 0:
                 precios.append((d, p))
         except Exception:
