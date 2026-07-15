@@ -884,13 +884,19 @@ def get_accion_db(emisora_serie: str) -> dict | None:
         return None
 
     precio_cierre = round(precios[-1][1], 2)
-    p_mtd = precio_en(date(hoy.year, hoy.month, 1))
-    p_3m  = precio_en(hoy - timedelta(days=91))
-    p_6m  = precio_en(hoy - timedelta(days=182))
-    p_ytd = precio_en(date(hoy.year, 1, 1))
-    p_1y  = precio_en(hoy - timedelta(days=365))
-    p_2y  = precio_en(hoy - timedelta(days=730))
-    p_3y  = precio_en(hoy - timedelta(days=1095))
+    import calendar as _cal
+    def _fatras(meses=0, anios=0):
+        y = hoy.year - anios; m = hoy.month - meses
+        while m <= 0:
+            m += 12; y -= 1
+        return date(y, m, min(hoy.day, _cal.monthrange(y, m)[1]))
+    p_mtd = precio_en(_fatras(meses=1))
+    p_3m  = precio_en(_fatras(meses=3))
+    p_6m  = precio_en(_fatras(meses=6))
+    p_ytd = precio_en(date(hoy.year - 1, 12, 31))
+    p_1y  = precio_en(_fatras(anios=1))
+    p_2y  = precio_en(_fatras(anios=2))
+    p_3y  = precio_en(_fatras(anios=3))
 
     def rend_efectivo(p_ini):
         if p_ini and p_ini > 0:
@@ -950,9 +956,9 @@ def get_accion_db(emisora_serie: str) -> dict | None:
         "r3m":           rend_efectivo(p_3m),
         "r6m":           rend_efectivo(p_6m),
         "ytd":           rend_efectivo(p_ytd),
-        "r1y":           rend_anual(p_1y, 1),
-        "r2y":           rend_anual(p_2y, 2),
-        "r3y":           rend_anual(p_3y, 3),
+        "r1y":           rend_efectivo(p_1y),
+        "r2y":           rend_efectivo(p_2y),
+        "r3y":           rend_efectivo(p_3y),
         "sectores":      sec_db,
         "geo":           geo_db,
         "historico":     historico_bt,
@@ -1390,6 +1396,9 @@ def get_accion_yf(ticker: str) -> dict | None:
                 else:
                     prices = prices[prices < median_price * 3]
 
+        if len(prices) < 20:
+            print(f"[YF] {ticker}: historia insuficiente ({len(prices)} pts)")
+            return None
         idx = prices.index
 
         def precio_en(d: date):
@@ -3492,6 +3501,24 @@ def index():
     return make_response(html)
 
 
+def _resolver_db_key(db_key):
+    """Encuentra la clave exacta (emisora+serie, ej BNY*) en el catalogo DataBursatil."""
+    try:
+        cat = cargar_catalogo_emisoras()
+        if db_key in cat:
+            return db_key
+        mx = (db_key + ".MX").upper()
+        for k, info in cat.items():
+            if (info.get("yf_ticker") or "").upper() == mx:
+                return k
+        cands = [k for k in cat if k.upper().startswith(db_key.upper())]
+        if cands:
+            return sorted(cands, key=len)[0]
+    except Exception:
+        pass
+    return db_key
+
+
 @app.route("/api/accion/validate", methods=["POST"])
 def api_accion_validate():
     if "usuario" not in session:
@@ -3526,7 +3553,7 @@ def api_accion_validate():
 
     # 2. DataBursatil — fallback para emisoras que YF no tenga
     if DB_TOKEN:
-        data = get_accion_db(db_key)
+        data = get_accion_db(_resolver_db_key(db_key))
         if data:
             return jsonify({"ok": True, "data": data, "fuente": "databursatil"})
 
