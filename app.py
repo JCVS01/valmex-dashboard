@@ -5003,7 +5003,7 @@ FWD_FX_VOL  = 0.11
 
 FWD_PROXY = {
  "Dolar": "U.S. Cash",
- "Deuda Corto Plazo": "U.S. Cash",
+ "Deuda Corto Plazo": "Emerging Markets Local Currency Debt",
  "Deuda Largo Plazo": "Emerging Markets Local Currency Debt",
  "Deuda MXN": "Emerging Markets Local Currency Debt",
  "Deuda USA": "U.S. Aggregate Bonds",
@@ -5017,7 +5017,10 @@ FWD_PROXY = {
  "Oro": "Gold",
 }
 FWD_USD_SLEEVE = {"Dolar", "Deuda USA", "Bolsa USD", "Tecnologia",
-                  "Mercados Desarrollados", "Oro", "Deuda Gubernamental Global"}
+                  "Mercados Desarrollados", "Oro", "Deuda Gubernamental Global",
+                  "Bolsa Emergentes"}
+FWD_MXN_NATIVE = {"Bolsa Local", "Bolsa Mexicana", "Deuda Corto Plazo",
+                  "Deuda Largo Plazo", "Deuda MXN"}
 
 # alias sin acentos -> claves internas (para tolerar entradas del front)
 FWD_ALIAS = {"Dólar": "Dolar", "Tecnología": "Tecnologia"}
@@ -5035,7 +5038,11 @@ def _fwd_stats(clase):
     mu_usd = j["arith2026"][ji] / 100.0
     mu_mxn = (1 + mu_usd) * (1 + FWD_DEPREC) - 1
     sig = j["vol"][ji] / 100.0
-    if clase in FWD_USD_SLEEVE:
+    if clase in FWD_MXN_NATIVE:
+        # activo en pesos: quitar componente cambiaria del proxy USD (sin riesgo FX)
+        sig = _fmath.sqrt(max(sig**2 - FWD_FX_VOL**2, 0.02**2))
+    elif clase in FWD_USD_SLEEVE:
+        # activo en dolares: sumar vol del peso (riesgo cambiario)
         sig = _fmath.sqrt(sig**2 + FWD_FX_VOL**2)
     comp_usd = j["comp2026"][ji] / 100.0
     g_mxn = (1 + comp_usd) * (1 + FWD_DEPREC) - 1
