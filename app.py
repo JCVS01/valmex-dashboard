@@ -4978,6 +4978,152 @@ def _prewarm_quilts_inner(_t, _tb, _t0):
     print(f"[PREWARM] All done in {_t.time()-_t0:.1f}s total")
 
 
+# ===========================================================================
+# FORWARD DE RENDIMIENTOS - J.P. Morgan LTCMA 2026 (proyeccion 5/10 anios, MXN)
+# ADITIVO. No modifica nada existente.
+# ===========================================================================
+import math as _fmath
+
+_JPM = None
+def _load_jpm():
+    global _JPM
+    if _JPM is None:
+        try:
+            with open(os.path.join(BASE, "jpm_ltcma_2026.json"), encoding="utf-8") as _f:
+                _JPM = json.load(_f)
+            _JPM["_idx"] = {n: i for i, n in enumerate(_JPM["names"])}
+        except Exception as _e:
+            print(f"[FORWARD] no se pudo cargar JPM LTCMA: {_e}")
+            _JPM = {"names": [], "arith2026": [], "comp2026": [], "vol": [], "corr": [], "_idx": {}}
+    return _JPM
+
+FWD_DEPREC  = 0.011    # depreciacion peso (PPP: MX 3.5% - US 2.4%)
+FWD_MX_INFL = 0.035
+FWD_FX_VOL  = 0.11
+
+FWD_PROXY = {
+ "Dolar": "U.S. Cash",
+ "Deuda Corto Plazo": "U.S. Cash",
+ "Deuda Largo Plazo": "Emerging Markets Local Currency Debt",
+ "Deuda MXN": "Emerging Markets Local Currency Debt",
+ "Deuda USA": "U.S. Aggregate Bonds",
+ "Deuda Gubernamental Global": "World Government Bonds",
+ "Bolsa Local": "Emerging Markets Equity",
+ "Bolsa Mexicana": "Emerging Markets Equity",
+ "Bolsa USD": "U.S. Large Cap",
+ "Tecnologia": "U.S. Large Cap",
+ "Mercados Desarrollados": "AC World Equity",
+ "Bolsa Emergentes": "Emerging Markets Equity",
+ "Oro": "Gold",
+}
+FWD_USD_SLEEVE = {"Dolar", "Deuda USA", "Bolsa USD", "Tecnologia",
+                  "Mercados Desarrollados", "Oro", "Deuda Gubernamental Global"}
+
+# alias sin acentos -> claves internas (para tolerar entradas del front)
+FWD_ALIAS = {"Dólar": "Dolar", "Tecnología": "Tecnologia"}
+
+def _fwd_key(c):
+    return FWD_ALIAS.get(c, c)
+
+def _fwd_stats(clase):
+    clase = _fwd_key(clase)
+    j = _load_jpm()
+    proxy = FWD_PROXY.get(clase)
+    ji = j["_idx"].get(proxy)
+    if ji is None:
+        return None
+    mu_usd = j["arith2026"][ji] / 100.0
+    mu_mxn = (1 + mu_usd) * (1 + FWD_DEPREC) - 1
+    sig = j["vol"][ji] / 100.0
+    if clase in FWD_USD_SLEEVE:
+        sig = _fmath.sqrt(sig**2 + FWD_FX_VOL**2)
+    comp_usd = j["comp2026"][ji] / 100.0
+    g_mxn = (1 + comp_usd) * (1 + FWD_DEPREC) - 1
+    return mu_mxn, sig, ji, g_mxn
+
+def _fwd_portfolio(alloc, fee=0.0, horizontes=(5, 10)):
+    j = _load_jpm()
+    clases = [c for c in alloc if _fwd_stats(c)]
+    if not clases:
+        return None
+    w = np.array([float(alloc[c]) for c in clases], dtype=float)
+    if w.sum() <= 0:
+        return None
+    w = w / w.sum()
+    st = [_fwd_stats(c) for c in clases]
+    mu = np.array([x[0] for x in st])
+    sig = np.array([x[1] for x in st])
+    jidx = [x[2] for x in st]
+    C = np.array(j["corr"]) if j.get("corr") else np.eye(len(clases))
+    sub = C[np.ix_(jidx, jidx)] if len(C) else np.eye(len(clases))
+    sub = np.nan_to_num(sub); sub = (sub + sub.T) / 2.0; np.fill_diagonal(sub, 1.0)
+    COV = np.outer(sig, sig) * sub
+    mu_p = float(w @ mu) - fee
+    var_p = float(w @ COV @ w)
+    sig_p = _fmath.sqrt(max(var_p, 1e-9))
+    g_p = mu_p - var_p / 2.0
+    out = {"mu_arith": round(mu_p, 5), "sigma": round(sig_p, 5), "geo": round(g_p, 5),
+           "clases": [_fwd_key(c) for c in clases], "pesos": [round(float(x), 4) for x in w]}
+    for N_ in horizontes:
+        mln = _fmath.log(1 + g_p) * N_
+        sln = sig_p * _fmath.sqrt(N_)
+        def _pct(z):
+            return _fmath.exp(mln + z * sln) - 1
+        cono = []
+        for t in range(0, N_ + 1):
+            ml = _fmath.log(1 + g_p) * t
+            sl = sig_p * _fmath.sqrt(t)
+            cono.append({"t": t,
+                         "med": round((1 + g_p) ** t - 1, 4),
+                         "p10": round(_fmath.exp(ml - 1.2816 * sl) - 1, 4),
+                         "p90": round(_fmath.exp(ml + 1.2816 * sl) - 1, 4)})
+        out[f"h{N_}"] = {
+            "mediana_nom": round((1 + g_p) ** N_ - 1, 4),
+            "mediana_real": round((1 + g_p) ** N_ / (1 + FWD_MX_INFL) ** N_ - 1, 4),
+            "p10": round(_pct(-1.2816), 4), "p25": round(_pct(-0.6745), 4),
+            "p75": round(_pct(0.6745), 4), "p90": round(_pct(1.2816), 4),
+            "cono": cono,
+        }
+    return out
+
+@app.route("/api/forward", methods=["GET", "POST"])
+def api_forward():
+    if "usuario" not in session:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    body = request.get_json(silent=True) or {}
+    try:
+        fee = float(body.get("fee", 0.0) or 0.0)
+    except Exception:
+        fee = 0.0
+    alloc = body.get("alloc")
+    if not alloc:
+        alloc = {"Bolsa Local": 1, "Bolsa USD": 1, "Mercados Desarrollados": 1,
+                 "Bolsa Emergentes": 1, "Tecnologia": 1, "Deuda Corto Plazo": 1,
+                 "Deuda Largo Plazo": 1, "Deuda Gubernamental Global": 1, "Oro": 1}
+    port = _fwd_portfolio(alloc, fee=fee)
+    j = _load_jpm()
+    tabla = ["Bolsa Local", "Bolsa USD", "Mercados Desarrollados", "Bolsa Emergentes",
+             "Tecnologia", "Deuda Corto Plazo", "Deuda Largo Plazo", "Deuda MXN",
+             "Deuda USA", "Deuda Gubernamental Global", "Oro", "Dolar"]
+    por_clase = []
+    for c in tabla:
+        st = _fwd_stats(c)
+        if not st:
+            continue
+        mu, sig, ji, g = st
+        por_clase.append({
+            "clase": c, "proxy": FWD_PROXY[_fwd_key(c)],
+            "ret_mxn": round(g * 100, 2), "vol": round(sig * 100, 1),
+            "f5": round(((1 + g) ** 5 - 1) * 100, 1),
+            "f10": round(((1 + g) ** 10 - 1) * 100, 1),
+            "f10_real": round(((1 + g) ** 10 / (1 + FWD_MX_INFL) ** 10 - 1) * 100, 1),
+        })
+    return jsonify({"ok": True,
+                    "supuestos": {"deprec_peso": FWD_DEPREC, "mx_infl": FWD_MX_INFL,
+                                  "fx_vol": FWD_FX_VOL, "fuente": j.get("source", "")},
+                    "portafolio": port, "por_clase": por_clase})
+
+
 # ── Pre-warm caches at startup (works with both gunicorn and direct run) ──
 if DB_TOKEN:
     threading.Thread(target=cargar_catalogo_emisoras, daemon=True).start()
