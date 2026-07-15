@@ -2609,11 +2609,11 @@ async function _fwdRender(){
       <div class="fwd-k" style="flex:1.7;min-width:280px">
         <div class="kl">Escenarios a ${N} años</div>
         <div style="display:flex;gap:16px;margin-top:3px;flex-wrap:wrap">
-          <div><div style="font-size:9.5px;color:#e0503c;font-weight:800">CONSERVADOR</div><div style="font-size:17px;font-weight:800;color:var(--navy)">${fa(ann(H.p10))}</div><div style="font-size:10px;color:var(--gray)">${f(H.p10)} total</div></div>
+          <div><div style="font-size:9.5px;color:#e0503c;font-weight:800">CONSERVADOR</div><div style="font-size:17px;font-weight:800;color:var(--navy)">${fa(ann(H.s_lo))}</div><div style="font-size:10px;color:var(--gray)">${f(H.s_lo)} total</div></div>
           <div><div style="font-size:9.5px;color:#1a7f4e;font-weight:800">ESPERADO</div><div style="font-size:17px;font-weight:800;color:#1a7f4e">${fa(ann(H.mediana_nom))}</div><div style="font-size:10px;color:var(--gray)">${f(H.mediana_nom)} total</div></div>
-          <div><div style="font-size:9.5px;color:#3f559e;font-weight:800">OPTIMISTA</div><div style="font-size:17px;font-weight:800;color:var(--navy)">${fa(ann(H.p90))}</div><div style="font-size:10px;color:var(--gray)">${f(H.p90)} total</div></div>
+          <div><div style="font-size:9.5px;color:#3f559e;font-weight:800">OPTIMISTA</div><div style="font-size:17px;font-weight:800;color:var(--navy)">${fa(ann(H.s_hi))}</div><div style="font-size:10px;color:var(--gray)">${f(H.s_hi)} total</div></div>
         </div>
-        <div class="ks" style="margin-top:5px;opacity:.6;font-size:9.5px">técnico: volatilidad σ ${(P.sigma*100).toFixed(1)}%/año · rango = 80% de escenarios (P10–P90)</div>
+        <div class="ks" style="margin-top:5px;opacity:.6;font-size:9.5px">técnico: volatilidad σ ${(P.sigma*100).toFixed(1)}%/año · rango = ±½ desviación estándar</div>
       </div>`;
     const su = dd.supuestos||{};
     note.innerHTML = `Asignación tomada del drilldown del portafolio (${_fwdSel==='A'?'Actual':_fwdSel==='B'?'Perfil':'Propuesta'}). Retornos JPM (USD) → MXN vía depreciación PPP ${(su.deprec_peso*100).toFixed(1)}%/año; riesgo cambiario ${(su.fx_vol*100).toFixed(0)}% en sleeves USD, removido en activos MXN nativos. σ vía covarianza JPM real; proyección lognormal (volatility drag); neto 1% comisión; real = deflactado por inflación MX ${(su.mx_infl*100).toFixed(1)}%.`;
@@ -2623,9 +2623,9 @@ async function _fwdRender(){
     _fwdChart = new Chart(ctx, {type:'line',
       data:{ labels: cono.map(p=>'Año '+p.t),
         datasets:[
-          {label:'P90 (optimista)', data:cono.map(p=>+(p.p90*100).toFixed(1)), borderColor:'rgba(0,32,92,.28)', backgroundColor:'rgba(65,187,201,.15)', borderWidth:1, pointRadius:0, fill:'+1', tension:.25},
+          {label:'+½σ (optimista)', data:cono.map(p=>+(p.phi*100).toFixed(1)), borderColor:'rgba(0,32,92,.28)', backgroundColor:'rgba(65,187,201,.15)', borderWidth:1, pointRadius:0, fill:'+1', tension:.25},
           {label:'Mediana', data:cono.map(p=>+(p.med*100).toFixed(1)), borderColor:'#00205C', borderWidth:3, pointRadius:0, fill:false, tension:.25},
-          {label:'P10 (conservador)', data:cono.map(p=>+(p.p10*100).toFixed(1)), borderColor:'rgba(224,80,60,.6)', borderWidth:1.5, borderDash:[4,3], pointRadius:0, fill:false, tension:.25},
+          {label:'−½σ (conservador)', data:cono.map(p=>+(p.plo*100).toFixed(1)), borderColor:'rgba(224,80,60,.6)', borderWidth:1.5, borderDash:[4,3], pointRadius:0, fill:false, tension:.25},
         ]},
       options:{responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:14}},

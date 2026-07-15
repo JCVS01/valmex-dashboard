@@ -5024,6 +5024,9 @@ FWD_USD_SLEEVE = {"Dolar", "Deuda USA", "Bolsa USD", "Tecnologia",
                   "Bolsa Emergentes"}
 FWD_MXN_NATIVE = {"Bolsa Local", "Bolsa Mexicana", "Deuda Corto Plazo",
                   "Deuda Largo Plazo", "Deuda MXN"}
+# Clases cuyo proxy JPM YA es rendimiento en moneda local (EM Local Ccy Debt):
+# se usan DIRECTO, sin sumar depreciacion del peso (el activo esta en pesos).
+FWD_LOCAL_RETURN = {"Deuda Corto Plazo", "Deuda MXN", "Deuda Largo Plazo"}
 
 # alias sin acentos -> claves internas (para tolerar entradas del front)
 FWD_ALIAS = {"Dólar": "Dolar", "Tecnología": "Tecnologia"}
@@ -5038,21 +5041,25 @@ def _fwd_stats(clase):
     ji = j["_idx"].get(proxy)
     if ji is None:
         return None
-    sig = j["vol"][ji] / 100.0
-    # Deuda MXN por tenor: vol = duracion representativa x vol de tasa MXN (~1.3%/año)
+    comp_usd = j["comp2026"][ji] / 100.0
+    # RETORNO geometrico en MXN:
+    #  - Deuda en pesos (proxy EM Local Currency Debt) = rendimiento LOCAL directo, SIN tipo de cambio.
+    #  - Resto (USD/extranjero) = tropicalizado: + depreciacion del peso.
+    if clase in FWD_LOCAL_RETURN:
+        g_mxn = comp_usd
+    else:
+        g_mxn = (1 + comp_usd) * (1 + FWD_DEPREC) - 1
+    # VOLATILIDAD en MXN:
     _TENOR_VOL = {"Deuda Corto Plazo": 0.020, "Deuda Largo Plazo": 0.075}
     if clase in _TENOR_VOL:
-        return (1 + j["comp2026"][ji] / 100.0) * (1 + FWD_DEPREC) - 1 + _TENOR_VOL[clase] ** 2 / 2, _TENOR_VOL[clase], ji, (1 + j["comp2026"][ji] / 100.0) * (1 + FWD_DEPREC) - 1
-    if clase in FWD_MXN_NATIVE:
-        # activo en pesos: quitar componente cambiaria del proxy USD (sin riesgo FX)
-        sig = _fmath.sqrt(max(sig**2 - FWD_FX_VOL**2, 0.02**2))
-    elif clase in FWD_USD_SLEEVE:
-        # activo en dolares: sumar vol del peso (riesgo cambiario)
-        sig = _fmath.sqrt(sig**2 + FWD_FX_VOL**2)
-    # ANCLA: retorno COMPUESTO (geometrico) de JPM, tropicalizado a MXN
-    comp_usd = j["comp2026"][ji] / 100.0
-    g_mxn = (1 + comp_usd) * (1 + FWD_DEPREC) - 1
-    # Aritmetico DERIVADO consistente con g y la vol local (para la covarianza)
+        sig = _TENOR_VOL[clase]                      # deuda por tenor (duracion)
+    else:
+        sig = j["vol"][ji] / 100.0
+        if clase in FWD_MXN_NATIVE:
+            sig = _fmath.sqrt(max(sig**2 - FWD_FX_VOL**2, 0.02**2))   # sin riesgo cambiario
+        elif clase in FWD_USD_SLEEVE:
+            sig = _fmath.sqrt(sig**2 + FWD_FX_VOL**2)                 # + riesgo cambiario
+    # Aritmetico DERIVADO consistente con g y la vol local (para covarianza)
     mu_mxn = g_mxn + sig ** 2 / 2
     return mu_mxn, sig, ji, g_mxn
 
