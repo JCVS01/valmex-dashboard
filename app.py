@@ -5083,12 +5083,15 @@ def _fwd_portfolio(alloc, fee=0.0, horizontes=(5, 10)):
             cono.append({"t": t,
                          "med": round((1 + g_p) ** t - 1, 4),
                          "p10": round(_fmath.exp(ml - 1.2816 * sl) - 1, 4),
-                         "p90": round(_fmath.exp(ml + 1.2816 * sl) - 1, 4)})
+                         "p90": round(_fmath.exp(ml + 1.2816 * sl) - 1, 4),
+                         "plo": round(_fmath.exp(ml - 0.5 * sl) - 1, 4),
+                         "phi": round(_fmath.exp(ml + 0.5 * sl) - 1, 4)})
         out[f"h{N_}"] = {
             "mediana_nom": round((1 + g_p) ** N_ - 1, 4),
             "mediana_real": round((1 + g_p) ** N_ / (1 + FWD_MX_INFL) ** N_ - 1, 4),
             "p10": round(_pct(-1.2816), 4), "p25": round(_pct(-0.6745), 4),
             "p75": round(_pct(0.6745), 4), "p90": round(_pct(1.2816), 4),
+            "s_lo": round(_pct(-0.5), 4), "s_hi": round(_pct(0.5), 4),
             "cono": cono,
         }
     return out
