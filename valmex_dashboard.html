@@ -2593,10 +2593,27 @@ async function _fwdRender(){
     const dd = await r.json();
     if(!dd.ok || !dd.portafolio){ kpi.innerHTML='<div class="fwd-k"><div class="kl">No se pudo calcular</div></div>'; return; }
     const P = dd.portafolio; const H = P['h'+_fwdHoriz];
-    const f = (x)=> (x>=0?'+':'')+(x*100).toFixed(1)+'%';
+    const N = _fwdHoriz;
+    const f  = (x)=> (x>=0?'+':'')+(x*100).toFixed(1)+'%';           // acumulado
+    const ann= (c)=> Math.pow(1+c, 1/N) - 1;                          // anualizado
+    const fa = (x)=> (x>=0?'+':'')+(x*100).toFixed(1)+'%/año';
+    const mult = (1+H.mediana_nom).toFixed(2);
     kpi.innerHTML = `
-      <div class="fwd-k"><div class="kl">Mediana nominal ${_fwdHoriz}A</div><div class="kv">${f(H.mediana_nom)}</div><div class="ks">real: ${f(H.mediana_real)} · poder de compra</div></div>
-      <div class="fwd-k"><div class="kl">Rango P10–P90 (conservador)</div><div class="kv" style="color:var(--navy);font-size:19px">${f(H.p10)} · ${f(H.p90)}</div><div class="ks">σ ${(P.sigma*100).toFixed(1)}% · geo ${(P.geo*100).toFixed(1)}%/año</div></div>`;
+      <div class="fwd-k" style="flex:1.3;min-width:210px">
+        <div class="kl">Rendimiento esperado (en pesos)</div>
+        <div class="kv">${(ann(H.mediana_nom)*100).toFixed(1)}% <span style="font-size:13px;color:var(--gray)">al año</span></div>
+        <div class="ks">En ${N} años: <b>${f(H.mediana_nom)}</b> · tu inversión ~<b>${mult}×</b></div>
+        <div class="ks" style="color:var(--gray)">Poder de compra (real): <b>${fa(ann(H.mediana_real))}</b> · ${f(H.mediana_real)} en ${N}A</div>
+      </div>
+      <div class="fwd-k" style="flex:1.7;min-width:280px">
+        <div class="kl">Escenarios a ${N} años</div>
+        <div style="display:flex;gap:16px;margin-top:3px;flex-wrap:wrap">
+          <div><div style="font-size:9.5px;color:#e0503c;font-weight:800">CONSERVADOR</div><div style="font-size:17px;font-weight:800;color:var(--navy)">${fa(ann(H.p10))}</div><div style="font-size:10px;color:var(--gray)">${f(H.p10)} total</div></div>
+          <div><div style="font-size:9.5px;color:#1a7f4e;font-weight:800">ESPERADO</div><div style="font-size:17px;font-weight:800;color:#1a7f4e">${fa(ann(H.mediana_nom))}</div><div style="font-size:10px;color:var(--gray)">${f(H.mediana_nom)} total</div></div>
+          <div><div style="font-size:9.5px;color:#3f559e;font-weight:800">OPTIMISTA</div><div style="font-size:17px;font-weight:800;color:var(--navy)">${fa(ann(H.p90))}</div><div style="font-size:10px;color:var(--gray)">${f(H.p90)} total</div></div>
+        </div>
+        <div class="ks" style="margin-top:5px;opacity:.6;font-size:9.5px">técnico: volatilidad σ ${(P.sigma*100).toFixed(1)}%/año · rango = 80% de escenarios (P10–P90)</div>
+      </div>`;
     const su = dd.supuestos||{};
     note.innerHTML = `Asignación tomada del drilldown del portafolio (${_fwdSel==='A'?'Actual':_fwdSel==='B'?'Perfil':'Propuesta'}). Retornos JPM (USD) → MXN vía depreciación PPP ${(su.deprec_peso*100).toFixed(1)}%/año; riesgo cambiario ${(su.fx_vol*100).toFixed(0)}% en sleeves USD, removido en activos MXN nativos. σ vía covarianza JPM real; proyección lognormal (volatility drag); neto 1% comisión; real = deflactado por inflación MX ${(su.mx_infl*100).toFixed(1)}%.`;
     const cono = H.cono||[];
