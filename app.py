@@ -5063,7 +5063,7 @@ def _fwd_stats(clase):
     mu_mxn = g_mxn + sig ** 2 / 2
     return mu_mxn, sig, ji, g_mxn
 
-def _fwd_portfolio(alloc, fee=0.0, horizontes=(5, 10)):
+def _fwd_portfolio(alloc, fee=0.0, horizontes=(5, 10), ret_override=None):
     j = _load_jpm()
     clases = [c for c in alloc if _fwd_stats(c)]
     if not clases:
@@ -5072,10 +5072,14 @@ def _fwd_portfolio(alloc, fee=0.0, horizontes=(5, 10)):
     if w.sum() <= 0:
         return None
     w = w / w.sum()
+    ret_override = ret_override or {}
     st = [_fwd_stats(c) for c in clases]
-    mu = np.array([x[0] for x in st])
-    sig = np.array([x[1] for x in st])
-    jidx = [x[2] for x in st]
+    mu_l, sig_l, jidx = [], [], []
+    for c, x in zip(clases, st):
+        g = ret_override[c] if c in ret_override else x[3]        # retorno geometrico (override = YTM real)
+        mu_l.append(g + x[1] ** 2 / 2)
+        sig_l.append(x[1]); jidx.append(x[2])
+    mu = np.array(mu_l); sig = np.array(sig_l)
     C = np.array(j["corr"]) if j.get("corr") else np.eye(len(clases))
     sub = C[np.ix_(jidx, jidx)] if len(C) else np.eye(len(clases))
     sub = np.nan_to_num(sub); sub = (sub + sub.T) / 2.0; np.fill_diagonal(sub, 1.0)
@@ -5172,14 +5176,19 @@ def _fondo_lookthrough(fondo):
         if cash > 0:
             out["Deuda Corto Plazo"] = out.get("Deuda Corto Plazo", 0) + cash
         tot = sum(out.values())
-        return {k: v / tot for k, v in out.items()} if tot > 0 else None
+        alloc = {k: v / tot for k, v in out.items()} if tot > 0 else None
+        return alloc, ytm
     except Exception as _e:
         print(f"[FWD LOOKTHROUGH] {fondo}: {_e}")
-        return None
+        return None, 0.0
 
+_FWD_DEUDA_MXN = {"Deuda Corto Plazo", "Deuda MXN", "Deuda Largo Plazo"}
 def _alloc_from_composicion(comp):
-    """Agrega el look-through de cada fondo de la composicion, ponderado por su %."""
+    """Look-through por fondo. Retorno de deuda = YTM REAL de cada fondo (Morningstar):
+    deuda MXN = YTM directo (sin TC); deuda global = YTM + depreciacion. Diferencia CP/med/LP
+    solo por su yield real. Devuelve (alloc, debt_ret_override)."""
     alloc = {}
+    dret_w, dw = {}, {}
     for item in (comp or []):
         try:
             fondo = item.get("fondo") or item.get("ticker") or ""
@@ -5188,14 +5197,23 @@ def _alloc_from_composicion(comp):
             continue
         if pct <= 0 or not fondo:
             continue
-        lt = _fondo_lookthrough(fondo)
+        lt, ytm = _fondo_lookthrough(fondo)
         if not lt:
-            # fallback por tipo_fondo si Morningstar no tiene el fondo
             tf = (item.get("tipo_fondo") or "").lower()
             lt = {"Deuda MXN": 1.0} if tf == "deuda" else ({"Bolsa Local": 1.0} if tf == "rv" else {"Mercados Desarrollados": 0.55, "Deuda MXN": 0.45})
+            ytm = 0.0
         for clase, w in lt.items():
             alloc[clase] = alloc.get(clase, 0) + pct * w
-    return alloc if alloc else None
+            if ytm > 0 and clase in _FWD_DEUDA_MXN:
+                ret = ytm / 100.0                               # deuda en pesos: YTM directo, SIN TC
+                dret_w[clase] = dret_w.get(clase, 0) + pct * w * ret
+                dw[clase] = dw.get(clase, 0) + pct * w
+            elif ytm > 0 and clase == "Deuda Gubernamental Global":
+                ret = (1 + ytm / 100.0) * (1 + FWD_DEPREC) - 1  # deuda global: + depreciacion
+                dret_w[clase] = dret_w.get(clase, 0) + pct * w * ret
+                dw[clase] = dw.get(clase, 0) + pct * w
+    debt_ret = {c: dret_w[c] / dw[c] for c in dw if dw[c] > 0}
+    return (alloc, debt_ret) if alloc else (None, {})
 
 
 @app.route("/api/forward", methods=["GET", "POST"])
@@ -5208,12 +5226,15 @@ def api_forward():
     except Exception:
         fee = 0.0
     comp = body.get("composicion")
-    alloc = _alloc_from_composicion(comp) if comp else body.get("alloc")
+    if comp:
+        alloc, _debt_ret = _alloc_from_composicion(comp)
+    else:
+        alloc, _debt_ret = body.get("alloc"), {}
     if not alloc:
         alloc = {"Bolsa Local": 1, "Bolsa USD": 1, "Mercados Desarrollados": 1,
                  "Bolsa Emergentes": 1, "Tecnologia": 1, "Deuda Corto Plazo": 1,
                  "Deuda Largo Plazo": 1, "Deuda Gubernamental Global": 1, "Oro": 1}
-    port = _fwd_portfolio(alloc, fee=fee)
+    port = _fwd_portfolio(alloc, fee=fee, ret_override=_debt_ret)
     j = _load_jpm()
     tabla = ["Bolsa Local", "Bolsa USD", "Mercados Desarrollados", "Bolsa Emergentes",
              "Tecnologia", "Deuda Corto Plazo", "Deuda Largo Plazo", "Deuda MXN",
