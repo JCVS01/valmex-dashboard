@@ -2596,7 +2596,7 @@ async function _fwdRender(){
     const f = (x)=> (x>=0?'+':'')+(x*100).toFixed(1)+'%';
     kpi.innerHTML = `
       <div class="fwd-k"><div class="kl">Mediana nominal ${_fwdHoriz}A</div><div class="kv">${f(H.mediana_nom)}</div><div class="ks">real: ${f(H.mediana_real)} · poder de compra</div></div>
-      <div class="fwd-k"><div class="kl">Rango típico (±½σ)</div><div class="kv" style="color:var(--navy);font-size:19px">${f(H.s_lo)} · ${f(H.s_hi)}</div><div class="ks">σ ${(P.sigma*100).toFixed(1)}% · geo ${(P.geo*100).toFixed(1)}%/año</div></div>`;
+      <div class="fwd-k"><div class="kl">Rango P10–P90 (conservador)</div><div class="kv" style="color:var(--navy);font-size:19px">${f(H.p10)} · ${f(H.p90)}</div><div class="ks">σ ${(P.sigma*100).toFixed(1)}% · geo ${(P.geo*100).toFixed(1)}%/año</div></div>`;
     const su = dd.supuestos||{};
     note.innerHTML = `Asignación tomada del drilldown del portafolio (${_fwdSel==='A'?'Actual':_fwdSel==='B'?'Perfil':'Propuesta'}). Retornos JPM (USD) → MXN vía depreciación PPP ${(su.deprec_peso*100).toFixed(1)}%/año; riesgo cambiario ${(su.fx_vol*100).toFixed(0)}% en sleeves USD, removido en activos MXN nativos. σ vía covarianza JPM real; proyección lognormal (volatility drag); neto 1% comisión; real = deflactado por inflación MX ${(su.mx_infl*100).toFixed(1)}%.`;
     const cono = H.cono||[];
@@ -2605,9 +2605,9 @@ async function _fwdRender(){
     _fwdChart = new Chart(ctx, {type:'line',
       data:{ labels: cono.map(p=>'Año '+p.t),
         datasets:[
-          {label:'+½σ', data:cono.map(p=>+(p.phi*100).toFixed(1)), borderColor:'rgba(0,32,92,.28)', backgroundColor:'rgba(65,187,201,.15)', borderWidth:1, pointRadius:0, fill:'+1', tension:.25},
+          {label:'P90 (optimista)', data:cono.map(p=>+(p.p90*100).toFixed(1)), borderColor:'rgba(0,32,92,.28)', backgroundColor:'rgba(65,187,201,.15)', borderWidth:1, pointRadius:0, fill:'+1', tension:.25},
           {label:'Mediana', data:cono.map(p=>+(p.med*100).toFixed(1)), borderColor:'#00205C', borderWidth:3, pointRadius:0, fill:false, tension:.25},
-          {label:'−½σ', data:cono.map(p=>+(p.plo*100).toFixed(1)), borderColor:'rgba(0,32,92,.28)', borderWidth:1, pointRadius:0, fill:false, tension:.25},
+          {label:'P10 (conservador)', data:cono.map(p=>+(p.p10*100).toFixed(1)), borderColor:'rgba(224,80,60,.6)', borderWidth:1.5, borderDash:[4,3], pointRadius:0, fill:false, tension:.25},
         ]},
       options:{responsive:true,maintainAspectRatio:false,
         plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:14}},
