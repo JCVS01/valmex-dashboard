@@ -5039,6 +5039,10 @@ def _fwd_stats(clase):
     if ji is None:
         return None
     sig = j["vol"][ji] / 100.0
+    # Deuda MXN por tenor: vol = duracion representativa x vol de tasa MXN (~1.3%/año)
+    _TENOR_VOL = {"Deuda Corto Plazo": 0.020, "Deuda Largo Plazo": 0.075}
+    if clase in _TENOR_VOL:
+        return (1 + j["comp2026"][ji] / 100.0) * (1 + FWD_DEPREC) - 1 + _TENOR_VOL[clase] ** 2 / 2, _TENOR_VOL[clase], ji, (1 + j["comp2026"][ji] / 100.0) * (1 + FWD_DEPREC) - 1
     if clase in FWD_MXN_NATIVE:
         # activo en pesos: quitar componente cambiaria del proxy USD (sin riesgo FX)
         sig = _fmath.sqrt(max(sig**2 - FWD_FX_VOL**2, 0.02**2))
@@ -5100,6 +5104,93 @@ def _fwd_portfolio(alloc, fee=0.0, horizontes=(5, 10)):
         }
     return out
 
+def _fondo_lookthrough(fondo):
+    """Descompone un fondo en clases forward usando el drilldown REAL de Morningstar:
+    AAB (accion/bono/efectivo) x RE (regiones) para RV; YTM (moneda) + duracion (tenor)
+    para deuda. Trazable, no promedios genericos. Devuelve {clase: peso 0..1} o None."""
+    try:
+        uni = load_ms_universe()
+        key = next((k for k in uni if k.upper().replace(" ", "").startswith(str(fondo).upper().replace(" ", ""))), None)
+        if not key:
+            return None
+        a = uni[key]
+        def _num(x):
+            try: return float(x)
+            except: return 0.0
+        stock = _num(a.get("AAB-StockNet")) / 100.0
+        bond  = _num(a.get("AAB-BondNet")) / 100.0
+        cash  = _num(a.get("AAB-CashNet")) / 100.0
+        other = _num(a.get("AAB-OtherNet")) / 100.0
+        dur   = _num(a.get("PS-EffectiveDuration"))
+        ytm   = _num(a.get("PS-YieldToMaturity"))
+        out = {}
+        # --- RENTA VARIABLE por region (RE) ---
+        re = a.get("RE-RegionalExposure") or []
+        reg = {}
+        if isinstance(re, list):
+            for r in re:
+                if isinstance(r, dict):
+                    nm = (r.get("Region") or "").strip()
+                    if nm in ("Emerging Markets", "Developed Countries", "Not Classified", ""):
+                        continue  # agregados/summary
+                    reg[nm] = _num(r.get("Value"))
+        regtot = sum(reg.values())
+        if stock > 0 and regtot > 0:
+            for nm, v in reg.items():
+                w = stock * (v / regtot); rl = nm.lower()
+                if "latin" in rl or "mex" in rl:
+                    out["Bolsa Local"] = out.get("Bolsa Local", 0) + w
+                elif "united states" in rl or "u.s" in rl:
+                    out["Bolsa USD"] = out.get("Bolsa USD", 0) + w
+                elif "emerg" in rl or "china" in rl:
+                    out["Bolsa Emergentes"] = out.get("Bolsa Emergentes", 0) + w
+                else:
+                    out["Mercados Desarrollados"] = out.get("Mercados Desarrollados", 0) + w
+        elif stock > 0:
+            out["Bolsa Local"] = out.get("Bolsa Local", 0) + stock
+        # --- DEUDA: moneda por YTM, tenor por duracion ---
+        deuda_total = bond + other  # 'otros' suele ser derivados/deuda estructurada
+        if deuda_total > 0:
+            if ytm >= 4.2:  # MXN nominal/real (calibrado: MXN >= ~6%, udibonos ~4.2%)
+                if dur < 1.5:
+                    clase = "Deuda Corto Plazo"
+                elif dur < 4.0:
+                    clase = "Deuda MXN"          # mediano plazo
+                else:
+                    clase = "Deuda Largo Plazo"
+            else:  # yield bajo -> bonos globales/USD
+                clase = "Deuda Gubernamental Global"
+            out[clase] = out.get(clase, 0) + deuda_total
+        # --- EFECTIVO ---
+        if cash > 0:
+            out["Deuda Corto Plazo"] = out.get("Deuda Corto Plazo", 0) + cash
+        tot = sum(out.values())
+        return {k: v / tot for k, v in out.items()} if tot > 0 else None
+    except Exception as _e:
+        print(f"[FWD LOOKTHROUGH] {fondo}: {_e}")
+        return None
+
+def _alloc_from_composicion(comp):
+    """Agrega el look-through de cada fondo de la composicion, ponderado por su %."""
+    alloc = {}
+    for item in (comp or []):
+        try:
+            fondo = item.get("fondo") or item.get("ticker") or ""
+            pct = float(item.get("pct", 0) or 0)
+        except Exception:
+            continue
+        if pct <= 0 or not fondo:
+            continue
+        lt = _fondo_lookthrough(fondo)
+        if not lt:
+            # fallback por tipo_fondo si Morningstar no tiene el fondo
+            tf = (item.get("tipo_fondo") or "").lower()
+            lt = {"Deuda MXN": 1.0} if tf == "deuda" else ({"Bolsa Local": 1.0} if tf == "rv" else {"Mercados Desarrollados": 0.55, "Deuda MXN": 0.45})
+        for clase, w in lt.items():
+            alloc[clase] = alloc.get(clase, 0) + pct * w
+    return alloc if alloc else None
+
+
 @app.route("/api/forward", methods=["GET", "POST"])
 def api_forward():
     if "usuario" not in session:
@@ -5109,7 +5200,8 @@ def api_forward():
         fee = float(body.get("fee", 0.0) or 0.0)
     except Exception:
         fee = 0.0
-    alloc = body.get("alloc")
+    comp = body.get("composicion")
+    alloc = _alloc_from_composicion(comp) if comp else body.get("alloc")
     if not alloc:
         alloc = {"Bolsa Local": 1, "Bolsa USD": 1, "Mercados Desarrollados": 1,
                  "Bolsa Emergentes": 1, "Tecnologia": 1, "Deuda Corto Plazo": 1,

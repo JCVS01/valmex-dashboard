@@ -2580,8 +2580,9 @@ async function _fwdRender(){
   const kpi = document.getElementById('fwd-kpi'); const note = document.getElementById('fwd-note');
   if(!kpi) return;
   const d = _fwdSel==='A'?_cmp2DataA : _fwdSel==='B'?_cmp2DataB : _cmp2DataC;
-  const alloc = _fwdAllocFromPortfolio(d);
-  if(!alloc){
+  const comp = (d && d.composicion && d.composicion.length) ? d.composicion : null;  // look-through real por fondo
+  const alloc = comp ? null : _fwdAllocFromPortfolio(d);
+  if(!comp && !alloc){
     kpi.innerHTML = `<div class="fwd-k"><div class="kl">Sin datos</div><div class="ks" style="font-weight:600">Calcula/ajusta el portafolio en la pestaña Configuración para ver su forward aquí.</div></div>`;
     if(_fwdChart){ _fwdChart.destroy(); _fwdChart=null; }
     return;
@@ -2589,7 +2590,7 @@ async function _fwdRender(){
   const feeGuess = 0.010; // 1% neto por defecto
   try{
     const r = await fetch('/api/forward',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({alloc, fee: feeGuess})});
+      body: JSON.stringify(comp ? {composicion: comp, fee: feeGuess} : {alloc, fee: feeGuess})});
     const dd = await r.json();
     if(!dd.ok || !dd.portafolio){ kpi.innerHTML='<div class="fwd-k"><div class="kl">No se pudo calcular</div></div>'; return; }
     const P = dd.portafolio; const H = P['h'+_fwdHoriz];
