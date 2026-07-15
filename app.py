@@ -3611,7 +3611,10 @@ def api_propuesta():
                 _di = _d.fromisoformat(str(bt_ini)[:10])
                 _df = _d.fromisoformat(str(bt_fin)[:10])
                 if (_df - _di).days > 7300:
-                    return jsonify({"ok": False, "error": "Rango máximo 20 años"}), 400
+                    # Recortar a 20 años (no fallar) para no romper comparativa/forward
+                    _di = _df - timedelta(days=7300)
+                    body["bt_fecha_ini"] = _di.isoformat()
+                    bt_ini = body["bt_fecha_ini"]
                 if _di > _df:
                     return jsonify({"ok": False, "error": "Fecha inicio > fin"}), 400
             except (ValueError, TypeError):
