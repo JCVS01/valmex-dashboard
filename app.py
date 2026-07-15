@@ -5038,8 +5038,6 @@ def _fwd_stats(clase):
     ji = j["_idx"].get(proxy)
     if ji is None:
         return None
-    mu_usd = j["arith2026"][ji] / 100.0
-    mu_mxn = (1 + mu_usd) * (1 + FWD_DEPREC) - 1
     sig = j["vol"][ji] / 100.0
     if clase in FWD_MXN_NATIVE:
         # activo en pesos: quitar componente cambiaria del proxy USD (sin riesgo FX)
@@ -5047,8 +5045,11 @@ def _fwd_stats(clase):
     elif clase in FWD_USD_SLEEVE:
         # activo en dolares: sumar vol del peso (riesgo cambiario)
         sig = _fmath.sqrt(sig**2 + FWD_FX_VOL**2)
+    # ANCLA: retorno COMPUESTO (geometrico) de JPM, tropicalizado a MXN
     comp_usd = j["comp2026"][ji] / 100.0
     g_mxn = (1 + comp_usd) * (1 + FWD_DEPREC) - 1
+    # Aritmetico DERIVADO consistente con g y la vol local (para la covarianza)
+    mu_mxn = g_mxn + sig ** 2 / 2
     return mu_mxn, sig, ji, g_mxn
 
 def _fwd_portfolio(alloc, fee=0.0, horizontes=(5, 10)):
