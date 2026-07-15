@@ -3591,6 +3591,7 @@ function initCmp2Charts() {
 function aplicarDatosCmp2(dataA, dataB, dataC) {
   // Cache for mode switching without re-fetch
   _cmp2DataA = dataA; _cmp2DataB = dataB; _cmp2DataC = dataC;
+  try{ if(typeof _fwdRender==='function') _fwdRender(); }catch(e){}
   const mode = _cmp2ViewMode;
   const is3way = mode === '3way';
   const showB = mode !== 'avc';
