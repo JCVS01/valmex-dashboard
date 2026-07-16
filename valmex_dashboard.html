@@ -2476,7 +2476,7 @@ const _FWD_LBL = {A: 'P. Actual', B: 'P. Modelo', C: 'P. Propuesta'};
   if(!document.getElementById('fwd-css')){
     const st = document.createElement('style'); st.id = 'fwd-css';
     st.textContent = `
-    #fwd-panel{margin-top:22px;font-family:'Montserrat',sans-serif;}
+    #fwd-panel{font-family:'Montserrat',sans-serif;}
     #fwd-panel .fwd-box{background:#fff;border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;}
     #fwd-panel .fwd-desc{font-size:14px;color:var(--gray);line-height:1.6;margin:0 0 14px;font-family:'Montserrat',sans-serif;}
     #fwd-panel .fwd-note{font-size:11px;color:var(--gray);line-height:1.5;margin-top:14px;}
@@ -2493,21 +2493,26 @@ const _FWD_LBL = {A: 'P. Actual', B: 'P. Modelo', C: 'P. Propuesta'};
     if(!page || document.getElementById('fwd-panel')) return;
     const div = document.createElement('div'); div.id = 'fwd-panel'; div.className = 'prop-dash-scaler';
     div.innerHTML = `
-      <div class="fwd-box">
-        <div class="cmp-header-bar" style="flex-direction:column;align-items:flex-start;gap:0;">
-          <div class="cmp-main-title">Rendimiento Esperado a Futuro</div>
-          <div class="cmp-sub-title">Proyección en Pesos · J.P. Morgan</div>
-        </div>
-        <div style="padding:0 24px 22px;">
-          <div style="display:flex;justify-content:center;margin:2px 0 16px;">
-            <button class="cmp2-vf-btn" id="fwd-h5" onclick="_fwdSetH(5)">A 5 años</button>
-            <button class="cmp2-vf-btn active" id="fwd-h10" onclick="_fwdSetH(10)">A 10 años</button>
+      <div class="cmp-header-bar">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:8px;align-self:stretch;background:var(--sky);border-radius:3px;flex-shrink:0;"></div>
+          <div>
+            <div class="cmp-main-title">Rendimiento Esperado a Futuro</div>
+            <div class="cmp-sub-title">Proyección en Pesos · J.P. Morgan</div>
           </div>
-          <p class="fwd-desc">Cuánto podría crecer cada estrategia hacia adelante, en pesos, según las expectativas de largo plazo de J.P. Morgan. La línea muestra el escenario más probable; el rango indica dónde caería la mayoría de los resultados.</p>
-          <div style="height:320px;position:relative;"><canvas id="fwd-chart"></canvas></div>
-          <div style="overflow-x:auto;"><table class="cmp2-fwd" id="fwd-tbl"></table></div>
-          <p class="fwd-note" id="fwd-note"></p>
         </div>
+        <img src="/VALMEX2.png" style="height:75px;width:auto;" alt="VALMEX">
+      </div>
+      <div style="height:2px;background:var(--navy);margin:0 20px 2px;"></div>
+      <div style="padding:14px 24px 22px;">
+        <div style="display:flex;justify-content:center;margin:2px 0 16px;">
+          <button class="cmp2-vf-btn" id="fwd-h5" onclick="_fwdSetH(5)">A 5 años</button>
+          <button class="cmp2-vf-btn active" id="fwd-h10" onclick="_fwdSetH(10)">A 10 años</button>
+        </div>
+        <p class="fwd-desc">Cuánto podría crecer cada estrategia hacia adelante, en pesos, según las expectativas de largo plazo de J.P. Morgan. La línea muestra el escenario más probable; el rango indica dónde caería la mayoría de los resultados.</p>
+        <div style="height:320px;position:relative;"><canvas id="fwd-chart"></canvas></div>
+        <div style="overflow-x:auto;"><table class="cmp2-fwd" id="fwd-tbl"></table></div>
+        <p class="fwd-note" id="fwd-note"></p>
       </div>`;
     page.appendChild(div);
     _fwdRender();
