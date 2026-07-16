@@ -2465,60 +2465,48 @@ function cerrarDetalleAccion(){ const md=document.getElementById('det-modal'); i
 
 // ═══════════════════════════════════════════════════════════════════════════
 // FORWARD DE RENDIMIENTOS — J.P. Morgan LTCMA 2026 (MXN) — PANEL ADITIVO
-// UNA grafica. Asignacion AUTOMATICA del drilldown de los instrumentos del
-// portafolio (Actual / Perfil / Propuesta). Sin edicion manual.
+// UNA grafica con TODAS las estrategias activas (segun el modo de vista de arriba:
+// 3way / avb / avc). Mismo formato, colores y estilos que el resto de Portafolios.
+// Asignacion tomada del drilldown real de cada portafolio. Sin edicion manual.
 // ═══════════════════════════════════════════════════════════════════════════
-const FWD_CLASES = ["Bolsa Local","Bolsa USD","Mercados Desarrollados","Bolsa Emergentes",
-  "Tecnología","Deuda Corto Plazo","Deuda Largo Plazo","Deuda MXN","Deuda USA",
-  "Deuda Gubernamental Global","Oro","Dólar"];
-let _fwdHoriz = 10, _fwdChart = null, _fwdSel = 'C';
+let _fwdHoriz = 10, _fwdChart = null;
+const _FWD_LBL = {A: 'P. Actual', B: 'P. Modelo', C: 'P. Propuesta'};
 
 (function _fwdInject(){
   if(!document.getElementById('fwd-css')){
     const st = document.createElement('style'); st.id = 'fwd-css';
     st.textContent = `
     #fwd-panel{margin-top:22px;font-family:'Montserrat',sans-serif;}
-    #fwd-panel .fwd-card{background:#fff;border:1px solid #E5E7EB;border-radius:14px;overflow:hidden;}
-    #fwd-panel .fwd-hd{background:var(--navy);color:#fff;padding:16px 20px;}
-    #fwd-panel .fwd-hd h3{margin:0;font-size:18px;font-weight:800;}
-    #fwd-panel .fwd-hd .fwd-sub{font-size:11.5px;opacity:.85;margin-top:3px;}
-    #fwd-panel .fwd-body{padding:16px 20px;}
-    #fwd-panel .fwd-ctrls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px;}
-    #fwd-panel .fwd-btn{background:#eef2f7;border:1px solid #d3dde6;border-radius:8px;padding:7px 13px;
-      font-weight:700;font-size:12px;cursor:pointer;color:var(--navy);}
-    #fwd-panel .fwd-btn:hover{background:#dbe6f2;}
-    #fwd-panel .fwd-btn.on{background:var(--navy);color:#fff;border-color:var(--navy);}
-    #fwd-panel .fwd-kpirow{display:flex;flex-wrap:wrap;gap:22px;margin:4px 0 12px;}
-    #fwd-panel .fwd-k .kl{font-size:10.5px;color:var(--gray);font-weight:700;text-transform:uppercase;}
-    #fwd-panel .fwd-k .kv{font-size:24px;font-weight:800;color:#1a7f4e;font-variant-numeric:tabular-nums;line-height:1.1;}
-    #fwd-panel .fwd-k .ks{font-size:11px;color:var(--gray);font-weight:700;}
-    #fwd-panel .fwd-note{font-size:10px;color:var(--gray);line-height:1.5;margin-top:12px;}`;
+    #fwd-panel .fwd-box{background:#fff;border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;}
+    #fwd-panel .fwd-desc{font-size:14px;color:var(--gray);line-height:1.6;margin:0 0 14px;font-family:'Montserrat',sans-serif;}
+    #fwd-panel .fwd-note{font-size:11px;color:var(--gray);line-height:1.5;margin-top:14px;}
+    #fwd-panel table.cmp2-fwd{width:100%;border-collapse:collapse;font-size:13px;font-family:'Montserrat',sans-serif;margin-top:8px;}
+    #fwd-panel table.cmp2-fwd th{background:#F1F4F7;color:var(--navy);padding:8px 10px;text-align:right;font-size:12px;font-weight:700;}
+    #fwd-panel table.cmp2-fwd th:first-child{text-align:left;}
+    #fwd-panel table.cmp2-fwd td{padding:8px 10px;text-align:right;border-bottom:1px solid #EEF1F4;font-variant-numeric:tabular-nums;}
+    #fwd-panel table.cmp2-fwd td:first-child{text-align:left;font-weight:700;}
+    #fwd-panel .fwd-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;vertical-align:middle;}`;
     document.head.appendChild(st);
   }
   function build(){
     const page = document.getElementById('page-comparativa2');
     if(!page || document.getElementById('fwd-panel')) return;
-    const div = document.createElement('div'); div.id = 'fwd-panel';
+    const div = document.createElement('div'); div.id = 'fwd-panel'; div.className = 'prop-dash-scaler';
     div.innerHTML = `
-      <div class="fwd-card">
-        <div class="fwd-hd">
-          <h3>Forward de Rendimientos — J.P. Morgan LTCMA 2026 · en MXN 🇲🇽</h3>
-          <div class="fwd-sub">Proyección probabilística · asignación tomada del drilldown de los instrumentos · retornos USD de JPM tropicalizados a pesos (retorno + riesgo cambiario) · neto de comisiones</div>
+      <div class="fwd-box">
+        <div class="cmp-header-bar" style="flex-direction:column;align-items:flex-start;gap:0;">
+          <div class="cmp-main-title">Rendimiento Esperado a Futuro</div>
+          <div class="cmp-sub-title">Proyección en Pesos · J.P. Morgan</div>
         </div>
-        <div class="fwd-body">
-          <div class="fwd-ctrls">
-            <span style="font-size:12px;font-weight:700;color:var(--gray)">Portafolio:</span>
-            <button class="fwd-btn" id="fwd-pA" onclick="_fwdSelPort('A')">Actual</button>
-            <button class="fwd-btn" id="fwd-pB" onclick="_fwdSelPort('B')">Perfil</button>
-            <button class="fwd-btn on" id="fwd-pC" onclick="_fwdSelPort('C')">Propuesta</button>
-            <span style="flex:1"></span>
-            <span style="font-size:12px;font-weight:700;color:var(--gray)">Horizonte:</span>
-            <button class="fwd-btn" id="fwd-h5" onclick="_fwdSetH(5)">5 años</button>
-            <button class="fwd-btn on" id="fwd-h10" onclick="_fwdSetH(10)">10 años</button>
+        <div style="padding:0 24px 22px;">
+          <div style="display:flex;justify-content:center;margin:2px 0 16px;">
+            <button class="cmp2-vf-btn" id="fwd-h5" onclick="_fwdSetH(5)">A 5 años</button>
+            <button class="cmp2-vf-btn active" id="fwd-h10" onclick="_fwdSetH(10)">A 10 años</button>
           </div>
-          <div id="fwd-kpi" class="fwd-kpirow"></div>
-          <div style="height:280px;position:relative"><canvas id="fwd-chart"></canvas></div>
-          <div class="fwd-note" id="fwd-note"></div>
+          <p class="fwd-desc">Cuánto podría crecer cada estrategia hacia adelante, en pesos, según las expectativas de largo plazo de J.P. Morgan. La línea muestra el escenario más probable; el rango indica dónde caería la mayoría de los resultados.</p>
+          <div style="height:320px;position:relative;"><canvas id="fwd-chart"></canvas></div>
+          <div style="overflow-x:auto;"><table class="cmp2-fwd" id="fwd-tbl"></table></div>
+          <p class="fwd-note" id="fwd-note"></p>
         </div>
       </div>`;
     page.appendChild(div);
@@ -2529,110 +2517,87 @@ let _fwdHoriz = 10, _fwdChart = null, _fwdSel = 'C';
 })();
 
 function _fwdSetH(h){ _fwdHoriz = h;
-  document.getElementById('fwd-h5').classList.toggle('on', h===5);
-  document.getElementById('fwd-h10').classList.toggle('on', h===10);
-  _fwdRender(); }
-function _fwdSelPort(w){ _fwdSel = w;
-  ['A','B','C'].forEach(x=>document.getElementById('fwd-p'+x).classList.toggle('on', x===w));
+  var b5=document.getElementById('fwd-h5'), b10=document.getElementById('fwd-h10');
+  if(b5) b5.classList.toggle('active', h===5);
+  if(b10) b10.classList.toggle('active', h===10);
   _fwdRender(); }
 
-// Asignacion AUTOMATICA a partir del drilldown del portafolio (clase_activos + geo + moneda)
-function _fwdAllocFromPortfolio(d){
-  const A = {}; FWD_CLASES.forEach(c=>A[c]=0);
-  if(!d || !d.clase_activos) return null;
-  const ca = {}; (d.clase_activos.labels||[]).forEach((l,i)=>ca[l]=(d.clase_activos.values||[])[i]||0);
-  const geo = {}; (d.geo?.labels||[]).forEach((l,i)=>geo[l]=(d.geo.values||[])[i]||0);
-  const rv = (ca['Renta Variable']||0);
-  const ciclo = (ca['Ciclo de Vida']||0);
-  const acc = (ca['Acciones']||0)+(ca['Acción']||0);
-  const etf = (ca['ETF']||0)+(ca["ETF's"]||0);
-  const ind = (ca['Índice']||0);
-  const deuda = (ca['Deuda']||0);
-  const repo = (ca['Reporto']||0);
-  // Renta variable (fondos RV VALMEX) -> Bolsa Local (mexicana)
-  A['Bolsa Local'] += rv;
-  // Ciclo de vida -> mixto global/deuda
-  A['Mercados Desarrollados'] += ciclo*0.55; A['Deuda MXN'] += ciclo*0.45;
-  // Acciones/ETF/Indice individuales -> por region del drilldown geo
-  const eqInd = acc + etf + ind;
-  if(eqInd > 0){
-    const gt = Object.values(geo).reduce((a,b)=>a+b,0);
-    if(gt > 0){
-      for(const [reg,v] of Object.entries(geo)){
-        const w = eqInd*(v/gt); const R = (reg||'').toLowerCase();
-        if(R.includes('méx')||R.includes('mex')||R.includes('latin')||R.includes('local')) A['Bolsa Local']+=w;
-        else if(R.includes('unid')||R.includes('u.s')||R.includes('estados')||R.includes('norteam')) A['Bolsa USD']+=w;
-        else if(R.includes('emerg')||R.includes('china')||R.includes('asia')) A['Bolsa Emergentes']+=w;
-        else A['Mercados Desarrollados']+=w;
-      }
-    } else { A['Bolsa USD'] += eqInd; }
-  }
-  // Deuda -> por moneda del portafolio
-  if(d.has_usd && !d.has_mxn) A['Deuda USA'] += deuda;
-  else if(d.has_mxn && !d.has_usd) A['Deuda MXN'] += deuda;
-  else { A['Deuda MXN'] += deuda*0.7; A['Deuda USA'] += deuda*0.3; }
-  A['Deuda Corto Plazo'] += repo;
-  const tot = Object.values(A).reduce((a,b)=>a+b,0);
-  return tot > 0 ? A : null;
+// Estrategias activas segun el modo de vista de arriba (3way / avb / avc)
+function _fwdEstrategias(){
+  var mode = (typeof _cmp2ViewMode !== 'undefined' && _cmp2ViewMode) ? _cmp2ViewMode : '3way';
+  var out = [];
+  out.push({k:'A', d: _cmp2DataA, label:_FWD_LBL.A, color: CMP2_COLORS[0]});
+  if(mode==='3way' || mode==='avb') out.push({k:'B', d:_cmp2DataB, label:_FWD_LBL.B, color: CMP2_COLORS[1]});
+  if(mode==='3way' || mode==='avc') out.push({k:'C', d:_cmp2DataC, label:_FWD_LBL.C, color: CMP2_COLORS[2]});
+  return out;
 }
 
 async function _fwdRender(){
-  const kpi = document.getElementById('fwd-kpi'); const note = document.getElementById('fwd-note');
-  if(!kpi) return;
-  const d = _fwdSel==='A'?_cmp2DataA : _fwdSel==='B'?_cmp2DataB : _cmp2DataC;
-  const comp = (d && d.composicion && d.composicion.length) ? d.composicion : null;  // look-through real por fondo
-  const alloc = comp ? null : _fwdAllocFromPortfolio(d);
-  if(!comp && !alloc){
-    kpi.innerHTML = `<div class="fwd-k"><div class="kl">Sin datos</div><div class="ks" style="font-weight:600">Calcula/ajusta el portafolio en la pestaña Configuración para ver su forward aquí.</div></div>`;
-    if(_fwdChart){ _fwdChart.destroy(); _fwdChart=null; }
-    return;
+  var tbl = document.getElementById('fwd-tbl'); var note = document.getElementById('fwd-note');
+  if(!tbl) return;
+  var ests = _fwdEstrategias();
+  var res = [];
+  for(var i=0;i<ests.length;i++){
+    var e = ests[i];
+    var comp = (e.d && e.d.composicion && e.d.composicion.length) ? e.d.composicion : null;
+    if(!comp) continue;
+    try{
+      var r = await fetch('/api/forward',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({composicion: comp, fee: 0.01})});
+      var dd = await r.json();
+      if(dd.ok && dd.portafolio){ res.push({e:e, P:dd.portafolio, su:dd.supuestos||{}}); }
+    }catch(err){}
   }
-  const feeGuess = 0.010; // 1% neto por defecto
-  try{
-    const r = await fetch('/api/forward',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(comp ? {composicion: comp, fee: feeGuess} : {alloc, fee: feeGuess})});
-    const dd = await r.json();
-    if(!dd.ok || !dd.portafolio){ kpi.innerHTML='<div class="fwd-k"><div class="kl">No se pudo calcular</div></div>'; return; }
-    const P = dd.portafolio; const H = P['h'+_fwdHoriz];
-    const N = _fwdHoriz;
-    const f  = (x)=> (x>=0?'+':'')+(x*100).toFixed(1)+'%';           // acumulado
-    const ann= (c)=> Math.pow(1+c, 1/N) - 1;                          // anualizado
-    const fa = (x)=> (x>=0?'+':'')+(x*100).toFixed(1)+'%/año';
-    const mult = (1+H.mediana_nom).toFixed(2);
-    kpi.innerHTML = `
-      <div class="fwd-k" style="flex:1.3;min-width:210px">
-        <div class="kl">Rendimiento esperado (en pesos)</div>
-        <div class="kv">${(ann(H.mediana_nom)*100).toFixed(1)}% <span style="font-size:13px;color:var(--gray)">al año</span></div>
-        <div class="ks">En ${N} años: <b>${f(H.mediana_nom)}</b> · tu inversión ~<b>${mult}×</b></div>
-        <div class="ks" style="color:var(--gray)">Poder de compra (real): <b>${fa(ann(H.mediana_real))}</b> · ${f(H.mediana_real)} en ${N}A</div>
-      </div>
-      <div class="fwd-k" style="flex:1.7;min-width:280px">
-        <div class="kl">Escenarios a ${N} años</div>
-        <div style="display:flex;gap:16px;margin-top:3px;flex-wrap:wrap">
-          <div><div style="font-size:9.5px;color:#e0503c;font-weight:800">CONSERVADOR</div><div style="font-size:17px;font-weight:800;color:var(--navy)">${fa(ann(H.s_lo))}</div><div style="font-size:10px;color:var(--gray)">${f(H.s_lo)} total</div></div>
-          <div><div style="font-size:9.5px;color:#1a7f4e;font-weight:800">ESPERADO</div><div style="font-size:17px;font-weight:800;color:#1a7f4e">${fa(ann(H.mediana_nom))}</div><div style="font-size:10px;color:var(--gray)">${f(H.mediana_nom)} total</div></div>
-          <div><div style="font-size:9.5px;color:#3f559e;font-weight:800">OPTIMISTA</div><div style="font-size:17px;font-weight:800;color:var(--navy)">${fa(ann(H.s_hi))}</div><div style="font-size:10px;color:var(--gray)">${f(H.s_hi)} total</div></div>
-        </div>
-        <div class="ks" style="margin-top:5px;opacity:.6;font-size:9.5px">técnico: volatilidad σ ${(P.sigma*100).toFixed(1)}%/año · rango = ±½ desviación estándar</div>
-      </div>`;
-    const su = dd.supuestos||{};
-    note.innerHTML = `Asignación tomada del drilldown del portafolio (${_fwdSel==='A'?'Actual':_fwdSel==='B'?'Perfil':'Propuesta'}). Retornos JPM (USD) → MXN vía depreciación PPP ${(su.deprec_peso*100).toFixed(1)}%/año; riesgo cambiario ${(su.fx_vol*100).toFixed(0)}% en sleeves USD, removido en activos MXN nativos. σ vía covarianza JPM real; proyección lognormal (volatility drag); neto 1% comisión; real = deflactado por inflación MX ${(su.mx_infl*100).toFixed(1)}%.`;
-    const cono = H.cono||[];
-    const ctx = document.getElementById('fwd-chart');
-    if(_fwdChart){ _fwdChart.destroy(); }
-    _fwdChart = new Chart(ctx, {type:'line',
-      data:{ labels: cono.map(p=>'Año '+p.t),
-        datasets:[
-          {label:'+½σ (optimista)', data:cono.map(p=>+(p.phi*100).toFixed(1)), borderColor:'rgba(0,32,92,.28)', backgroundColor:'rgba(65,187,201,.15)', borderWidth:1, pointRadius:0, fill:'+1', tension:.25},
-          {label:'Mediana', data:cono.map(p=>+(p.med*100).toFixed(1)), borderColor:'#00205C', borderWidth:3, pointRadius:0, fill:false, tension:.25},
-          {label:'−½σ (conservador)', data:cono.map(p=>+(p.plo*100).toFixed(1)), borderColor:'rgba(224,80,60,.6)', borderWidth:1.5, borderDash:[4,3], pointRadius:0, fill:false, tension:.25},
-        ]},
-      options:{responsive:true,maintainAspectRatio:false,
-        plugins:{legend:{display:true,labels:{font:{size:10},boxWidth:14}},
-          tooltip:{callbacks:{label:c=>c.dataset.label+': '+(c.parsed.y>=0?'+':'')+c.parsed.y+'%'}},
-          title:{display:true,text:'Rendimiento acumulado proyectado en MXN (%)',font:{size:11},color:'#5B6670'}},
-        scales:{x:{grid:{display:false},ticks:{font:{size:10}}},y:{ticks:{font:{size:10},callback:v=>v+'%'}}}}});
-  }catch(e){ kpi.innerHTML='<div class="fwd-k"><div class="kl">Error de conexión</div></div>'; }
+  if(!res.length){
+    tbl.innerHTML = '<tr><td style="text-align:center;color:#888;font-weight:600;padding:16px;">Calcula/ajusta tus portafolios arriba para ver su rendimiento esperado.</td></tr>';
+    if(_fwdChart){ _fwdChart.destroy(); _fwdChart=null; }
+    if(note) note.innerHTML=''; return;
+  }
+  var N = _fwdHoriz;
+  var ann = function(c){ return Math.pow(1+c, 1/N) - 1; };
+  var f = function(x){ return (x>=0?'+':'')+(x*100).toFixed(1)+'%'; };
+  var fa = function(x){ return (x>=0?'+':'')+(x*100).toFixed(1)+'%'; };
+
+  // ── Tabla comparativa (una fila por estrategia) ──
+  var rows = res.map(function(o){
+    var H = o.P['h'+N];
+    return '<tr>'
+      + '<td><span class="fwd-dot" style="background:'+o.e.color+'"></span>'+o.e.label+'</td>'
+      + '<td style="color:#1a7f4e;font-weight:800">'+fa(ann(H.mediana_nom))+' <span style="font-size:10.5px;color:var(--gray)">/año</span></td>'
+      + '<td>'+f(H.mediana_nom)+'</td>'
+      + '<td style="color:var(--gray)">'+fa(ann(H.mediana_real))+'/año</td>'
+      + '<td style="font-size:12px">'+f(H.s_lo)+' · '+f(H.s_hi)+'</td>'
+      + '</tr>';
+  }).join('');
+  tbl.innerHTML = '<thead><tr><th>Estrategia</th><th>Rendimiento (anual)</th><th>En '+N+' años</th><th>Real / año</th><th>Rango probable ('+N+'A)</th></tr></thead><tbody>'+rows+'</tbody>';
+
+  var su = res[0].su;
+  if(note) note.innerHTML = 'Todo en pesos, neto de comisiones. Retornos de largo plazo de J.P. Morgan convertidos a pesos; la deuda usa el rendimiento real de cada fondo. "Real" = ya descontada la inflación (poder de compra). El rango es ±½ desviación estándar (el ~38% central de los escenarios).';
+
+  // ── Gráfica: una línea (mediana) por estrategia, mismos colores que arriba ──
+  var labels = res[0].P['h'+N].cono.map(function(p){ return 'Año '+p.t; });
+  var datasets = res.map(function(o){
+    var cono = o.P['h'+N].cono;
+    return {label:o.e.label, data:cono.map(function(p){ return +(p.med*100).toFixed(1); }),
+      borderColor:o.e.color, backgroundColor:'transparent', fill:false, borderWidth:2.5,
+      pointRadius:0, pointHitRadius:4, pointHoverRadius:3, tension:0.35};
+  });
+  var ctx = document.getElementById('fwd-chart');
+  if(_fwdChart){ _fwdChart.destroy(); }
+  _fwdChart = new Chart(ctx, {type:'line',
+    data:{labels:labels, datasets:datasets},
+    options:{responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},
+        title:{display:true,text:'Crecimiento acumulado proyectado (en pesos)',font:{size:12,family:'Montserrat'},color:'#5B6670'},
+        tooltip:{backgroundColor:'#00205C',padding:10,cornerRadius:6,callbacks:{label:function(c){ return ' '+c.dataset.label+': '+(c.parsed.y>=0?'+':'')+c.parsed.y+'%'; }}}},
+      layout:{padding:{right:64,top:14}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:12,family:'Montserrat'},color:'#00205C',maxTicksLimit:8},border:{display:false}},
+        y:{grid:{display:false},ticks:{font:{size:12,family:'Montserrat'},color:'#00205C',callback:function(v){return v+'%';}},border:{display:false}}}},
+    plugins:[{id:'fwdEndLabels', afterDatasetsDraw:function(chart){
+      var c=chart.ctx; c.save();
+      var pts=chart.data.datasets.map(function(ds,i){var m=chart.getDatasetMeta(i);if(m.hidden||!ds.data.length)return null;var lp=m.data[m.data.length-1];if(!lp)return null;return{x:lp.x,y:lp.y,val:'+'+ds.data[ds.data.length-1]+'%',color:ds.borderColor};}).filter(Boolean);
+      pts.sort(function(a,b){return a.y-b.y;});for(var i=1;i<pts.length;i++){if(pts[i].y-pts[i-1].y<16)pts[i].y=pts[i-1].y+16;}
+      pts.forEach(function(p){c.fillStyle=p.color;c.font='bold 13px Montserrat,sans-serif';c.textAlign='left';c.textBaseline='middle';c.fillText(p.val,p.x+6,p.y);});c.restore();}}]});
 }
 
 // ── Handlers monto/pct ──
