@@ -2580,7 +2580,8 @@ async function _fwdRender(){
   if(note) note.innerHTML = 'Todo en pesos, neto de comisiones. Retornos de largo plazo de J.P. Morgan convertidos a pesos; la deuda usa el rendimiento real de cada fondo. "Real" = ya descontada la inflación (poder de compra). El rango es ±½ desviación estándar (el ~38% central de los escenarios).';
 
   // ── Gráfica: una línea (mediana) por estrategia, mismos colores que arriba ──
-  var labels = res[0].P['h'+N].cono.map(function(p){ return 'Año '+p.t; });
+  var _y0 = new Date().getFullYear();   // anio actual DINAMICO (no hardcodeado)
+  var labels = res[0].P['h'+N].cono.map(function(p){ return String(_y0 + p.t); });
   var datasets = res.map(function(o){
     var cono = o.P['h'+N].cono;
     return {label:o.e.label, data:cono.map(function(p){ return +(p.med*100).toFixed(1); }),
