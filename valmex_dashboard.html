@@ -2491,20 +2491,10 @@ const _FWD_LBL = {A: 'P. Actual', B: 'P. Modelo', C: 'P. Propuesta'};
   function build(){
     const page = document.getElementById('page-comparativa2');
     if(!page || document.getElementById('fwd-panel')) return;
-    const div = document.createElement('div'); div.id = 'fwd-panel'; div.className = 'prop-dash-scaler';
+    const div = document.createElement('div'); div.id = 'fwd-panel'; div.className = 'cmp2-panel'; div.style.margin = '22px 20px 0';
     div.innerHTML = `
-      <div class="cmp-header-bar">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <div style="width:8px;align-self:stretch;background:var(--sky);border-radius:3px;flex-shrink:0;"></div>
-          <div>
-            <div class="cmp-main-title">Rendimiento Esperado a Futuro</div>
-            <div class="cmp-sub-title">Proyección en Pesos · J.P. Morgan</div>
-          </div>
-        </div>
-        <img src="/VALMEX2.png" style="height:75px;width:auto;" alt="VALMEX">
-      </div>
-      <div style="height:2px;background:var(--navy);margin:0 20px 2px;"></div>
-      <div style="padding:14px 24px 22px;">
+      <div class="cmp2-panel-hdr">Rendimiento Esperado a Futuro</div>
+      <div style="padding:16px;">
         <div style="display:flex;justify-content:center;margin:2px 0 16px;">
           <button class="cmp2-vf-btn" id="fwd-h5" onclick="_fwdSetH(5)">A 5 años</button>
           <button class="cmp2-vf-btn active" id="fwd-h10" onclick="_fwdSetH(10)">A 10 años</button>
@@ -2586,9 +2576,9 @@ async function _fwdRender(){
   var datasets = [];
   res.forEach(function(o){
     var cono = o.P['h'+N].cono;
-    datasets.push({label:o.e.label+' (-½σ)', data:cono.map(function(p){return +(p.plo*100).toFixed(1);}), borderColor:'transparent', borderWidth:0, pointRadius:0, fill:false, tension:0.35});
-    datasets.push({label:o.e.label+' (rango ±½σ)', data:cono.map(function(p){return +(p.phi*100).toFixed(1);}), borderColor:'transparent', borderWidth:0, pointRadius:0, fill:'-1', backgroundColor:_hex2rgba(o.e.color,0.10), tension:0.35});
-    datasets.push({label:o.e.label, data:cono.map(function(p){return +(p.med*100).toFixed(1);}), borderColor:o.e.color, backgroundColor:'transparent', fill:false, borderWidth:2.5, pointRadius:0, pointHitRadius:4, pointHoverRadius:3, tension:0.35, _med:true});
+    datasets.push({label:o.e.label+' (-½σ)', data:cono.map(function(p){return +((1+p.plo)*100).toFixed(1);}), borderColor:'transparent', borderWidth:0, pointRadius:0, fill:false, tension:0.35});
+    datasets.push({label:o.e.label+' (rango ±½σ)', data:cono.map(function(p){return +((1+p.phi)*100).toFixed(1);}), borderColor:'transparent', borderWidth:0, pointRadius:0, fill:'-1', backgroundColor:_hex2rgba(o.e.color,0.10), tension:0.35});
+    datasets.push({label:o.e.label, data:cono.map(function(p){return +((1+p.med)*100).toFixed(1);}), borderColor:o.e.color, backgroundColor:'transparent', fill:false, borderWidth:2.5, pointRadius:0, pointHitRadius:4, pointHoverRadius:3, tension:0.35, _med:true});
   });
   var ctx = document.getElementById('fwd-chart');
   if(_fwdChart){ _fwdChart.destroy(); }
@@ -2596,14 +2586,14 @@ async function _fwdRender(){
     data:{labels:labels, datasets:datasets},
     options:{responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
       plugins:{legend:{display:false},
-        title:{display:true,text:'Crecimiento acumulado proyectado (en pesos)',font:{size:12,family:'Montserrat'},color:'#5B6670'},
-        tooltip:{backgroundColor:'#00205C',padding:10,cornerRadius:6,filter:function(it){return it.dataset._med;},callbacks:{label:function(c){ return ' '+c.dataset.label+': '+(c.parsed.y>=0?'+':'')+c.parsed.y+'%'; }}}},
+        title:{display:true,text:'Valor proyectado por cada $100 invertidos hoy (en pesos)',font:{size:12,family:'Montserrat'},color:'#5B6670'},
+        tooltip:{backgroundColor:'#00205C',padding:10,cornerRadius:6,filter:function(it){return it.dataset._med;},callbacks:{label:function(c){ return ' '+c.dataset.label+': $'+c.parsed.y; }}}},
       layout:{padding:{right:64,top:14}},
-      scales:{x:{grid:{display:false},ticks:{font:{size:12,family:'Montserrat'},color:'#00205C',maxTicksLimit:8},border:{display:false}},
-        y:{grid:{display:false},ticks:{font:{size:12,family:'Montserrat'},color:'#00205C',callback:function(v){return v+'%';}},border:{display:false}}}},
+      scales:{x:{grid:{display:false},ticks:{font:{size:12,family:'Montserrat'},color:'#00205C'},border:{display:false}},
+        y:{grid:{display:false},ticks:{font:{size:12,family:'Montserrat'},color:'#00205C',callback:function(v){return '$'+v;}},border:{display:false}}}},
     plugins:[{id:'fwdEndLabels', afterDatasetsDraw:function(chart){
       var c=chart.ctx; c.save();
-      var pts=chart.data.datasets.map(function(ds,i){var m=chart.getDatasetMeta(i);if(m.hidden||!ds.data.length||!ds._med)return null;var lp=m.data[m.data.length-1];if(!lp)return null;return{x:lp.x,y:lp.y,val:'+'+ds.data[ds.data.length-1]+'%',color:ds.borderColor};}).filter(Boolean);
+      var pts=chart.data.datasets.map(function(ds,i){var m=chart.getDatasetMeta(i);if(m.hidden||!ds.data.length||!ds._med)return null;var lp=m.data[m.data.length-1];if(!lp)return null;return{x:lp.x,y:lp.y,val:'$'+ds.data[ds.data.length-1],color:ds.borderColor};}).filter(Boolean);
       pts.sort(function(a,b){return a.y-b.y;});for(var i=1;i<pts.length;i++){if(pts[i].y-pts[i-1].y<16)pts[i].y=pts[i-1].y+16;}
       pts.forEach(function(p){c.fillStyle=p.color;c.font='bold 13px Montserrat,sans-serif';c.textAlign='left';c.textBaseline='middle';c.fillText(p.val,p.x+6,p.y);});c.restore();}}]});
 }
