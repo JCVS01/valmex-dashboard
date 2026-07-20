@@ -1006,6 +1006,9 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 0;font-size:13px;font-weight:600;color:#334155;">
             <input type="checkbox" id="pdf-cmp2-p3" checked style="accent-color:#00205C;width:16px;height:16px;"> Asset Allocation
           </label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 0;font-size:13px;font-weight:600;color:#334155;">
+            <input type="checkbox" id="pdf-cmp2-fwd" checked style="accent-color:#00205C;width:16px;height:16px;"> Rendimiento Esperado
+          </label>
           <button id="btn-pdf-cmp2" style="margin-top:10px;width:100%;padding:8px 0;background:#00205C;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;font-family:'Montserrat',sans-serif;cursor:pointer;">Descargar PDF</button>
         </div>
       </div>
@@ -2499,10 +2502,8 @@ const _FWD_LBL = {A: 'P. Actual', B: 'P. Modelo', C: 'P. Propuesta'};
           <button class="cmp2-vf-btn" id="fwd-h5" onclick="_fwdSetH(5)">A 5 años</button>
           <button class="cmp2-vf-btn active" id="fwd-h10" onclick="_fwdSetH(10)">A 10 años</button>
         </div>
-        <p class="fwd-desc">Cuánto podría crecer cada estrategia hacia adelante, en pesos, según las expectativas de largo plazo de J.P. Morgan. La línea muestra el escenario más probable; el rango indica dónde caería la mayoría de los resultados.</p>
-        <div style="height:320px;position:relative;"><canvas id="fwd-chart"></canvas></div>
+        <div class="fwd-chart-box" style="height:420px;position:relative;"><canvas id="fwd-chart"></canvas></div>
         <div style="overflow-x:auto;"><table class="cmp2-fwd" id="fwd-tbl"></table></div>
-        <p class="fwd-note" id="fwd-note"></p>
       </div>`;
     page.appendChild(div);
     _fwdRender();
@@ -2557,14 +2558,15 @@ async function _fwdRender(){
   var rows = res.map(function(o){
     var H = o.P['h'+N];
     return '<tr>'
-      + '<td><span class="fwd-dot" style="background:'+o.e.color+'"></span>'+o.e.label+'</td>'
-      + '<td style="color:#1a7f4e;font-weight:800">'+fa(ann(H.mediana_nom))+' <span style="font-size:10.5px;color:var(--gray)">/año</span></td>'
-      + '<td>'+f(H.mediana_nom)+'</td>'
-      + '<td style="color:var(--gray)">'+fa(ann(H.mediana_real))+'/año</td>'
-      + '<td style="font-size:12px">'+f(H.s_lo)+' · '+f(H.s_hi)+'</td>'
+      + '<td style="color:#00205C;font-weight:700"><span class="fwd-dot" style="background:'+o.e.color+'"></span>'+o.e.label+'</td>'
+      + '<td style="color:#00205C;font-weight:700">'+fa(ann(H.mediana_nom))+'</td>'
+      + '<td style="color:#00205C;font-weight:700">'+fa(ann(H.mediana_real))+' <span style="font-size:10.5px">/año</span></td>'
+      + '<td style="color:#00205C;font-weight:700">'+f(H.mediana_nom)+'</td>'
+      + '<td style="color:#c0392b;font-weight:700">'+f(H.s_lo)+'</td>'
+      + '<td style="color:#1a7f4e;font-weight:700">'+f(H.s_hi)+'</td>'
       + '</tr>';
   }).join('');
-  tbl.innerHTML = '<thead><tr><th>Estrategia</th><th>Rendimiento (anual)</th><th>En '+N+' años</th><th>Real / año</th><th>Rango probable ('+N+'A)</th></tr></thead><tbody>'+rows+'</tbody>';
+  tbl.innerHTML = '<thead><tr><th>Estrategia</th><th>R. Anualizado</th><th>R. Real (despu&eacute;s de inflaci&oacute;n)</th><th>R. Efectivo (en '+N+' a&ntilde;os)</th><th>R. Pesimista ('+N+'A)</th><th>R. Optimista ('+N+'A)</th></tr></thead><tbody>'+rows+'</tbody>';
 
   var su = res[0].su;
   if(note) note.innerHTML = 'Todo en pesos, neto de comisiones. Retornos de largo plazo de J.P. Morgan convertidos a pesos; la deuda usa el rendimiento real de cada fondo. "Real" = ya descontada la inflación (poder de compra). El rango es ±½ desviación estándar (el ~38% central de los escenarios).';
@@ -2576,24 +2578,25 @@ async function _fwdRender(){
   var datasets = [];
   res.forEach(function(o){
     var cono = o.P['h'+N].cono;
-    datasets.push({label:o.e.label+' (-½σ)', data:cono.map(function(p){return +((1+p.plo)*100).toFixed(1);}), borderColor:'transparent', borderWidth:0, pointRadius:0, fill:false, tension:0.35});
-    datasets.push({label:o.e.label+' (rango ±½σ)', data:cono.map(function(p){return +((1+p.phi)*100).toFixed(1);}), borderColor:'transparent', borderWidth:0, pointRadius:0, fill:'-1', backgroundColor:_hex2rgba(o.e.color,0.10), tension:0.35});
-    datasets.push({label:o.e.label, data:cono.map(function(p){return +((1+p.med)*100).toFixed(1);}), borderColor:o.e.color, backgroundColor:'transparent', fill:false, borderWidth:2.5, pointRadius:0, pointHitRadius:4, pointHoverRadius:3, tension:0.35, _med:true});
+    if(o.e.k === 'A'){   // banda +-0.5 sigma SOLO graficada para el Actual (referencia); rangos de todas van en la tabla
+    datasets.push({label:o.e.label+' (-½σ)', data:cono.map(function(p){return +(p.plo*100).toFixed(1);}), borderColor:'transparent', borderWidth:0, pointRadius:0, fill:false, tension:0.35});
+    datasets.push({label:o.e.label+' (rango ±½σ)', data:cono.map(function(p){return +(p.phi*100).toFixed(1);}), borderColor:'transparent', borderWidth:0, pointRadius:0, fill:'-1', backgroundColor:_hex2rgba(o.e.color,0.13), tension:0.35});
+    }
+    datasets.push({label:o.e.label, data:cono.map(function(p){return +(p.med*100).toFixed(1);}), borderColor:o.e.color, backgroundColor:o.e.color, fill:false, borderWidth:3, pointRadius:0, pointHitRadius:4, pointHoverRadius:3, tension:0.35, _med:true});
   });
   var ctx = document.getElementById('fwd-chart');
   if(_fwdChart){ _fwdChart.destroy(); }
   _fwdChart = new Chart(ctx, {type:'line',
     data:{labels:labels, datasets:datasets},
     options:{responsive:true, maintainAspectRatio:false, interaction:{mode:'index',intersect:false},
-      plugins:{legend:{display:false},
-        title:{display:true,text:'Valor proyectado por cada $100 invertidos hoy (en pesos)',font:{size:12,family:'Montserrat'},color:'#5B6670'},
-        tooltip:{backgroundColor:'#00205C',padding:10,cornerRadius:6,filter:function(it){return it.dataset._med;},callbacks:{label:function(c){ return ' '+c.dataset.label+': $'+c.parsed.y; }}}},
-      layout:{padding:{right:64,top:14}},
-      scales:{x:{grid:{display:false},ticks:{font:{size:12,family:'Montserrat'},color:'#00205C'},border:{display:false}},
-        y:{grid:{display:false},ticks:{font:{size:12,family:'Montserrat'},color:'#00205C',callback:function(v){return '$'+v;}},border:{display:false}}}},
+      plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:14,boxHeight:14,font:{size:11,family:'Montserrat',weight:'700'},padding:14,usePointStyle:true,pointStyle:'rectRounded',color:'#00205C',filter:function(item,data){return data.datasets[item.datasetIndex]._med;}}},
+        tooltip:{backgroundColor:'#00205C',titleFont:{size:12,weight:'600'},bodyFont:{size:12},padding:8,cornerRadius:6,filter:function(it){return it.dataset._med;},callbacks:{label:function(c){ return ' '+c.dataset.label+': '+(c.parsed.y>=0?'+':'')+c.parsed.y+'%'; }}}},
+      layout:{padding:{right:60,top:22}},
+      scales:{x:{title:{display:true,text:'Año',font:{size:11,weight:'700',family:'Montserrat'},color:'#00205C'},grid:{display:false},ticks:{font:{size:11,family:'Montserrat'},color:'#00205C',maxRotation:0,autoSkip:false},border:{display:false}},
+        y:{title:{display:true,text:'Rendimiento acumulado',font:{size:11,weight:'700',family:'Montserrat'},color:'#00205C'},grid:{color:'rgba(0,32,92,0.06)'},ticks:{font:{size:11,family:'Montserrat'},color:'#00205C',callback:function(v){return v+'%';}},border:{display:false}}}},
     plugins:[{id:'fwdEndLabels', afterDatasetsDraw:function(chart){
       var c=chart.ctx; c.save();
-      var pts=chart.data.datasets.map(function(ds,i){var m=chart.getDatasetMeta(i);if(m.hidden||!ds.data.length||!ds._med)return null;var lp=m.data[m.data.length-1];if(!lp)return null;return{x:lp.x,y:lp.y,val:'$'+ds.data[ds.data.length-1],color:ds.borderColor};}).filter(Boolean);
+      var pts=chart.data.datasets.map(function(ds,i){var m=chart.getDatasetMeta(i);if(m.hidden||!ds.data.length||!ds._med)return null;var lp=m.data[m.data.length-1];if(!lp)return null;return{x:lp.x,y:lp.y,val:(ds.data[ds.data.length-1]>=0?'+':'')+ds.data[ds.data.length-1]+'%',color:ds.borderColor};}).filter(Boolean);
       pts.sort(function(a,b){return a.y-b.y;});for(var i=1;i<pts.length;i++){if(pts[i].y-pts[i-1].y<16)pts[i].y=pts[i-1].y+16;}
       pts.forEach(function(p){c.fillStyle=p.color;c.font='bold 13px Montserrat,sans-serif';c.textAlign='left';c.textBaseline='middle';c.fillText(p.val,p.x+6,p.y);});c.restore();}}]});
 }
@@ -3575,8 +3578,12 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
   try{ if(typeof _fwdRender==='function') _fwdRender(); }catch(e){}
   const mode = _cmp2ViewMode;
   const is3way = mode === '3way';
-  const showB = mode !== 'avc';
-  const showC = mode !== 'avb';
+  // Un portafolio SOLO aporta columna si tiene holdings (composicion). Vacio => se omite en toda la vista y en el PDF.
+  const _hasComp = d => !!(d && d.composicion && d.composicion.length);
+  const showA = _hasComp(dataA);
+  const showB = (mode !== 'avc') && _hasComp(dataB);
+  const showC = (mode !== 'avb') && _hasComp(dataC);
+  const _nVis = (showA?1:0) + (showB?1:0) + (showC?1:0);
 
   const fmtR = v => (v == null) ? '\u2014' : (v >= 0 ? '+' : '') + v.toFixed(2) + ' %';
   const fmtPct = v => v != null ? (v * 100).toFixed(2) + ' %' : '\u2014';
@@ -3588,6 +3595,8 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
   const _cmp2LblB = 'Portafolio ' + perfilVal;
   const lblA = 'Portafolio Actual', lblB = _cmp2LblB, lblC = 'Portafolio Propuesta';
   const lblAshort = 'P. Actual', lblBshort = lblB.replace('Portafolio','P.'), lblCshort = 'P. Propuesta';
+  // Forward usa los MISMOS labels dinamicos que el resto del dashboard (congruencia) — nombre completo
+  _FWD_LBL.A = lblA; _FWD_LBL.B = lblB; _FWD_LBL.C = lblC;
 
   // Title
   const cmpMain = document.getElementById('cmp2-title-main');
@@ -3620,19 +3629,21 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
   ['cmp2-st-th-a','cmp2-sc-th-a'].forEach(id => setT(id, lblAshort));
   ['cmp2-st-th-b','cmp2-sc-th-b'].forEach(id => setT(id, lblBshort));
   ['cmp2-st-th-c','cmp2-sc-th-c'].forEach(id => setT(id, lblCshort));
-  // Hide/show header columns for B and C
+  // Hide/show header columns for A, B and C (segun tengan datos)
+  ['cmp2-h-th-a','cmp2-st-th-a','cmp2-sc-th-a'].forEach(id => setV(id, showA));
   ['cmp2-h-th-b','cmp2-st-th-b','cmp2-sc-th-b'].forEach(id => setV(id, showB));
   ['cmp2-h-th-c','cmp2-st-th-c','cmp2-sc-th-c'].forEach(id => setV(id, showC));
 
   // Rendimientos cards: show/hide + adjust grid
+  setV('cmp2-rend-card-a', showA);
   setV('cmp2-rend-card-b', showB);
   setV('cmp2-rend-card-c', showC);
   const rendGrid = document.getElementById('cmp2-rend-grid');
-  if (rendGrid) rendGrid.style.gridTemplateColumns = is3way ? '1fr 1fr 1fr' : '1fr 1fr';
+  if (rendGrid) rendGrid.style.gridTemplateColumns = 'repeat(' + Math.max(_nVis,1) + ',1fr)';
 
   // Risk contrib grid columns
   const rcGrid = document.getElementById('cmp2-risk-contrib-grid');
-  if (rcGrid) rcGrid.style.gridTemplateColumns = is3way ? 'repeat(3,1fr)' : 'repeat(2,1fr)';
+  if (rcGrid) rcGrid.style.gridTemplateColumns = 'repeat(' + Math.max(_nVis,1) + ',1fr)';
 
   // Chart labels + dataset visibility (line/scatter use hidden flag; bar charts rebuilt below)
   [cmp2Charts.perf, cmp2Charts.scatter].forEach(c => {
@@ -3640,6 +3651,7 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
     c.data.datasets[0].label = lblAshort;
     c.data.datasets[1].label = lblBshort;
     c.data.datasets[2].label = lblCshort;
+    c.data.datasets[0].hidden = !showA;
     c.data.datasets[1].hidden = !showB;
     c.data.datasets[2].hidden = !showC;
   });
@@ -3661,7 +3673,7 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
     const AC_COLORS = {'Reporto':'#00205C','Deuda':'#3DA5E0','Renta Variable':'#41BBC9','Ciclo de Vida':'#5B6670','Índice':'#3F559E','Acciones':'#FECB46','ETF':'#7CC677'};
     const assetBars = document.getElementById('cmp2-asset-bars');
     if (assetBars) {
-      const _allDatas = [dataA, dataB, dataC], _allLbls = [lblA, lblB, lblC], _allShowFlags = [true, showB, showC];
+      const _allDatas = [dataA, dataB, dataC], _allLbls = [lblA, lblB, lblC], _allShowFlags = [showA, showB, showC];
       const datas = _allDatas.filter((_, i) => _allShowFlags[i]);
       const lbls = _allLbls.filter((_, i) => _allShowFlags[i]);
       const barColors = CMP2_COLORS.filter((_, i) => _allShowFlags[i]);
@@ -3768,7 +3780,7 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
   {
     const FUND_ORDER = ['Reporto MXN','Reporto USD','VXREPO1','VXGUBCP','VLMXETF','VXUDIMP','VXDEUDA','VXGUBLP','VXCOBER','VXTBILL','VLMXDME','VALMXA','VALMX28','VALMX20','VALMXVL','VALMXES','VLMXTEC','VLMXESG','VALMXHC','VXINFRA','Fondos Ciclo de Vida','Acciones',"ETF's"];
     const _hAllComps = [dataA?.composicion||[], dataB?.composicion||[], dataC?.composicion||[]];
-    const _hShowFlags = [true, showB, showC];
+    const _hShowFlags = [showA, showB, showC];
     const comps = _hAllComps.filter((_, i) => _hShowFlags[i]);
     const mps = comps.map(c => { const m={}; c.forEach(f => { m[f.fondo]=f; }); return m; });
     const allFunds = new Set(comps.flat().map(f=>f.fondo));
@@ -3974,8 +3986,8 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
       metrics.forEach(row => {
         const [label, a, b, c, fmt, sign] = row;
         const tr = document.createElement('tr');
-        let tdHtml = `<td style="font-weight:600;">${label}</td>`
-          + `<td class="r" style="${colorVal(a,sign)};font-weight:600;">${fmt(a)}</td>`;
+        let tdHtml = `<td style="font-weight:600;">${label}</td>`;
+        if (showA) tdHtml += `<td class="r" style="${colorVal(a,sign)};font-weight:600;">${fmt(a)}</td>`;
         if (showB) tdHtml += `<td class="r" style="${colorVal(b,sign)};font-weight:600;">${fmt(b)}</td>`;
         if (showC) tdHtml += `<td class="r" style="${colorVal(c,sign)};font-weight:600;">${fmt(c)}</td>`;
         tr.innerHTML = tdHtml;
@@ -3985,7 +3997,7 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
       const fnRow = document.createElement('tr');
       const rfVal = dataA?.rf_annual ?? dataB?.rf_annual ?? dataC?.rf_annual;
       const rfPct = rfVal != null ? (rfVal * 100).toFixed(2) + '%' : 'N/A';
-      const _statsCols = 1 + 1 + (showB ? 1 : 0) + (showC ? 1 : 0);
+      const _statsCols = 1 + (showA ? 1 : 0) + (showB ? 1 : 0) + (showC ? 1 : 0);
       fnRow.innerHTML = `<td colspan="${_statsCols}" style="font-size:10px;color:#64748B;padding-top:6px;font-style:italic;">*Rf = CETES 28d promedio del per\u00edodo (${rfPct} anual)</td>`;
       tbody.appendChild(fnRow);
       // Update footer Rf display too
@@ -4061,7 +4073,7 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
       ['Oro -10%',                   f => f?.goldDown],
       ['VIX +10%',                   f => f?.vixSpike != null ? f.vixSpike * (10/50) : null],
     ];
-    const _sensVis = [true, showB, showC];
+    const _sensVis = [showA, showB, showC];
     const _visFi = fi.filter((_, i) => _sensVis[i]);
     const activeSens = sensScenarios.filter(([, fn]) => _visFi.some(f => f && Math.abs(fn(f)||0) > 0.0001));
     // Split long labels into 2 lines for readability
@@ -4113,7 +4125,7 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
       ['Recuperaci\u00f3n Bancaria 2023', i => hs[i]?.bankRecovery],
       ['Crisis Arancelaria 2025', i => hs[i]?.tariffCrisis],
     ];
-    const _scVis = [true, showB, showC];
+    const _scVis = [showA, showB, showC];
     const _scIdx = [0, 1, 2].filter(i => _scVis[i]);
     const active = scenarios.filter(([, fn]) => _scIdx.some(i => fn(i) != null));
     if (cmp2Charts.scenarios) {
@@ -4137,7 +4149,7 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
     const grid = document.getElementById('cmp2-risk-contrib-grid');
     const panel = document.getElementById('cmp2-risk-contrib-panel');
     const _rcAllDatas = [dataA, dataB, dataC];
-    const _rcShowFlags = [true, showB, showC];
+    const _rcShowFlags = [showA, showB, showC];
     const _rcAllLbls = [lblA, lblB, lblC];
     const _rcDatas = _rcAllDatas.filter((_, i) => _rcShowFlags[i]);
     const _rcLbls = _rcAllLbls.filter((_, i) => _rcShowFlags[i]);
@@ -4354,7 +4366,7 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
   // ── Exposure: RV vs ACWI + Deuda ──
   {
     const _exAllDatas = [dataA,dataB,dataC];
-    const _exShowFlags = [true, showB, showC];
+    const _exShowFlags = [showA, showB, showC];
     const _exDatas = _exAllDatas.filter((_, i) => _exShowFlags[i]);
     const _exColors = CMP2_COLORS.filter((_, i) => _exShowFlags[i]);
     const _exPNames = ['P. Actual','P. Modelo','P. Propuesta'].filter((_, i) => _exShowFlags[i]);
@@ -4454,6 +4466,7 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
         }
 
         const geoCard = document.getElementById('cmp2-rv-geo-card');
+        if (geoCard) geoCard.innerHTML = '';
         if (geoCard && acwi.geo) {
           buildRvExpo('Exposici\u00f3n Geogr\u00e1fica',
             _exDatas.map(d=>d?.geo?.labels||[]),
@@ -4461,6 +4474,7 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
             acwi.geo, geoCard, _exDatas);
         }
         const secCard = document.getElementById('cmp2-rv-sec-card');
+        if (secCard) secCard.innerHTML = '';
         if (secCard && acwi.sectores) {
           buildRvExpo('Exposici\u00f3n Sectorial',
             _exDatas.map(d=>d?.sectores?.labels||[]),
@@ -4470,6 +4484,10 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
           const hdr = secCard.querySelector('.expo-rv-row .expo-rv-label');
           if (hdr) hdr.textContent = 'Sector';
         }
+        // Defensivo: si el cuerpo quedo vacio, no dejar el panel con solo el encabezado
+        const _geoEmpty = !geoCard || !geoCard.innerHTML.trim();
+        const _secEmpty = !secCard || !secCard.innerHTML.trim();
+        if (_geoEmpty && _secEmpty) rvPanel.style.display = 'none';
       } else if (rvPanel) { rvPanel.style.display = 'none'; }
     } else if (rvPanel) { rvPanel.style.display = 'none'; }
 
@@ -5069,7 +5087,8 @@ document.getElementById('btn-pdf-cmp2').addEventListener('click', async () => {
   const inclP2 = document.getElementById('pdf-cmp2-p2').checked;
   const inclP3r = document.getElementById('pdf-cmp2-p3r').checked;
   const inclP3 = document.getElementById('pdf-cmp2-p3').checked;
-  if (!inclQuilt && !inclFondos && !inclPerfiles && !inclP1 && !inclP2 && !inclP3r && !inclP3) { vxToast('Selecciona al menos una hoja.'); return; }
+  const inclFwd = document.getElementById('pdf-cmp2-fwd') ? document.getElementById('pdf-cmp2-fwd').checked : false;
+  if (!inclQuilt && !inclFondos && !inclPerfiles && !inclP1 && !inclP2 && !inclP3r && !inclP3 && !inclFwd) { vxToast('Selecciona al menos una hoja.'); return; }
   const {jsPDF} = window.jspdf;
   const dash = document.getElementById('cmp2-dash');
   const page1 = document.getElementById('cmp2-page1');
@@ -5421,7 +5440,8 @@ document.getElementById('btn-pdf-cmp2').addEventListener('click', async () => {
   // PDF PAGE 4: Características + Exposición (Drilldown RV y Deuda)
   // ════════════════════════════════════════════════════════════════════
   const hasP3Data = document.getElementById('cmp2-rv-expo-panel')?.style.display !== 'none'
-    || document.getElementById('cmp2-deuda-expo-panel')?.style.display !== 'none';
+    || document.getElementById('cmp2-deuda-expo-panel')?.style.display !== 'none'
+    || document.getElementById('cmp2-movimientos-panel')?.style.display !== 'none';
   if (inclP3 && hasP3Data) {
     const targetH = Math.round(W * (215.9 / 279.4));
     const removeHdr4 = injectHeader(page3, 'Características y Exposición', 'Desglose de los Portafolios por Clase de Activo');
@@ -5462,6 +5482,46 @@ document.getElementById('btn-pdf-cmp2').addEventListener('click', async () => {
     if (!firstPage) pdf.addPage('letter', 'landscape');
     firstPage = false;
     pdf.addImage(cv.toDataURL('image/jpeg', 0.92), 'JPEG', mx, mt, usableW, usableH);
+  }
+
+  // ════════════════════════════════════════════════════════════════════
+  // PDF PAGE 5: Rendimiento Esperado a Futuro (Forward J.P. Morgan LTCMA)
+  // ════════════════════════════════════════════════════════════════════
+  const fwdPanel = document.getElementById('fwd-panel');
+  const fwdHasData = fwdPanel && fwdPanel.querySelector('#fwd-tbl tbody');
+  if (inclFwd && fwdPanel && fwdHasData) {
+    const targetHF = Math.round(W * (215.9 / 279.4));
+    const fwdOrigParent = fwdPanel.parentNode;
+    const fwdOrigNext = fwdPanel.nextSibling;
+    const fwdOrigMargin = fwdPanel.style.margin;
+    const fwdWrap = document.createElement('div'); fwdWrap.id = 'fwd-pdf-page';
+    dash.appendChild(fwdWrap);
+    const removeHdrFwd = injectHeader(fwdWrap, 'Rendimiento Esperado a Futuro', 'Proyección Esperada de los Portafolios');
+    fwdWrap.appendChild(fwdPanel); // mueve el panel REAL (con su canvas vivo)
+    fwdPanel.style.margin = '18px 20px 0';
+    const fwdStyle = document.createElement('style'); fwdStyle.id = 'pdf-fwd-fit';
+    fwdStyle.textContent = `
+      #fwd-pdf-page{width:${W}px!important;height:${targetHF}px!important;overflow:hidden!important;box-sizing:border-box!important;display:flex!important;flex-direction:column!important;justify-content:flex-start!important;background:#fff!important;}
+      #fwd-pdf-page .pdf-hdr-clone{flex-shrink:0!important;}
+      #fwd-pdf-page .cmp-header-bar.pdf-hdr-clone{padding:14px 24px 12px!important;height:${hdrH - 2}px!important;box-sizing:border-box!important;}
+      #fwd-pdf-page .cmp-header-bar.pdf-hdr-clone img{height:75px!important;}
+      #fwd-pdf-page .cmp-header-bar.pdf-hdr-clone .cmp-main-title{font-size:32px!important;color:#00205C!important;}
+      #fwd-pdf-page .cmp-header-bar.pdf-hdr-clone .cmp-sub-title{font-size:18px!important;}
+      #fwd-pdf-page #fwd-panel{flex-shrink:0!important;}
+      #fwd-pdf-page .fwd-chart-box{height:600px!important;}
+      #fwd-pdf-page table.cmp2-fwd th,#fwd-pdf-page table.cmp2-fwd td{font-size:15px!important;padding:10px 12px!important;}
+    `;
+    document.head.appendChild(fwdStyle);
+    void fwdWrap.offsetWidth;
+    window.dispatchEvent(new Event('resize')); // que Chart.js redibuje al ancho W
+    await new Promise(r => setTimeout(r, 600));
+    const cvFwd = await html2canvas(fwdWrap, {scale:2, useCORS:true, backgroundColor:'#fff', logging:false, scrollX:0, scrollY:0, width:W, height:targetHF});
+    fwdStyle.remove();
+    removeHdrFwd();
+    fwdPanel.style.margin = fwdOrigMargin; // regresa el panel a su lugar EXACTO
+    if (fwdOrigNext) fwdOrigParent.insertBefore(fwdPanel, fwdOrigNext); else fwdOrigParent.appendChild(fwdPanel);
+    fwdWrap.remove();
+    addScaledPage(cvFwd);
   }
 
   // ── Full restore: return dashboard to EXACT pre-export state ──
