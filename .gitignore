@@ -5,3 +5,5 @@ __pycache__/
 *.pem
 *.key
 .cache/
+.secrets.local.json
+cookies.txt

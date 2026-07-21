@@ -4871,6 +4871,10 @@ function renderPerfiles(data, prefix, chartStore) {
     const values = funds.map(f => f[1]);
     const bgColors = funds.map(f => FUND_COLORS[f[0]] || '#AAAAAA');
 
+    // Destruir la instancia previa para evitar "Canvas is already in use" de Chart.js v4
+    // (pasa al reintentar tras el cold-start de Render y colgaba el ajedrez de rendimientos)
+    if (chartStore[idx]) { chartStore[idx].destroy(); }
+
     chartStore[idx] = new Chart(canvas, {
       type: 'pie',
       data: {

@@ -22,6 +22,30 @@ _DISK_CACHE_DIR = os.path.join(BASE, ".cache")
 os.makedirs(_DISK_CACHE_DIR, exist_ok=True)
 
 
+def _load_local_secrets():
+    """Populate os.environ from an untracked .secrets.local.json for local dev.
+
+    Never commit this file (it's in .gitignore). In production (Render) the real
+    values come from the dashboard's env vars, so this file is absent and this is
+    a no-op. Existing env vars always win — the file only fills the gaps.
+    """
+    path = os.path.join(BASE, ".secrets.local.json")
+    if not os.path.exists(path):
+        return
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+        for k, v in data.items():
+            if not os.environ.get(k):
+                os.environ[k] = str(v)
+        print(f"[SECRETS] Loaded {len(data)} local secret(s) from .secrets.local.json")
+    except Exception as e:
+        print(f"[SECRETS] Error loading .secrets.local.json: {e}")
+
+
+_load_local_secrets()
+
+
 def _disk_cache_save(name: str, data: dict):
     """Save cache data to disk as JSON with timestamp."""
     try:
@@ -562,7 +586,9 @@ SERIE_MAP = {
 _ms_cache = {}
 _ms_cache_ts = 0.0          # epoch timestamp of last fetch
 MS_URL    = os.environ.get("MS_URL", "https://api.morningstar.com/v2/service/mf/hlk0d0zmiy1b898b/universeid/txcm88fa8x3vxapp")
-MS_ACCESS = os.environ.get("MS_ACCESS", "hjowuranvftlsxttmswcy0v1w8tqlv7m")
+MS_ACCESS = os.environ.get("MS_ACCESS", "")
+if not MS_ACCESS:
+    print("[SECURITY] WARNING: MS_ACCESS not set — Morningstar calls will fail. Set the MS_ACCESS env var (or .secrets.local.json).")
 MS_NAV_URL = os.environ.get("MS_NAV_URL", "https://api.morningstar.com/service/mf/UnadjustedNAV/ISIN")
 _ms_session = requests.Session()          # reuse TCP connections to Morningstar
 
@@ -3339,11 +3365,19 @@ def _check_api_rate_limit():
     _api_calls[ip] = (1, now)
     return True
 
+# Dev-only auto-login. Requires the DEV_AUTOLOGIN=1 env var (NEVER set in Render)
+# AND a localhost Host — belt and suspenders. Without the env var, the Host header
+# alone can no longer grant a session, so a spoofed `Host: localhost` is inert in prod.
+def _dev_autologin_ok():
+    if os.environ.get("DEV_AUTOLOGIN") != "1":
+        return False
+    return request.host.split(":")[0] in ("127.0.0.1", "localhost")
+
+
 @app.before_request
 def global_rate_limit():
-    # Auto-login in localhost for development
-    _host = request.host.split(":")[0]
-    if _host in ("127.0.0.1", "localhost") and "usuario" not in session:
+    # Auto-login in localhost for development (gated by DEV_AUTOLOGIN env var)
+    if _dev_autologin_ok() and "usuario" not in session:
         session["usuario"] = "jvilla"
     if request.path.startswith('/api/'):
         if not _check_api_rate_limit():
@@ -3424,9 +3458,8 @@ def login():
             return jsonify({"ok":True,"nombre":user["nombre"],"iniciales":user["iniciales"],"rol":user["rol"]})
         print(f"[AUDIT] LOGIN_FAIL user={u} ip={ip}", flush=True)
         return jsonify({"ok": False}), 401
-    # In localhost: skip login, serve dashboard directly
-    _host = request.host.split(":")[0]
-    if _host in ("127.0.0.1", "localhost"):
+    # In dev (DEV_AUTOLOGIN=1 on localhost): skip login, serve dashboard directly
+    if _dev_autologin_ok():
         session["usuario"] = "jvilla"
         with open(os.path.join(BASE, "valmex_dashboard.html"), "r", encoding="utf-8") as f:
             return make_response(f.read())
@@ -3496,8 +3529,7 @@ def valmex_logo2():
 
 @app.route("/")
 def index():
-    _host = request.host.split(":")[0]
-    if _host in ("127.0.0.1", "localhost"):
+    if _dev_autologin_ok():
         session["usuario"] = "jvilla"
     if "usuario" not in session:
         return redirect(url_for("login"))
@@ -3640,17 +3672,15 @@ def api_propuesta():
 # ─────────────────────────────────────────────────────────────────────────────
 # MACRO
 # ─────────────────────────────────────────────────────────────────────────────
-BANXICO_TOKEN = os.environ.get("BANXICO_TOKEN", "") or "592b06934a31710cba9e9a6efebec12c1fe432f5459fc87e7f473380fa0a1d3a"
+BANXICO_TOKEN = os.environ.get("BANXICO_TOKEN", "")
 BANXICO_BASE  = "https://www.banxico.org.mx/SieAPIRest/service/v1/series"
-FRED_API_KEY  = os.environ.get("FRED_API_KEY", "") or "1a6dadbec2267dd21b3ad5d6447ed711"
+FRED_API_KEY  = os.environ.get("FRED_API_KEY", "")
 FRED_BASE     = "https://api.stlouisfed.org/fred/series/observations"
-# Warn if using hardcoded fallback keys (should be set via env vars in production)
-if not os.environ.get("BANXICO_TOKEN"):
-    print("[SECURITY] WARNING: Using fallback Banxico token — set BANXICO_TOKEN env var in production")
-if not os.environ.get("FRED_API_KEY"):
-    print("[SECURITY] WARNING: Using fallback FRED key — set FRED_API_KEY env var in production")
-if not os.environ.get("MS_ACCESS"):
-    print("[SECURITY] WARNING: Using fallback Morningstar access — set MS_ACCESS env var in production")
+# Secrets come from env vars (Render) or .secrets.local.json (local dev). No hardcoded fallbacks.
+if not BANXICO_TOKEN:
+    print("[SECURITY] WARNING: BANXICO_TOKEN not set — Banxico calls will fail.")
+if not FRED_API_KEY:
+    print("[SECURITY] WARNING: FRED_API_KEY not set — FRED calls will fail.")
 
 SERIE_TIIE28  = "SF43783"
 SERIE_USDMXN  = "SF43718"
