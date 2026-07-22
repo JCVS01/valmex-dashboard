@@ -33,7 +33,7 @@ def _load_local_secrets():
     if not os.path.exists(path):
         return
     try:
-        with open(path, encoding="utf-8") as f:
+        with open(path, encoding="utf-8-sig") as f:   # utf-8-sig tolera BOM (Windows/PowerShell)
             data = json.load(f)
         for k, v in data.items():
             if not os.environ.get(k):
@@ -4605,6 +4605,16 @@ _BRAND_PALETTE = {
     "VALMX28": "#3DA5E0",   # Blue (brand — Pantone 299 C)
     "VALMX20": "#BFDD7E",   # Lime Green (brand accent RV)
 }
+
+@app.route("/api/me")
+def api_me():
+    """Devuelve el usuario logueado, para namespacing del autosave en el front."""
+    u = session.get("usuario")
+    if not u:
+        return jsonify({"ok": False, "error": "No autenticado"}), 401
+    user = USERS.get(u, {})
+    return jsonify({"ok": True, "usuario": u, "nombre": user.get("nombre", u)})
+
 
 @app.route("/api/perfiles")
 def api_perfiles():

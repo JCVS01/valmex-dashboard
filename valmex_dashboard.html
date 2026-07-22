@@ -846,6 +846,13 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
 
   <!-- CONFIGURACIÓN -->
   <div id="page-configuracion" class="page">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap;">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button onclick="_vxOpenModal()" style="padding:8px 14px;background:#fff;color:#00205C;border:1.5px solid #00205C;border-radius:8px;font-size:13px;font-weight:700;font-family:'Montserrat',sans-serif;cursor:pointer;">Mis propuestas</button>
+        <button onclick="_vxNewProp()" style="padding:8px 14px;background:#fff;color:#00205C;border:1.5px solid #00205C;border-radius:8px;font-size:13px;font-weight:700;font-family:'Montserrat',sans-serif;cursor:pointer;">Nueva propuesta</button>
+      </div>
+      <span id="vx-save-status" style="font-size:12px;font-weight:600;color:#64748b;"></span>
+    </div>
     <div class="cfg-layout">
 
       <div class="cfg-card">
@@ -879,7 +886,6 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
               <option>Persona Moral con Fee - B0CO</option>
             </select>
           </div>
-          <button class="btn-primary" onclick="guardarCliente()">Guardar Cliente</button>
         </div>
       </div>
 
@@ -922,7 +928,6 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
 <div id="act-accion-msg" style="font-size:11px;color:var(--navy);padding:2px 4px;min-height:16px;grid-column:1/-1;"></div>
           </div>
           <div class="fondo-total">Total: <span id="total-actual">$0.00</span></div>
-          <button class="btn-primary" onclick="guardarActual()">Guardar Portafolio Actual</button>
         </div>
       </div>
 
@@ -965,10 +970,23 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
 <div id="prop-accion-msg" style="font-size:11px;color:var(--navy);padding:2px 4px;min-height:16px;grid-column:1/-1;"></div>
           </div>
           <div class="fondo-total">Total: <span id="total-propuesta">0.00%</span></div>
-          <button class="btn-primary" onclick="guardarPropuesta()">Guardar Portafolio Propuesta</button>
         </div>
       </div>
 
+    </div>
+    <button onclick="guardarTodo()" style="width:100%;margin-top:14px;padding:14px;background:#00205C;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;font-family:'Montserrat',sans-serif;cursor:pointer;">Guardar Propuesta</button>
+  </div>
+
+  <!-- MODAL: Mis propuestas guardadas (autosave por usuario + cliente) -->
+  <div id="vx-prop-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:12px;max-width:520px;width:92%;max-height:80vh;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,.3);">
+      <div style="background:#00205C;color:#fff;padding:14px 18px;border-radius:12px 12px 0 0;display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-weight:700;font-family:'Montserrat',sans-serif;">Mis propuestas</span>
+        <span onclick="_vxCloseModal()" style="cursor:pointer;font-size:22px;line-height:1;user-select:none;">&times;</span>
+      </div>
+      <div style="padding:14px 18px;">
+        <div id="vx-prop-list"></div>
+      </div>
     </div>
   </div>
 
@@ -2854,6 +2872,388 @@ document.addEventListener('DOMContentLoaded', () => {
   renderSlotsActual();
   renderSlotsProp();
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PROPUESTAS ARCHIVADAS  (namespaced por usuario de login)
+//   Estructura jerárquica:
+//     MIS PROPUESTAS (usuario)
+//        +-- carpeta por CONTRATO + iniciales (un cliente, SIN nombre en la lista)
+//               |-- Versión 1 · fecha
+//               +-- Versión 2 · fecha (rebalanceo) ...
+//   Snapshot = todos los inputs de #page-configuracion (cfg/act/prop/reporto)
+//   + los arreglos _slotsActual/_slotsProp.
+//   • "Guardar Propuesta" valida y ARCHIVA (pregunta actualizar vs nueva versión).
+//   • "Mis propuestas" solo PRECARGA una versión guardada.
+//   • Arranca en blanco; un borrador auto-guardado evita perder trabajo por recarga.
+//   NO rompe las otras pestañas: al guardar/cargar refresca Propuesta y Comparativa.
+// ═══════════════════════════════════════════════════════════════════════════
+let _vxUser = null;                  // usuario logueado (namespacing)
+let _vxCurrent = null;               // {folderKey, vid} de la versión cargada/activa
+let _vxSaveTimer = null;
+let _vxRestoring = false;            // evita autosave mientras se restaura/limpia
+let _vxExpanded = null;              // carpeta expandida en el modal
+
+function _vxNS(){ return _vxUser || 'anon'; }
+function _vxKeyFolders(){ return 'vx-folders::' + _vxNS(); }
+function _vxKeyVer(fk, vid){ return 'vx-ver::' + _vxNS() + '::' + fk + '::' + vid; }
+function _vxKeyDraft(){ return 'vx-draft::' + _vxNS(); }
+function _vxEsc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function _vxIniciales(nombre){ return String(nombre||'').trim().split(/\s+/).filter(Boolean).map(w => w[0]).join('').toUpperCase().slice(0,4); }
+function _vxVerLabel(n){ n = n || 1; return n <= 1 ? 'Propuesta inicial' : ('Rebalanceo ' + (n - 1)); }
+function _vxFolderKey(contrato, cliente){
+  const c = String(contrato||'').trim();
+  if (c) return 'c:' + c;
+  const n = String(cliente||'').trim().toLowerCase().replace(/\s+/g,'-');
+  return n ? ('n:' + n) : null;
+}
+function _vxLoadFolders(){ try { return JSON.parse(localStorage.getItem(_vxKeyFolders()) || '[]'); } catch(e){ return []; } }
+function _vxSaveFolders(f){ try { localStorage.setItem(_vxKeyFolders(), JSON.stringify(f)); } catch(e){} }
+
+async function _vxInitAutosave(){
+  try {
+    const r = await fetch('/api/me', {credentials:'same-origin'});
+    if (r.ok){ const d = await r.json(); if (d && d.ok) _vxUser = d.usuario; }
+  } catch(e){ /* sin usuario → namespace 'anon' (localhost dev) */ }
+  // Q2: arrancar EN BLANCO. Si hay un borrador sin archivar, ofrecer recuperarlo.
+  let draft = null;
+  try { draft = JSON.parse(localStorage.getItem(_vxKeyDraft()) || 'null'); } catch(e){}
+  if (draft && _vxHasData(draft)) _vxShowRecoverBanner(draft);
+  // Autosave del BORRADOR por delegación (inputs presentes y futuros)
+  const page = document.getElementById('page-configuracion');
+  if (page) page.addEventListener('input', () => {
+    if (_vxRestoring) return;
+    clearTimeout(_vxSaveTimer);
+    _vxSaveTimer = setTimeout(_vxSaveDraft, 800);
+  });
+  window.addEventListener('beforeunload', () => {
+    if (_vxSaveTimer){ clearTimeout(_vxSaveTimer); _vxSaveDraft(); }
+  });
+  _vxUpdateStatus('');
+}
+
+function _vxSnapshot(){
+  const cfg = {};
+  document.querySelectorAll('#page-configuracion input, #page-configuracion select').forEach(el => {
+    if (el.id) cfg[el.id] = el.value;
+  });
+  return { cfg, slotsActual: _slotsActual, slotsProp: _slotsProp, savedAt: new Date().toISOString() };
+}
+
+function _vxHasData(snap){
+  if (!snap || !snap.cfg) return false;
+  if ((snap.cfg['cfg-nombre'] || '').trim()) return true;
+  if ((snap.cfg['cfg-contrato'] || '').trim()) return true;
+  const relevante = Object.entries(snap.cfg).some(([k,v]) =>
+    v && String(v).trim() && !k.includes('fecha') && !k.includes('perfil') && !k.includes('serie'));
+  if (relevante) return true;
+  if ((snap.slotsActual || []).some(s => s.ticker || s.monto)) return true;
+  if ((snap.slotsProp || []).some(s => s.ticker || s.pct)) return true;
+  return false;
+}
+
+// Borrador (no archivado) — se guarda solo mientras capturas, para no perder trabajo
+function _vxSaveDraft(){
+  const snap = _vxSnapshot();
+  if (!_vxHasData(snap)){ try { localStorage.removeItem(_vxKeyDraft()); } catch(e){} _vxUpdateStatus(''); return; }
+  try { localStorage.setItem(_vxKeyDraft(), JSON.stringify(snap)); _vxUpdateStatus('draft'); } catch(e){ _vxUpdateStatus('error'); }
+}
+
+function _vxApplySnapshot(snap){
+  _vxRestoring = true;
+  try {
+    Object.entries(snap.cfg || {}).forEach(([id,val]) => {
+      const el = document.getElementById(id);
+      if (el) el.value = val;
+    });
+    if (Array.isArray(snap.slotsActual)) _slotsActual = snap.slotsActual;
+    if (Array.isArray(snap.slotsProp))   _slotsProp   = snap.slotsProp;
+    renderSlotsActual();
+    renderSlotsProp();
+    // Recalcular pcts/montos/totales disparando el oninput de cada campo restaurado
+    document.querySelectorAll('#page-configuracion input').forEach(el =>
+      el.dispatchEvent(new Event('input', {bubbles:true})));
+  } finally { _vxRestoring = false; }
+  _cmp2Loaded = false;   // invalidar cache de comparativa (datos nuevos)
+}
+
+// Refresca las pestañas que dependen de Configuración (igual que hacían los 3 botones viejos)
+function _vxRefreshTabs(){
+  _cmp2Loaded = false;
+  const pp = document.getElementById('page-propuesta');
+  const pc = document.getElementById('page-comparativa2');
+  if (pp && pp.classList.contains('active')) cargarPortafolio();
+  if (pc && pc.classList.contains('active')) { _cmp2Loaded = true; cargarComparativa2(); }
+}
+
+// Valida Portafolio Actual y Propuesta (solo las secciones con datos)
+function _vxValidatePortafolios(){
+  let totalActual = 0;
+  ALL_FUNDS.forEach(f => { const el = document.getElementById('act-'+f); if (el) totalActual += parseFloat(el.value.replace(/[^0-9.]/g,'')) || 0; });
+  totalActual += getRepoActualMonto('MXN') + getRepoActualMonto('USD');
+  _slotsActual.forEach(s => { totalActual += parseFloat((s.monto||'').replace(/[^0-9.]/g,'')) || 0; });
+  if (totalActual > 0){
+    const contrato = getMonto();
+    if (contrato > 0 && Math.abs(totalActual - contrato) >= 1){
+      const diff = totalActual - contrato, signo = diff > 0 ? '+' : '';
+      vxToast('Portafolio Actual: el total ($'+totalActual.toLocaleString('es-MX',{minimumFractionDigits:2})+') no coincide con el monto del contrato ($'+contrato.toLocaleString('es-MX',{minimumFractionDigits:2})+').<br>Diferencia: '+signo+'$'+diff.toLocaleString('es-MX',{minimumFractionDigits:2}));
+      return false;
+    }
+    if (getRepoActualMonto('MXN') > 0 && getRepoActualTasa('MXN') <= 0){ const el = document.getElementById('act-REPO-MXN-tasa'); if (el){ el.style.border='2px solid #EF4444'; el.focus(); } vxToast('Reporto MXN (actual): falta la tasa neta.'); return false; }
+    if (getRepoActualMonto('USD') > 0 && getRepoActualTasa('USD') <= 0){ const el = document.getElementById('act-REPO-USD-tasa'); if (el){ el.style.border='2px solid #EF4444'; el.focus(); } vxToast('Reporto USD (actual): falta la tasa neta.'); return false; }
+  }
+  let totalProp = 0;
+  ALL_FUNDS.forEach(f => { const el = document.getElementById('prop-'+f); if (el) totalProp += parseFloat(el.value.replace(/[^0-9.%]/g,'')) || 0; });
+  totalProp += getRepoPropPct('MXN') + getRepoPropPct('USD');
+  _slotsProp.forEach(s => { totalProp += parseFloat(s.pct||0) || 0; });
+  if (totalProp > 0){
+    if (Math.abs(totalProp - 100) >= 0.01){ vxToast('Portafolio Propuesta: el total es '+totalProp.toFixed(2)+'%.<br>Debe sumar 100% para guardar.'); return false; }
+    if (getRepoPropPct('MXN') > 0 && getRepoPropTasa('MXN') <= 0){ const el = document.getElementById('prop-REPO-MXN-tasa'); if (el){ el.style.border='2px solid #EF4444'; el.focus(); } vxToast('Reporto MXN (propuesta): falta la tasa neta.'); return false; }
+    if (getRepoPropPct('USD') > 0 && getRepoPropTasa('USD') <= 0){ const el = document.getElementById('prop-REPO-USD-tasa'); if (el){ el.style.border='2px solid #EF4444'; el.focus(); } vxToast('Reporto USD (propuesta): falta la tasa neta.'); return false; }
+  }
+  return true;
+}
+
+// Confirmación con estilo VALMEX (reemplaza el confirm() nativo del navegador). Promise<boolean>
+function _vxConfirm(msg, opts){
+  opts = opts || {};
+  const okText = opts.okText || 'Aceptar';
+  const cancelText = opts.cancelText || 'Cancelar';
+  const danger = !!opts.danger;
+  const title = opts.title || 'Confirmar';
+  const okBg = danger ? '#c0392b' : '#00205C';
+  return new Promise(resolve => {
+    const ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10002;display:flex;align-items:center;justify-content:center;';
+    ov.innerHTML =
+      '<div style="background:#fff;border-radius:12px;max-width:420px;width:90%;box-shadow:0 10px 40px rgba(0,0,0,.3);overflow:hidden;">'
+      + '<div style="background:'+okBg+';color:#fff;padding:13px 18px;font-weight:700;font-family:\'Montserrat\',sans-serif;">'+_vxEsc(title)+'</div>'
+      + '<div style="padding:18px;">'
+      +   '<p style="font-size:14px;color:#334155;margin:0 0 18px;line-height:1.5;">'+msg+'</p>'
+      +   '<div style="display:flex;gap:10px;justify-content:flex-end;">'
+      +     '<button id="vx-cf-cancel" style="padding:9px 18px;background:#fff;color:#64748b;border:1.5px solid #e2e8f0;border-radius:8px;font-weight:700;cursor:pointer;font-family:\'Montserrat\',sans-serif;">'+_vxEsc(cancelText)+'</button>'
+      +     '<button id="vx-cf-ok" style="padding:9px 18px;background:'+okBg+';color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-family:\'Montserrat\',sans-serif;">'+_vxEsc(okText)+'</button>'
+      +   '</div>'
+      + '</div></div>';
+    document.body.appendChild(ov);
+    const done = v => { try { document.body.removeChild(ov); } catch(e){} resolve(v); };
+    ov.querySelector('#vx-cf-ok').onclick = () => done(true);
+    ov.querySelector('#vx-cf-cancel').onclick = () => done(false);
+    ov.onclick = e => { if (e.target === ov) done(false); };
+  });
+}
+
+// Pregunta actualizar la versión activa o crear una nueva (rebalanceo). Promise<'update'|'new'|null>
+function _vxAskVersionChoice(folder){
+  return new Promise(resolve => {
+    const vm = (folder.versions||[]).find(v => _vxCurrent && v.vid === _vxCurrent.vid);
+    const activeN = vm ? vm.n : null;
+    const ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:center;justify-content:center;';
+    ov.innerHTML =
+      '<div style="background:#fff;border-radius:12px;max-width:430px;width:90%;box-shadow:0 10px 40px rgba(0,0,0,.3);overflow:hidden;">'
+      + '<div style="background:#00205C;color:#fff;padding:13px 18px;font-weight:700;font-family:\'Montserrat\',sans-serif;">Ya existe una versión de este cliente</div>'
+      + '<div style="padding:16px 18px;">'
+      +   '<p style="font-size:13px;color:#334155;margin:0 0 14px;"><b>'+(folder.contrato?('#'+_vxEsc(folder.contrato)+' · '):'')+_vxEsc(folder.iniciales||'')+'</b>. ¿Cómo guardas los cambios?</p>'
+      +   '<button id="vx-vc-update" style="width:100%;padding:10px;margin-bottom:8px;background:#fff;color:#00205C;border:1.5px solid #00205C;border-radius:8px;font-weight:700;cursor:pointer;font-family:\'Montserrat\',sans-serif;">Actualizar '+(activeN?_vxVerLabel(activeN):'la versión actual')+'</button>'
+      +   '<button id="vx-vc-new" style="width:100%;padding:10px;margin-bottom:8px;background:#00205C;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-family:\'Montserrat\',sans-serif;">Guardar como versión nueva (rebalanceo)</button>'
+      +   '<button id="vx-vc-cancel" style="width:100%;padding:8px;background:transparent;color:#64748b;border:none;cursor:pointer;font-weight:600;">Cancelar</button>'
+      + '</div></div>';
+    document.body.appendChild(ov);
+    const done = v => { try { document.body.removeChild(ov); } catch(e){} resolve(v); };
+    ov.querySelector('#vx-vc-update').onclick = () => done('update');
+    ov.querySelector('#vx-vc-new').onclick    = () => done('new');
+    ov.querySelector('#vx-vc-cancel').onclick = () => done(null);
+    ov.onclick = e => { if (e.target === ov) done(null); };
+  });
+}
+
+// GUARDAR PROPUESTA — valida, archiva (con versionado) y refresca las otras pestañas
+async function guardarTodo(){
+  const snap = _vxSnapshot();
+  if (!_vxHasData(snap)){ vxToast('No hay datos que guardar.<br>Captura al menos el nombre o el # de contrato.'); return; }
+  if (!_vxValidatePortafolios()) return;
+  const cliente   = (snap.cfg['cfg-nombre'] || '').trim() || 'Sin nombre';
+  const contrato  = (snap.cfg['cfg-contrato'] || '').trim();
+  const iniciales = _vxIniciales(cliente);
+  const fk = _vxFolderKey(contrato, cliente);
+  if (!fk){ vxToast('Captura el # de contrato o el nombre del cliente para archivar.'); return; }
+
+  let folders = _vxLoadFolders();
+  let folder  = folders.find(f => f.key === fk);
+  let mode = 'new';   // 'new' = versión nueva | 'update' = sobreescribe la activa
+  if (folder && _vxCurrent && _vxCurrent.folderKey === fk && (folder.versions||[]).some(v => v.vid === _vxCurrent.vid)){
+    const choice = await _vxAskVersionChoice(folder);
+    if (choice === null) return;   // cancelado
+    mode = choice;
+  }
+  if (!folder){ folder = { key:fk, contrato, iniciales, cliente, seq:0, versions:[] }; folders.push(folder); }
+  folder.contrato = contrato; folder.iniciales = iniciales; folder.cliente = cliente;
+
+  let vid, n;
+  if (mode === 'update' && _vxCurrent){
+    vid = _vxCurrent.vid;
+    const vm = folder.versions.find(v => v.vid === vid);
+    if (vm){ vm.savedAt = snap.savedAt; n = vm.n; }
+  }
+  if (!vid){
+    folder.seq = (folder.seq || 0) + 1;
+    n = folder.seq;
+    vid = 'v' + n;
+    folder.versions.push({ vid, n, savedAt: snap.savedAt });
+  }
+  folder.updatedAt = snap.savedAt;
+  try {
+    localStorage.setItem(_vxKeyVer(fk, vid), JSON.stringify(snap));
+    _vxSaveFolders(folders);
+    localStorage.removeItem(_vxKeyDraft());   // ya está archivado
+  } catch(e){ vxToast('No se pudo archivar (almacenamiento lleno).'); return; }
+  _vxCurrent = { folderKey:fk, vid };
+  _vxUpdateStatus('saved');
+  _vxRefreshTabs();
+  vxToast('Propuesta guardada · '+(contrato?('#'+_vxEsc(contrato)+' · '):'')+_vxEsc(iniciales)+' · '+_vxVerLabel(n), 'ok');
+}
+
+// ── Modal "Mis propuestas" (solo para PRECARGAR) ──
+function _vxOpenModal(){ _vxRenderFolders(); document.getElementById('vx-prop-modal').style.display = 'flex'; }
+function _vxCloseModal(){ document.getElementById('vx-prop-modal').style.display = 'none'; }
+
+function _vxRenderFolders(){
+  const cont = document.getElementById('vx-prop-list');
+  const folders = _vxLoadFolders().slice().sort((a,b) => {
+    const na = parseInt(String(a.contrato||'').replace(/\D/g,''), 10);
+    const nb = parseInt(String(b.contrato||'').replace(/\D/g,''), 10);
+    const va = isNaN(na) ? Infinity : na, vb = isNaN(nb) ? Infinity : nb;
+    if (va !== vb) return va - vb;                    // menor a mayor por # de contrato
+    return (a.cliente||'').localeCompare(b.cliente||'');
+  });
+  if (!folders.length){ cont.innerHTML = '<p style="color:#64748b;text-align:center;padding:14px;font-size:13px;">Aún no tienes propuestas archivadas.<br>Captura y usa <b>Guardar Propuesta</b>.</p>'; return; }
+  cont.innerHTML = folders.map(f => {
+    const titulo = (f.contrato ? ('#'+_vxEsc(f.contrato)) : '(sin contrato)') + ' · ' + _vxEsc(f.iniciales||'');
+    const abierto = _vxExpanded === f.key;
+    const nv = (f.versions||[]).length;
+    let html = '<div style="border:1px solid #e2e8f0;border-radius:8px;margin-bottom:8px;overflow:hidden;">'
+      + '<div onclick="_vxToggleFolder(\''+f.key+'\')" style="display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;background:'+(abierto?'#f0f5ff':'#fff')+';">'
+      +   '<div style="flex:1;min-width:0;"><div style="font-weight:700;color:#00205C;font-size:14px;letter-spacing:.3px;">'+titulo+'</div>'
+      +     '<div style="font-size:11px;color:#64748b;">'+nv+' versión'+(nv===1?'':'es')+'</div></div>'
+      +   '<span onclick="event.stopPropagation();_vxDeleteFolder(\''+f.key+'\')" title="Eliminar cliente completo" style="color:#c0392b;cursor:pointer;font-weight:700;font-size:12px;padding:2px 6px;">Eliminar</span>'
+      + '</div>';
+    if (abierto){
+      const vers = (f.versions||[]).slice().sort((a,b) => (b.savedAt||'').localeCompare(a.savedAt||''));
+      html += '<div style="padding:4px 12px 10px;">' + vers.map(v => {
+        const fecha = v.savedAt ? new Date(v.savedAt).toLocaleString('es-MX',{day:'2-digit',month:'short',year:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+        const activa = _vxCurrent && _vxCurrent.folderKey === f.key && _vxCurrent.vid === v.vid;
+        return '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid '+(activa?'#00205C':'#eef2f7')+';border-radius:6px;margin-top:6px;background:'+(activa?'#f0f5ff':'#fbfcfe')+';">'
+          + '<div style="flex:1;min-width:0;"><span style="font-weight:800;color:#00205C;font-size:13px;">'+_vxVerLabel(v.n)+'</span>'+(activa?' <span style=\"font-size:10px;color:#1a7f4e;font-weight:700;\">(activa)</span>':'')
+          +   '<div style="font-size:12px;color:#334155;font-weight:600;">'+fecha+'</div></div>'
+          + '<button onclick="_vxLoadVersion(\''+f.key+'\',\''+v.vid+'\')" style="padding:5px 12px;background:#00205C;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">Cargar</button>'
+          + '<button onclick="_vxDeleteVersion(\''+f.key+'\',\''+v.vid+'\')" title="Eliminar versión" style="padding:5px 10px;background:#fff;color:#c0392b;border:1px solid #c0392b;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">Eliminar</button>'
+          + '</div>';
+      }).join('') + '</div>';
+    }
+    return html + '</div>';
+  }).join('');
+}
+
+function _vxToggleFolder(fk){ _vxExpanded = (_vxExpanded === fk) ? null : fk; _vxRenderFolders(); }
+
+function _vxLoadVersion(fk, vid){
+  let snap = null;
+  try { snap = JSON.parse(localStorage.getItem(_vxKeyVer(fk, vid))); } catch(e){}
+  if (!snap){ vxToast('No se pudo cargar la versión.'); return; }
+  _vxApplySnapshot(snap);
+  _vxCurrent = { folderKey:fk, vid };
+  _vxUpdateStatus('saved');
+  _vxCloseModal();
+  switchPage('configuracion');
+  _vxRefreshTabs();
+  const f = _vxLoadFolders().find(x => x.key === fk) || {};
+  const vm = (f.versions||[]).find(v => v.vid === vid) || {};
+  vxToast('Propuesta cargada · ' + (f.contrato?('#'+_vxEsc(f.contrato)+' · '):'') + _vxEsc(f.iniciales||'') + ' · ' + _vxVerLabel(vm.n), 'ok');
+}
+
+async function _vxDeleteVersion(fk, vid){
+  if (!(await _vxConfirm('La versión seleccionada se eliminará de forma permanente. Esta acción es irreversible.', {title:'Eliminar versión', okText:'Eliminar', danger:true}))) return;
+  try {
+    localStorage.removeItem(_vxKeyVer(fk, vid));
+    const folders = _vxLoadFolders();
+    const f = folders.find(x => x.key === fk);
+    if (f){
+      f.versions = (f.versions||[]).filter(v => v.vid !== vid);
+      if (!f.versions.length) folders.splice(folders.indexOf(f), 1);   // carpeta vacía → fuera
+    }
+    _vxSaveFolders(folders);
+    if (_vxCurrent && _vxCurrent.folderKey === fk && _vxCurrent.vid === vid) _vxCurrent = null;
+  } catch(e){}
+  _vxRenderFolders();
+}
+
+async function _vxDeleteFolder(fk){
+  if (!(await _vxConfirm('Se eliminarán de forma permanente <b>todas</b> las versiones de este cliente. Esta acción es irreversible.', {title:'Eliminar cliente', okText:'Eliminar todo', danger:true}))) return;
+  try {
+    const folders = _vxLoadFolders();
+    const f = folders.find(x => x.key === fk);
+    if (f){
+      (f.versions||[]).forEach(v => { try { localStorage.removeItem(_vxKeyVer(fk, v.vid)); } catch(e){} });
+      folders.splice(folders.indexOf(f), 1);
+    }
+    _vxSaveFolders(folders);
+    if (_vxCurrent && _vxCurrent.folderKey === fk) _vxCurrent = null;
+  } catch(e){}
+  _vxExpanded = null;
+  _vxRenderFolders();
+}
+
+// Empezar una propuesta en blanco (el trabajo actual queda como borrador recuperable)
+async function _vxNewProp(){
+  if (!(await _vxConfirm('Se limpiará la información capturada para iniciar una nueva propuesta.', {title:'Nueva propuesta', okText:'Iniciar propuesta'}))) return;
+  _vxCurrent = null;
+  _vxClearAll();
+  _vxCloseModal();
+  switchPage('configuracion');
+  vxToast('Formulario en blanco, listo para capturar.', 'ok');
+}
+
+function _vxClearAll(){
+  _vxRestoring = true;
+  try {
+    document.querySelectorAll('#page-configuracion input').forEach(el => {
+      if (el.type === 'date') return;   // conservar fechas por defecto (backtesting)
+      el.value = '';
+    });
+    document.querySelectorAll('#page-configuracion select').forEach(el => { el.selectedIndex = 0; });
+    _slotsActual = Array.from({length: SLOTS_INICIALES}, () => ({ticker:'',nombre:'',tipo:'',monto:'',titulos:'',loading:false,error:''}));
+    _slotsProp   = Array.from({length: SLOTS_INICIALES}, () => ({ticker:'',nombre:'',tipo:'',pct:'',titulos:'',loading:false,error:''}));
+    renderSlotsActual();
+    renderSlotsProp();
+    document.querySelectorAll('#page-configuracion input').forEach(el =>
+      el.dispatchEvent(new Event('input', {bubbles:true})));
+  } finally { _vxRestoring = false; }
+  try { localStorage.removeItem(_vxKeyDraft()); } catch(e){}
+  _vxUpdateStatus('');
+}
+
+// Banner no intrusivo para recuperar un borrador sin archivar tras una recarga
+function _vxShowRecoverBanner(draft){
+  const b = document.createElement('div');
+  b.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:10001;background:#fff;border:1px solid #f59e0b;border-left:4px solid #f59e0b;border-radius:8px;padding:10px 14px;box-shadow:0 6px 20px rgba(0,0,0,.15);display:flex;align-items:center;gap:12px;font-family:\'Montserrat\',sans-serif;max-width:92vw;';
+  b.innerHTML = '<span style="font-size:13px;color:#334155;">Tienes un borrador sin archivar.</span>'
+    + '<button id="vx-rec-yes" style="padding:6px 12px;background:#00205C;color:#fff;border:none;border-radius:6px;font-weight:700;cursor:pointer;font-size:12px;">Recuperar</button>'
+    + '<button id="vx-rec-no" style="padding:6px 10px;background:transparent;color:#64748b;border:none;cursor:pointer;font-weight:600;font-size:12px;">Descartar</button>';
+  document.body.appendChild(b);
+  const close = () => { try { document.body.removeChild(b); } catch(e){} };
+  b.querySelector('#vx-rec-yes').onclick = () => { _vxApplySnapshot(draft); switchPage('configuracion'); close(); vxToast('Borrador recuperado.', 'ok'); };
+  b.querySelector('#vx-rec-no').onclick  = () => { try { localStorage.removeItem(_vxKeyDraft()); } catch(e){} close(); };
+}
+
+function _vxUpdateStatus(state){
+  const el = document.getElementById('vx-save-status');
+  if (!el) return;
+  const map = { draft:'Borrador sin archivar', saved:'Guardado ✓', error:'Error al guardar', '':'' };
+  el.textContent = map[state] !== undefined ? map[state] : '';
+  el.style.color = state === 'error' ? '#c0392b' : (state === 'saved' ? '#1a7f4e' : (state === 'draft' ? '#b45309' : '#64748b'));
+}
+
+document.addEventListener('DOMContentLoaded', () => { _vxInitAutosave(); });
 
 function guardarActual(){
   // Validar que el total coincida con el monto del contrato
