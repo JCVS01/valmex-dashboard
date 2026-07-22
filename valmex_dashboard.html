@@ -1051,6 +1051,13 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
       <button class="cmp2-vf-btn active" data-mode="3way" onclick="setCmp2ViewMode('3way')">Actual vs Modelo vs Propuesta</button>
       <button class="cmp2-vf-btn" data-mode="avb" onclick="setCmp2ViewMode('avb')">Actual vs Modelo</button>
       <button class="cmp2-vf-btn" data-mode="avc" onclick="setCmp2ViewMode('avc')">Actual vs Propuesta</button>
+      <button class="cmp2-vf-btn" data-mode="unica" onclick="setCmp2ViewMode('unica')">Única</button>
+    </div>
+    <!-- Selector secundario (solo en modo Única): muestra un portafolio por sí solo -->
+    <div id="cmp2-unica-sel" style="display:none;justify-content:center;gap:0;margin:8px 20px 0;font-family:'Montserrat',sans-serif;">
+      <button class="cmp2-vf-btn" data-mode="only-a" onclick="setCmp2ViewMode('only-a')">Actual</button>
+      <button class="cmp2-vf-btn" data-mode="only-b" onclick="setCmp2ViewMode('only-b')">Modelo</button>
+      <button class="cmp2-vf-btn" data-mode="only-c" onclick="setCmp2ViewMode('only-c')">Propuesta</button>
     </div>
 
     <!-- ═══ CMP2: QUILT CHART: Rendimientos por Clase de Activo ═══ -->
@@ -2555,10 +2562,11 @@ function _fwdSetH(h){ _fwdHoriz = h;
 // Estrategias activas segun el modo de vista de arriba (3way / avb / avc)
 function _fwdEstrategias(){
   var mode = (typeof _cmp2ViewMode !== 'undefined' && _cmp2ViewMode) ? _cmp2ViewMode : '3way';
+  var only = mode.indexOf('only') === 0;
   var out = [];
-  out.push({k:'A', d: _cmp2DataA, label:_FWD_LBL.A, color: CMP2_COLORS[0]});
-  if(mode==='3way' || mode==='avb') out.push({k:'B', d:_cmp2DataB, label:_FWD_LBL.B, color: CMP2_COLORS[1]});
-  if(mode==='3way' || mode==='avc') out.push({k:'C', d:_cmp2DataC, label:_FWD_LBL.C, color: CMP2_COLORS[2]});
+  if(!only || mode==='only-a') out.push({k:'A', d: _cmp2DataA, label:_FWD_LBL.A, color: CMP2_COLORS[0]});
+  if((!only && (mode==='3way' || mode==='avb')) || mode==='only-b') out.push({k:'B', d:_cmp2DataB, label:_FWD_LBL.B, color: CMP2_COLORS[1]});
+  if((!only && (mode==='3way' || mode==='avc')) || mode==='only-c') out.push({k:'C', d:_cmp2DataC, label:_FWD_LBL.C, color: CMP2_COLORS[2]});
   return out;
 }
 
@@ -3837,8 +3845,24 @@ let _cmp2ViewMode = '3way'; // '3way' | 'avb' | 'avc'
 let _cmp2DataA = null, _cmp2DataB = null, _cmp2DataC = null;
 
 function setCmp2ViewMode(mode) {
+  // "unica" abre el selector; elige un portafolio por defecto (Propuesta > Actual > Modelo)
+  if (mode === 'unica') {
+    const has = d => !!(d && d.composicion && d.composicion.length);
+    mode = has(_cmp2DataC) ? 'only-c' : (has(_cmp2DataA) ? 'only-a' : 'only-b');
+  }
   _cmp2ViewMode = mode;
-  document.querySelectorAll('.cmp2-vf-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  const isUnica = mode.indexOf('only') === 0;
+  // Botones principales (Única queda activo en cualquier only-*)
+  document.querySelectorAll('#cmp2-view-filter .cmp2-vf-btn').forEach(b => {
+    const m = b.dataset.mode;
+    b.classList.toggle('active', m === mode || (m === 'unica' && isUnica));
+  });
+  // Selector secundario visible solo en modo Única
+  const sel = document.getElementById('cmp2-unica-sel');
+  if (sel) {
+    sel.style.display = isUnica ? 'flex' : 'none';
+    sel.querySelectorAll('.cmp2-vf-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  }
   if (_cmp2DataA || _cmp2DataB || _cmp2DataC) {
     aplicarDatosCmp2(_cmp2DataA, _cmp2DataB, _cmp2DataC);
   }
@@ -4002,9 +4026,10 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
   const is3way = mode === '3way';
   // Un portafolio SOLO aporta columna si tiene holdings (composicion). Vacio => se omite en toda la vista y en el PDF.
   const _hasComp = d => !!(d && d.composicion && d.composicion.length);
-  const showA = _hasComp(dataA);
-  const showB = (mode !== 'avc') && _hasComp(dataB);
-  const showC = (mode !== 'avb') && _hasComp(dataC);
+  const _only = mode.indexOf('only') === 0;   // only-a / only-b / only-c => vista Única
+  const showA = (_only ? mode === 'only-a' : true) && _hasComp(dataA);
+  const showB = (_only ? mode === 'only-b' : mode !== 'avc') && _hasComp(dataB);
+  const showC = (_only ? mode === 'only-c' : mode !== 'avb') && _hasComp(dataC);
   const _nVis = (showA?1:0) + (showB?1:0) + (showC?1:0);
 
   const fmtR = v => (v == null) ? '\u2014' : (v >= 0 ? '+' : '') + v.toFixed(2) + ' %';
@@ -4032,7 +4057,10 @@ function aplicarDatosCmp2(dataA, dataB, dataC) {
   if (toolbarLbl) {
     if (is3way) toolbarLbl.innerHTML = `A: ${lblA} &nbsp;|&nbsp; B: ${_cmp2LblB} &nbsp;|&nbsp; C: ${lblC}`;
     else if (mode === 'avb') toolbarLbl.innerHTML = `A: ${lblA} &nbsp;|&nbsp; B: ${_cmp2LblB}`;
-    else toolbarLbl.innerHTML = `A: ${lblA} &nbsp;|&nbsp; C: ${lblC}`;
+    else if (mode === 'avc') toolbarLbl.innerHTML = `A: ${lblA} &nbsp;|&nbsp; C: ${lblC}`;
+    else if (mode === 'only-a') toolbarLbl.innerHTML = lblA;
+    else if (mode === 'only-b') toolbarLbl.innerHTML = _cmp2LblB;
+    else if (mode === 'only-c') toolbarLbl.innerHTML = lblC;
   }
 
   // Fecha actualizacion
