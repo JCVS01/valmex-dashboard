@@ -1348,7 +1348,9 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
     <!-- Titlebar -->
     <div class="prop-titlebar">
       <div></div>
-      <div></div>
+      <div style="display:flex;justify-content:flex-end;padding-right:20px;">
+        <button id="btn-pdf-recursos" style="padding:7px 16px;background:#00205C;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;font-family:'Montserrat',sans-serif;cursor:pointer;">Descargar PDF</button>
+      </div>
     </div>
     <!-- Sub-tab filter centrado (igual que Comparativa) -->
     <div style="display:flex;justify-content:center;gap:0;margin:10px 20px 0;font-family:'Montserrat',sans-serif;">
@@ -6093,6 +6095,36 @@ document.getElementById('btn-pdf-pres-dl').addEventListener('click', async () =>
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   } catch (err) {
     vxToast('Error al generar PDF: ' + err.message);
+  }
+});
+
+// ── PDF de la pestaña Recursos (captura el sub-tab activo: Flujos Pensión / Bonos / CETES) ──
+document.getElementById('btn-pdf-recursos')?.addEventListener('click', async () => {
+  const { jsPDF } = window.jspdf;
+  const scaler = document.querySelector('#page-recursos .prop-dash-scaler');
+  if (!scaler) { vxToast('No se encontró el contenido a exportar.'); return; }
+  showSpinner(true);
+  try {
+    if (_fpChart) { try { _fpChart.resize(); } catch (e) {} }
+    await new Promise(r => setTimeout(r, 350));
+    const cv = await html2canvas(scaler, { scale: 2, useCORS: true, backgroundColor: '#fff', logging: false });
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'letter' });
+    const pw = pdf.internal.pageSize.getWidth();
+    const ph = pdf.internal.pageSize.getHeight();
+    const mx = 6, mt = 6, mb = 8;
+    let imgW = pw - mx * 2;
+    let imgH = imgW * (cv.height / cv.width);
+    const usableH = ph - mt - mb;
+    if (imgH > usableH) { imgH = usableH; imgW = usableH * (cv.width / cv.height); }
+    const x = (pw - imgW) / 2;
+    pdf.addImage(cv.toDataURL('image/jpeg', 0.92), 'JPEG', x, mt, imgW, imgH);
+    const activo = document.querySelector('.cmp2-vf-btn.active[data-rtab]')?.dataset.rtab || 'flujos';
+    const map = { flujos: 'Flujo de Pensión', bonos: 'Calculadora de Bonos', cetesetf: 'CETES vs VLMXETF' };
+    pdf.save((map[activo] || 'Recursos') + ' - VALMEX.pdf');
+  } catch (err) {
+    vxToast('Error al generar PDF: ' + (err.message || err));
+  } finally {
+    showSpinner(false);
   }
 });
 
