@@ -5163,7 +5163,7 @@ def _fondo_lookthrough(fondo):
         uni = load_ms_universe()
         key = next((k for k in uni if k.upper().replace(" ", "").startswith(str(fondo).upper().replace(" ", ""))), None)
         if not key:
-            return None
+            return None, 0.0   # ticker no es fondo VALMEX -> el caller lo clasifica como accion/ETF
         a = uni[key]
         def _num(x):
             try: return float(x)
@@ -5223,6 +5223,50 @@ def _fondo_lookthrough(fondo):
         return None, 0.0
 
 _FWD_DEUDA_MXN = {"Deuda Corto Plazo", "Deuda MXN", "Deuda Largo Plazo"}
+# Acciones/ETFs mega-cap tech cuyo NOMBRE no dice "technology" (Apple, Nvidia, etc.)
+_FWD_TECH_TK = {"AAPL", "MSFT", "NVDA", "GOOGL", "GOOG", "AMZN", "META", "TSLA", "AVGO",
+                "AMD", "ADBE", "CRM", "ORCL", "NFLX", "INTC", "CSCO", "QCOM", "TXN", "MU",
+                "QQQ", "QQQM", "SMH", "SOXX", "XLK", "VGT", "ARKK", "PLTR"}
+
+
+def _clasificar_accion_forward(fondo):
+    """Mapea una accion/ETF suelto (no fondo VALMEX) a su clase de activo forward JPM.
+    Usa el catalogo DataBursatil (nombre del emisor + tipo + mercado). Prioriza el NOMBRE
+    (descriptivo) y un set de tickers tech. Devuelve {clase: 1.0} — 100% RV, sin meter deuda
+    ficticia (a diferencia del viejo fallback 55/45)."""
+    norm = str(fondo or "").upper().replace(".MX", "").replace("*", "").strip()
+    cat  = cargar_catalogo_emisoras() or {}
+    info = cat.get(norm) or cat.get(norm + "*")
+    if not info:
+        info = next((v for k, v in cat.items() if k.replace("*", "") == norm), None) or {}
+    nombre  = (info.get("nombre") or "").upper()
+    tipo    = info.get("tipo") or ""
+    mercado = info.get("mercado") or ""
+
+    def has(*words):
+        return any(w in nombre for w in words)
+
+    if has("GOLD", "ORO", "PRECIOUS METAL"):
+        return {"Oro": 1.0}
+    if has("TREASURY", "BOND", "AGGREGATE", "FIXED INCOME", "GOVT", "GOVERNMENT BOND",
+           "CORPORATE BOND", "20+ YEAR", "7-10 YEAR"):
+        return {"Deuda Gubernamental Global": 1.0}
+    if has("EMERGING", "EMERGENTE"):
+        return {"Bolsa Emergentes": 1.0}
+    if has("MSCI WORLD", "ALL COUNTRY", "ACWI", "DEVELOPED MARKETS", "GLOBAL EQUITY",
+           "MSCI EAFE", "TOTAL WORLD", "INTERNATIONAL EQUITY"):
+        return {"Mercados Desarrollados": 1.0}
+    if norm in _FWD_TECH_TK or has("TECHNOLOG", "SEMICONDUCTOR", "NASDAQ-100", "NASDAQ 100",
+                                   "INFORMATION TECH"):
+        return {"Tecnologia": 1.0}
+    if has("S&P 500", "S&P500", "DOW JONES", "RUSSELL", "TOTAL STOCK MARKET"):
+        return {"Bolsa USD": 1.0}
+    if mercado == "local" or tipo == "FIBRA":
+        return {"Bolsa Local": 1.0}
+    # Default: accion/ETF global sin match especifico -> renta variable US (100% RV, cero deuda)
+    return {"Bolsa USD": 1.0}
+
+
 def _alloc_from_composicion(comp):
     """Look-through por fondo. Retorno de deuda = YTM REAL de cada fondo (Morningstar):
     deuda MXN = YTM directo (sin TC); deuda global = YTM + depreciacion. Diferencia CP/med/LP
@@ -5240,7 +5284,12 @@ def _alloc_from_composicion(comp):
         lt, ytm = _fondo_lookthrough(fondo)
         if not lt:
             tf = (item.get("tipo_fondo") or "").lower()
-            lt = {"Deuda MXN": 1.0} if tf == "deuda" else ({"Bolsa Local": 1.0} if tf == "rv" else {"Mercados Desarrollados": 0.55, "Deuda MXN": 0.45})
+            if tf == "deuda":
+                lt = {"Deuda MXN": 1.0}
+            elif tf == "rv":
+                lt = {"Bolsa Local": 1.0}
+            else:
+                lt = _clasificar_accion_forward(fondo)   # accion/ETF suelto -> su clase real
             ytm = 0.0
         for clase, w in lt.items():
             alloc[clase] = alloc.get(clase, 0) + pct * w
