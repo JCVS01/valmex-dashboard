@@ -326,6 +326,10 @@ input,textarea,select{-webkit-user-select:text;-moz-user-select:text;-ms-user-se
 .ef-icon{width:34px;height:34px;border-radius:8px;background:rgba(245,158,11,.1);display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:8px;}
 .ef-card h4{font-size:11px;font-weight:700;color:#D97706;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;}
 .ef-card p{font-size:11px;color:var(--gray);font-family:'Montserrat',sans-serif;line-height:1.5;}
+/* Tema NARANJA para VALMEX Elite: reasigna --navy dentro de la pestaña para que
+   todo lo que normalmente es azul (headers, tablas, texto) use el naranja Elite,
+   sin tocar el resto del dashboard. */
+#page-elite{--navy:#D4713E;}
 #page-elite .cmp2-vf-btn{border-color:#ED8A56;color:#ED8A56;}
 #page-elite .cmp2-vf-btn.active{background:#ED8A56;color:#fff;}
 #page-elite .cmp2-vf-btn:hover:not(.active){background:rgba(245,158,11,.08);}
@@ -1758,7 +1762,7 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
             <th style="padding:4px 4px;text-align:center;font-size:9px;border-bottom:1px solid rgba(255,255,255,.3);" colspan="2">Suma Tipo</th>
             <th style="padding:4px 4px;text-align:center;font-size:9px;border-bottom:1px solid rgba(255,255,255,.3);" colspan="2">Suma Moneda</th>
           </tr>
-          <tr style="background:#0A3580;color:rgba(255,255,255,.85);">
+          <tr style="background:#ED8A56;color:rgba(255,255,255,.9);">
             <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">GUBCP</th>
             <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">GUBLP</th>
             <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">DEUDA</th>
@@ -6700,8 +6704,8 @@ const ELITE_STRATS = [
     tr.innerHTML = `<td style="padding:5px 8px;font-weight:700;white-space:nowrap;">${s.id}</td>`
       + `<td style="padding:5px 8px;white-space:nowrap;">${s.name}</td>`
       + s.w.map(v => `<td style="padding:4px 3px;text-align:center;">${fmtW(v)}</td>`).join('')
-      + `<td style="padding:4px 3px;text-align:center;background:rgba(0,32,92,.04);">${fmtS(s.sd)}</td>`
-      + `<td style="padding:4px 3px;text-align:center;background:rgba(0,32,92,.04);">${fmtS(s.sc)}</td>`
+      + `<td style="padding:4px 3px;text-align:center;background:rgba(212,113,62,.10);">${fmtS(s.sd)}</td>`
+      + `<td style="padding:4px 3px;text-align:center;background:rgba(212,113,62,.10);">${fmtS(s.sc)}</td>`
       + `<td style="padding:4px 3px;text-align:center;background:rgba(65,187,201,.06);">${fmtS(s.sm)}</td>`
       + `<td style="padding:4px 3px;text-align:center;background:rgba(65,187,201,.06);">${fmtS(s.so)}</td>`;
     tb.appendChild(tr);
@@ -6837,10 +6841,10 @@ function renderElitePropuesta(data, strat) {
         },
         options: {
           responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { display: false }, tooltip: { backgroundColor: '#00205C', cornerRadius: 6 } },
+          plugins: { legend: { display: false }, tooltip: { backgroundColor: '#D4713E', cornerRadius: 6 } },
           scales: {
-            y: { ticks: { font: { size: 12, family: 'Montserrat' }, color: '#00205C' }, grid: { display: false }, border: { display: false } },
-            x: { ticks: { font: { size: 10, family: 'Montserrat' }, color: '#00205C', maxTicksLimit: 8, maxRotation: 0 }, grid: { display: false }, border: { display: false } }
+            y: { ticks: { font: { size: 12, family: 'Montserrat' }, color: '#D4713E' }, grid: { display: false }, border: { display: false } },
+            x: { ticks: { font: { size: 10, family: 'Montserrat' }, color: '#D4713E', maxTicksLimit: 8, maxRotation: 0 }, grid: { display: false }, border: { display: false } }
           }
         }
       });
