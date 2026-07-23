@@ -332,10 +332,10 @@ input,textarea,select{-webkit-user-select:text;-moz-user-select:text;-ms-user-se
 #page-elite .cmp2-vf-btn.active{background:#ED8A56;color:#fff;}
 #page-elite .cmp2-vf-btn:hover:not(.active){background:rgba(245,158,11,.08);}
 .elite-strat-row:hover{outline:2px solid rgba(237,138,86,.45);outline-offset:-2px;}
-/* Dashboard reutilizado dentro de Elite: paleta profesional NARANJA como color principal,
-   con teal complementario. Se reasignan --navy (headers/títulos) -> naranja y --sky (acentos)
-   -> teal. Scopeado al dashboard montado, así Propuesta y la tabla de Estrategias no cambian. */
-#elite-dash-mount{--navy:#C25A2E;--sky:#2A9D8F;}
+/* Dashboard reutilizado dentro de Elite: paleta MINIMALISTA monocromática naranja + neutro.
+   --navy (headers/títulos) -> naranja quemado; --sky (subtítulo/acento) -> gris pizarra sobrio.
+   Scopeado al dashboard montado, así Propuesta y la tabla de Estrategias no cambian. */
+#elite-dash-mount{--navy:#C25A2E;--sky:#94A3B8;}
 
 /* ══ TABLET PORTRAIT (≤1024px vertical) ══ */
 @media(max-width:1024px) and (orientation:portrait){
@@ -6856,24 +6856,24 @@ function loadEliteStrategy() {
   .catch(e => { if (loading) loading.style.display = 'none'; console.error('[Elite]', e); });
 }
 
-// Paleta profesional para el dashboard de Elite: NARANJA como protagonista + teal complementario,
-// dorado, carbón y neutros cálidos. Se aplica a barras, línea y donas. En Propuesta, aplicarDatos
-// re-asigna los colores originales; la línea del backtest se resetea aparte en _eliteReturnDash.
-const _ELITE_PAL = ['#C25A2E','#2A9D8F','#E9975B','#E9C46A','#546E7A','#F0B37E','#8A4B2A','#88B0A4','#F4D6B8'];
+// Paleta MINIMALISTA para el dashboard de Elite: escala monocromática de naranjas (oscuro→claro)
+// + un neutro suave para las rebanadas pequeñas. Limpia y elegante para el cliente. En Propuesta,
+// aplicarDatos re-asigna los colores originales; la línea se resetea aparte en _eliteReturnDash.
+const _ELITE_PAL = ['#9C3D14','#C25A2E','#D97A45','#E89A67','#F0B389','#F6CFAE','#FBE4D3','#B7B0A6','#8A4B2A'];
 function _eliteRecolorCharts() {
   try {
     // Composición (barra) -> naranja
     if (charts.comp && charts.comp.data.datasets[0]) {
-      charts.comp.data.datasets[0].backgroundColor = '#E07A3E';
+      charts.comp.data.datasets[0].backgroundColor = '#D4713E';
       charts.comp.update('none');
     }
-    // Backtest (línea) -> naranja con relleno cálido suave
+    // Backtest (línea) -> naranja con relleno cálido muy suave
     if (charts.linea && charts.linea.data.datasets[0]) {
       const d0 = charts.linea.data.datasets[0];
-      d0.borderColor = '#C25A2E'; d0.backgroundColor = 'rgba(224,122,62,.12)'; d0.pointHoverBackgroundColor = '#C25A2E';
+      d0.borderColor = '#C25A2E'; d0.backgroundColor = 'rgba(196,90,46,.10)'; d0.pointHoverBackgroundColor = '#C25A2E';
       charts.linea.update('none');
     }
-    // Donas -> paleta cálida profesional (naranja principal + teal/dorado/carbón)
+    // Donas -> escala monocromática de naranjas (minimalista)
     ['clase','geo','sector'].forEach(k => {
       const c = charts[k];
       if (c && c.data.datasets[0] && Array.isArray(c.data.datasets[0].data)) {
