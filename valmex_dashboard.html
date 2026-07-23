@@ -331,6 +331,7 @@ input,textarea,select{-webkit-user-select:text;-moz-user-select:text;-ms-user-se
 #page-elite .cmp2-vf-btn{border-color:#ED8A56;color:#ED8A56;}
 #page-elite .cmp2-vf-btn.active{background:#ED8A56;color:#fff;}
 #page-elite .cmp2-vf-btn:hover:not(.active){background:rgba(245,158,11,.08);}
+.elite-strat-row:hover{outline:2px solid rgba(237,138,86,.45);outline-offset:-2px;}
 
 /* ══ TABLET PORTRAIT (≤1024px vertical) ══ */
 @media(max-width:1024px) and (orientation:portrait){
@@ -772,7 +773,7 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
       </div>
     </div>
 
-    <div class="prop-dash-scaler"><div class="prop-grid" id="prop-dash">
+    <div class="prop-dash-scaler" id="prop-dash-scaler"><div class="prop-grid" id="prop-dash">
 
       <div class="prop-dash-title">
         <div class="prop-title-left">
@@ -1748,40 +1749,52 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
     <div id="etab-presentacion" style="margin-top:16px;">
       <!-- Propuesta content will be moved here dynamically -->
     </div>
-    <div id="etab-estrategias" style="display:none;margin-top:16px;padding:0 20px;overflow-x:auto;">
-      <div style="font-family:'Montserrat',sans-serif;font-size:10px;color:var(--navy);">
-      <table style="width:100%;border-collapse:collapse;min-width:1000px;">
+    <div id="etab-estrategias" style="display:none;margin-top:16px;padding:0 20px;">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;font-family:'Montserrat',sans-serif;">
+        <div>
+          <div style="font-size:18px;font-weight:800;color:var(--navy);letter-spacing:.2px;">Estrategias VALMEX Elite</div>
+          <div style="font-size:12px;color:#5B6670;margin-top:2px;">Asignación por fondo, con suma por tipo de activo y por moneda</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#5B6670;">
+          <span>Peso:</span>
+          <span style="width:14px;height:12px;border-radius:3px;background:rgba(0,32,92,.10);display:inline-block;"></span>
+          <span style="width:14px;height:12px;border-radius:3px;background:rgba(0,32,92,.28);display:inline-block;"></span>
+          <span style="width:14px;height:12px;border-radius:3px;background:rgba(0,32,92,.48);display:inline-block;"></span>
+          <span>mayor</span>
+        </div>
+      </div>
+      <div style="overflow-x:auto;border:1px solid #E5E9EF;border-radius:12px;box-shadow:0 6px 20px rgba(0,32,92,.07);">
+      <table style="width:100%;border-collapse:collapse;min-width:1040px;font-family:'Montserrat',sans-serif;">
         <thead>
           <tr style="background:var(--navy);color:#fff;">
-            <th style="padding:6px 8px;text-align:left;font-size:10px;white-space:nowrap;" rowspan="2">Estrategia</th>
-            <th style="padding:6px 8px;text-align:left;font-size:10px;white-space:nowrap;" rowspan="2">Nombre</th>
-            <th style="padding:4px 4px;text-align:center;font-size:9px;border-bottom:1px solid rgba(255,255,255,.3);" colspan="5">Deuda</th>
-            <th style="padding:4px 4px;text-align:center;font-size:9px;border-bottom:1px solid rgba(255,255,255,.3);" colspan="8">Capitales</th>
-            <th style="padding:4px 4px;text-align:center;font-size:9px;border-bottom:1px solid rgba(255,255,255,.3);" colspan="2">Suma Tipo</th>
-            <th style="padding:4px 4px;text-align:center;font-size:9px;border-bottom:1px solid rgba(255,255,255,.3);" colspan="2">Suma Moneda</th>
+            <th style="padding:11px 12px;text-align:left;font-size:11px;white-space:nowrap;letter-spacing:.3px;" rowspan="2">Estrategia</th>
+            <th style="padding:11px 12px;text-align:left;font-size:11px;white-space:nowrap;letter-spacing:.3px;" rowspan="2">Nombre</th>
+            <th style="padding:7px 4px;text-align:center;font-size:10px;font-weight:800;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,.22);border-left:1px solid rgba(255,255,255,.14);" colspan="5">DEUDA</th>
+            <th style="padding:7px 4px;text-align:center;font-size:10px;font-weight:800;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,.22);border-left:1px solid rgba(255,255,255,.14);" colspan="8">CAPITALES</th>
+            <th style="padding:7px 4px;text-align:center;font-size:10px;font-weight:800;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,.22);border-left:1px solid rgba(255,255,255,.14);" colspan="2">SUMA TIPO</th>
+            <th style="padding:7px 4px;text-align:center;font-size:10px;font-weight:800;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,.22);border-left:1px solid rgba(255,255,255,.14);" colspan="2">SUMA MONEDA</th>
           </tr>
-          <tr style="background:#0A3580;color:rgba(255,255,255,.85);">
-            <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">GUBCP</th>
-            <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">GUBLP</th>
-            <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">DEUDA</th>
-            <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">UDIMP</th>
-            <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">TBILL</th>
-            <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">DME</th>
-            <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">MX20</th>
-            <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">MX28</th>
-            <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">TEC</th>
-            <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">ESG</th>
-            <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">HC</th>
-            <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">ES</th>
-            <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">VL</th>
-            <th style="padding:4px 3px;text-align:center;font-size:8px;">Deuda</th>
-            <th style="padding:4px 3px;text-align:center;font-size:8px;">Cap.</th>
-            <th style="padding:4px 3px;text-align:center;font-size:8px;">MXN</th>
-            <th style="padding:4px 3px;text-align:center;font-size:8px;">Otra</th>
+          <tr style="background:#0A3580;color:rgba(255,255,255,.92);">
+            <th style="padding:6px 4px;text-align:center;font-size:9.5px;font-weight:700;white-space:nowrap;border-left:1px solid rgba(255,255,255,.10);">GUBCP</th>
+            <th style="padding:6px 4px;text-align:center;font-size:9.5px;font-weight:700;white-space:nowrap;">GUBLP</th>
+            <th style="padding:6px 4px;text-align:center;font-size:9.5px;font-weight:700;white-space:nowrap;">DEUDA</th>
+            <th style="padding:6px 4px;text-align:center;font-size:9.5px;font-weight:700;white-space:nowrap;">UDIMP</th>
+            <th style="padding:6px 4px;text-align:center;font-size:9.5px;font-weight:700;white-space:nowrap;">TBILL</th>
+            <th style="padding:6px 4px;text-align:center;font-size:9.5px;font-weight:700;white-space:nowrap;border-left:1px solid rgba(255,255,255,.10);">DME</th>
+            <th style="padding:6px 4px;text-align:center;font-size:9.5px;font-weight:700;white-space:nowrap;">MX20</th>
+            <th style="padding:6px 4px;text-align:center;font-size:9.5px;font-weight:700;white-space:nowrap;">MX28</th>
+            <th style="padding:6px 4px;text-align:center;font-size:9.5px;font-weight:700;white-space:nowrap;">TEC</th>
+            <th style="padding:6px 4px;text-align:center;font-size:9.5px;font-weight:700;white-space:nowrap;">ESG</th>
+            <th style="padding:6px 4px;text-align:center;font-size:9.5px;font-weight:700;white-space:nowrap;">HC</th>
+            <th style="padding:6px 4px;text-align:center;font-size:9.5px;font-weight:700;white-space:nowrap;">ES</th>
+            <th style="padding:6px 4px;text-align:center;font-size:9.5px;font-weight:700;white-space:nowrap;">VL</th>
+            <th style="padding:6px 4px;text-align:center;font-size:9.5px;font-weight:700;border-left:1px solid rgba(255,255,255,.10);">Deuda</th>
+            <th style="padding:6px 4px;text-align:center;font-size:9.5px;font-weight:700;">Cap.</th>
+            <th style="padding:6px 4px;text-align:center;font-size:9.5px;font-weight:700;border-left:1px solid rgba(255,255,255,.10);">MXN</th>
+            <th style="padding:6px 4px;text-align:center;font-size:9.5px;font-weight:700;">Otra</th>
           </tr>
         </thead>
-        <tbody id="elite-strat-body" style="font-size:10px;">
-        </tbody>
+        <tbody id="elite-strat-body" style="font-size:11px;"></tbody>
       </table>
       </div>
     </div>
@@ -3383,6 +3396,8 @@ function showPage(name, el) {
   const targetPage = document.getElementById('page-'+name);
   if (!targetPage) return;
   targetPage.classList.add('active');
+  // Si salimos de Elite, devolver el dashboard prop-dash a su lugar (pestaña Propuesta)
+  if (name !== 'elite' && typeof _eliteReturnDash === 'function') _eliteReturnDash();
   try { localStorage.setItem('vx-active-page', name); } catch(e) {}
   document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.mobile-tab').forEach(b => b.classList.remove('active'));
@@ -3400,6 +3415,10 @@ function showPage(name, el) {
   const logo = document.getElementById('logo-tab');
   if (name === 'presentacion') { logo.classList.add('logo-active'); loadPresentacion(); }
   else logo.classList.remove('logo-active');
+  if (name === 'elite') {
+    const pres = document.getElementById('etab-presentacion');
+    if ((!pres || pres.style.display !== 'none') && typeof _eliteShowPresentacion === 'function') _eliteShowPresentacion();
+  }
   if (name === 'propuesta') {
     setTimeout(() => { Object.values(charts).forEach(c => c && c.resize && c.resize()); }, 80);
     if (!_propuestaCargada) {
@@ -6693,19 +6712,25 @@ const ELITE_STRATS = [
 (function initEliteStrats(){
   const tb = document.getElementById('elite-strat-body');
   if(!tb) return;
-  const colors = ['#F4F7FA','#fff'];
-  ELITE_STRATS.forEach((s,idx) => {
+  // Celda de peso con heatmap: intensidad navy proporcional al peso; ceros discretos
+  const cellW = v => {
+    if (!v || v === 0) return `<td style="padding:7px 4px;text-align:center;color:#CBD5E1;">·</td>`;
+    const a = Math.min(0.5, 0.06 + (v / 100) * 0.6);
+    const strong = v >= 25;
+    return `<td style="padding:7px 4px;text-align:center;background:rgba(0,32,92,${a.toFixed(3)});color:${strong ? '#fff' : '#00205C'};font-weight:${strong ? '800' : '700'};font-variant-numeric:tabular-nums;">${v.toFixed(1)}<span style="font-size:9px;opacity:.65;">%</span></td>`;
+  };
+  const sumaW = (v, tint) => `<td style="padding:7px 4px;text-align:center;background:${tint};color:#00205C;font-weight:800;font-variant-numeric:tabular-nums;">${v.toFixed(1)}%</td>`;
+  ELITE_STRATS.forEach((s) => {
     const tr = document.createElement('tr');
-    tr.style.background = colors[idx%2];
-    const fmtW = v => v === 0 ? '<span style="color:#D3DDE6;">—</span>' : v.toFixed(1)+'%';
-    const fmtS = v => '<b>'+v.toFixed(1)+'%</b>';
-    tr.innerHTML = `<td style="padding:5px 8px;font-weight:700;white-space:nowrap;">${s.id}</td>`
-      + `<td style="padding:5px 8px;white-space:nowrap;">${s.name}</td>`
-      + s.w.map(v => `<td style="padding:4px 3px;text-align:center;">${fmtW(v)}</td>`).join('')
-      + `<td style="padding:4px 3px;text-align:center;background:rgba(0,32,92,.04);">${fmtS(s.sd)}</td>`
-      + `<td style="padding:4px 3px;text-align:center;background:rgba(0,32,92,.04);">${fmtS(s.sc)}</td>`
-      + `<td style="padding:4px 3px;text-align:center;background:rgba(65,187,201,.06);">${fmtS(s.sm)}</td>`
-      + `<td style="padding:4px 3px;text-align:center;background:rgba(65,187,201,.06);">${fmtS(s.so)}</td>`;
+    tr.className = 'elite-strat-row';
+    tr.style.borderTop = '1px solid #EEF1F5';
+    tr.innerHTML = `<td style="padding:8px 12px;font-weight:800;white-space:nowrap;color:var(--navy);">${s.id}</td>`
+      + `<td style="padding:8px 12px;white-space:nowrap;color:#5B6670;">${s.name}</td>`
+      + s.w.map(cellW).join('')
+      + sumaW(s.sd, 'rgba(0,32,92,.05)')
+      + sumaW(s.sc, 'rgba(237,138,86,.12)')
+      + sumaW(s.sm, 'rgba(0,32,92,.05)')
+      + sumaW(s.so, 'rgba(65,187,201,.10)');
     tb.appendChild(tr);
   });
 })();
@@ -6716,9 +6741,30 @@ function showEliteTab(tab, btn) {
   document.querySelectorAll('#page-elite .cmp2-vf-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
 
-  if (tab === 'presentacion') {
-    _initElitePresentacion();
+  if (tab === 'presentacion') _eliteShowPresentacion();
+  else _eliteReturnDash();
+}
+
+// ── Reutiliza el MISMO dashboard de Propuesta (prop-dash) dentro de Elite ──
+let _propDashHome = null;
+function _eliteMountDash() {
+  const scaler = document.getElementById('prop-dash-scaler');
+  const mount  = document.getElementById('elite-dash-mount');
+  if (!scaler || !mount) return;
+  if (!_propDashHome) _propDashHome = scaler.parentElement;   // su lugar original (pestaña Propuesta)
+  if (scaler.parentElement !== mount) mount.appendChild(scaler);
+}
+function _eliteReturnDash() {
+  const scaler = document.getElementById('prop-dash-scaler');
+  if (scaler && _propDashHome && scaler.parentElement !== _propDashHome) {
+    _propDashHome.appendChild(scaler);
+    _propuestaCargada = false;   // que la pestaña Propuesta re-renderice sus propios datos
   }
+}
+function _eliteShowPresentacion() {
+  _initElitePresentacion();
+  _eliteMountDash();
+  loadEliteStrategy();
 }
 
 let _elitePresentacionInit = false;
@@ -6727,34 +6773,28 @@ function _initElitePresentacion() {
   _elitePresentacionInit = true;
   const dest = document.getElementById('etab-presentacion');
   if (!dest) return;
-
-  // Build selector
-  const selHtml = ELITE_STRATS.map((s, i) =>
-    `<option value="elite_${i}">${s.id} — ${s.name}</option>`
-  ).join('');
-
+  const selHtml = ELITE_STRATS.map((s, i) => `<option value="elite_${i}">${s.id} — ${s.name}</option>`).join('');
+  const serieOpts = ['Serie A','Persona Física - B1FI/B1','Persona Física con Fee - B0FI/B0','Plan Personal de Retiro - B1NC/B1CF','Persona Moral - B1CO','Persona Moral con Fee - B0CO']
+    .map(o => `<option>${o}</option>`).join('');
   dest.innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;padding:10px 20px;font-family:'Montserrat',sans-serif;flex-wrap:wrap;">
       <label style="font-weight:700;font-size:14px;color:var(--navy);">Estrategia:</label>
-      <select id="elite-selector" onchange="loadEliteStrategy()" style="padding:6px 12px;border:1px solid #D3DDE6;border-radius:6px;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);min-width:240px;">
-        ${selHtml}
-      </select>
+      <select id="elite-selector" onchange="loadEliteStrategy()" style="padding:6px 12px;border:1px solid #D3DDE6;border-radius:6px;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);min-width:230px;">${selHtml}</select>
+      <label style="font-weight:700;font-size:14px;color:var(--navy);">Serie:</label>
+      <select id="elite-serie" onchange="loadEliteStrategy()" style="padding:6px 12px;border:1px solid #D3DDE6;border-radius:6px;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);">${serieOpts}</select>
       <label style="font-weight:700;font-size:14px;color:var(--navy);">Del</label>
       <input type="date" id="elite-fecha-ini" onchange="loadEliteStrategy()" style="padding:5px 8px;border:1px solid #D3DDE6;border-radius:6px;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);">
       <label style="font-weight:700;font-size:14px;color:var(--navy);">al</label>
       <input type="date" id="elite-fecha-fin" onchange="loadEliteStrategy()" style="padding:5px 8px;border:1px solid #D3DDE6;border-radius:6px;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);">
+      <button onclick="document.getElementById('btn-pdf').click()" style="padding:6px 14px;background:#ED8A56;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;font-family:'Montserrat',sans-serif;cursor:pointer;">Descargar PDF</button>
       <span id="elite-loading" style="display:none;font-size:12px;color:var(--gray);">Cargando...</span>
     </div>
-    <div id="elite-prop-content" style="padding:0 20px;">
-      <div style="text-align:center;padding:40px;color:var(--gray);font-family:'Montserrat',sans-serif;">Selecciona una estrategia</div>
-    </div>
+    <div id="elite-dash-mount" style="padding:0 8px;"></div>
   `;
-  // Rango de fechas por defecto (Elite tiene su propio rango, como la hoja GNP)
   const _ef = document.getElementById('elite-fecha-fin');
   const _ei = document.getElementById('elite-fecha-ini');
   if (_ef && !_ef.value) _ef.value = new Date().toISOString().slice(0, 10);
   if (_ei && !_ei.value) _ei.value = '2024-01-01';
-  loadEliteStrategy();
 }
 
 function loadEliteStrategy() {
@@ -6763,14 +6803,15 @@ function loadEliteStrategy() {
   const idx = parseInt(sel.value.replace('elite_', ''));
   const strat = ELITE_STRATS[idx];
   if (!strat) return;
+  _eliteMountDash();
 
   const fundKeys = ['VXGUBCP','VXGUBLP','VXDEUDA','VXUDIMP','VXTBILL','VLMXDME','VALMX20','VALMX28','VLMXTEC','VLMXESG','VALMXHC','VALMXES','VALMXVL'];
   const fondos = {};
   strat.w.forEach((w, i) => { if (w > 0) fondos[fundKeys[i]] = w; });
 
-  const tipoCliente = document.getElementById('cfg-serie')?.value || 'Serie A';
-  const btIni = document.getElementById('elite-fecha-ini')?.value || document.getElementById('cfg-fecha-ini')?.value || '2024-01-01';
-  const btFin = document.getElementById('elite-fecha-fin')?.value || document.getElementById('cfg-fecha-fin')?.value || new Date().toISOString().slice(0, 10);
+  const tipoCliente = document.getElementById('elite-serie')?.value || 'Serie A';
+  const btIni = document.getElementById('elite-fecha-ini')?.value || '2024-01-01';
+  const btFin = document.getElementById('elite-fecha-fin')?.value || new Date().toISOString().slice(0, 10);
 
   const loading = document.getElementById('elite-loading');
   if (loading) loading.style.display = '';
@@ -6783,8 +6824,13 @@ function loadEliteStrategy() {
   .then(r => r.json())
   .then(data => {
     if (loading) loading.style.display = 'none';
-    if (data.error) { document.getElementById('elite-prop-content').innerHTML = '<div style="padding:20px;color:red;">'+data.error+'</div>'; return; }
-    renderElitePropuesta(data, strat);
+    if (data.error) { vxToast('Error: ' + data.error); return; }
+    // MISMO dashboard que Propuesta, alimentado con la estrategia + serie Elite
+    aplicarDatos(data, 'propuesta');
+    const tm = document.getElementById('prop-title-main');
+    const ts = document.getElementById('prop-title-sub');
+    if (tm) tm.textContent = 'VALMEX Elite — ' + strat.id;
+    if (ts) ts.textContent = strat.name + ' · ' + tipoCliente;
   })
   .catch(e => { if (loading) loading.style.display = 'none'; console.error('[Elite]', e); });
 }
