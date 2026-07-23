@@ -332,12 +332,10 @@ input,textarea,select{-webkit-user-select:text;-moz-user-select:text;-ms-user-se
 #page-elite .cmp2-vf-btn.active{background:#ED8A56;color:#fff;}
 #page-elite .cmp2-vf-btn:hover:not(.active){background:rgba(245,158,11,.08);}
 .elite-strat-row:hover{outline:2px solid rgba(237,138,86,.45);outline-offset:-2px;}
-/* Dashboard reutilizado dentro de Elite: encabezados de tarjeta (placeholders) y
-   acentos del título en NARANJA — sólo aquí; en la pestaña Propuesta siguen navy. */
-#page-elite .ph{background:#D4713E!important;}
-#page-elite .prop-accent{background:#ED8A56!important;}
-#page-elite #prop-title-sub{color:#ED8A56!important;}
-#page-elite .dd-hdr{background:#D4713E!important;}
+/* Dashboard reutilizado dentro de Elite: reemplaza ÚNICAMENTE el navy por naranja
+   (via --navy). Cyan (--sky) y azul claro (--blue) se quedan igual. Scopeado al
+   dashboard montado, así la pestaña Propuesta y la tabla de Estrategias no cambian. */
+#elite-dash-mount{--navy:#D4713E;}
 
 /* ══ TABLET PORTRAIT (≤1024px vertical) ══ */
 @media(max-width:1024px) and (orientation:portrait){
@@ -6858,26 +6856,25 @@ function loadEliteStrategy() {
   .catch(e => { if (loading) loading.style.display = 'none'; console.error('[Elite]', e); });
 }
 
-// Recolorea las gráficas del dashboard a paleta cálida (naranja/ámbar) para que combinen con los
-// encabezados naranja de Elite. En Propuesta, aplicarDatos re-asigna navy en comp/clase/geo/sector;
-// la línea del backtest se resetea aparte en _eliteReturnDash.
+// En las gráficas del dashboard reemplaza ÚNICAMENTE el navy (#00205C) por naranja; el resto de
+// colores (azul claro #3DA5E0, cyan #41BBC9, etc.) se queda igual. En Propuesta, aplicarDatos
+// re-asigna los colores originales; la línea del backtest se resetea aparte en _eliteReturnDash.
 function _eliteRecolorCharts() {
-  const WARM = ['#D4713E','#ED8A56','#C15A2B','#F0A875','#E8985C','#9A4620','#F5C89E','#B4592C','#FBD9A8'];
+  const NAVY = '#00205C', ORANGE = '#D4713E';
+  const sub = v => (typeof v === 'string' && v.toUpperCase() === NAVY) ? ORANGE : v;
   try {
-    if (charts.comp && charts.comp.data.datasets[0]) {
-      charts.comp.data.datasets[0].backgroundColor = '#ED8A56';
-      charts.comp.update('none');
-    }
+    // Composición (barra): es azul claro #3DA5E0, NO navy -> se queda igual.
     if (charts.linea && charts.linea.data.datasets[0]) {
       const d0 = charts.linea.data.datasets[0];
-      d0.borderColor = '#D4713E'; d0.backgroundColor = 'rgba(237,138,86,.14)'; d0.pointHoverBackgroundColor = '#D4713E';
+      d0.borderColor = sub(d0.borderColor);
+      d0.pointHoverBackgroundColor = sub(d0.pointHoverBackgroundColor);
       charts.linea.update('none');
     }
     ['clase','geo','sector'].forEach(k => {
       const c = charts[k];
-      if (c && c.data.datasets[0] && Array.isArray(c.data.datasets[0].data)) {
-        const n = c.data.datasets[0].data.length;
-        c.data.datasets[0].backgroundColor = Array.from({ length: n }, (_, i) => WARM[i % WARM.length]);
+      if (c && c.data.datasets[0]) {
+        const bg = c.data.datasets[0].backgroundColor;
+        c.data.datasets[0].backgroundColor = Array.isArray(bg) ? bg.map(sub) : sub(bg);
         c.update('none');
       }
     });
