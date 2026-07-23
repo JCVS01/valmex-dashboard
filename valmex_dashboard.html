@@ -326,10 +326,8 @@ input,textarea,select{-webkit-user-select:text;-moz-user-select:text;-ms-user-se
 .ef-icon{width:34px;height:34px;border-radius:8px;background:rgba(245,158,11,.1);display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:8px;}
 .ef-card h4{font-size:11px;font-weight:700;color:#D97706;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;}
 .ef-card p{font-size:11px;color:var(--gray);font-family:'Montserrat',sans-serif;line-height:1.5;}
-/* Tema NARANJA para VALMEX Elite: reasigna --navy dentro de la pestaña para que
-   todo lo que normalmente es azul (headers, tablas, texto) use el naranja Elite,
-   sin tocar el resto del dashboard. */
-#page-elite{--navy:#D4713E;}
+/* VALMEX Elite: mismo formato navy que el resto (como la pestaña Propuesta);
+   el naranja se usa sólo como ACENTO (hero, sub-tabs activos, línea del backtest). */
 #page-elite .cmp2-vf-btn{border-color:#ED8A56;color:#ED8A56;}
 #page-elite .cmp2-vf-btn.active{background:#ED8A56;color:#fff;}
 #page-elite .cmp2-vf-btn:hover:not(.active){background:rgba(245,158,11,.08);}
@@ -1762,7 +1760,7 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
             <th style="padding:4px 4px;text-align:center;font-size:9px;border-bottom:1px solid rgba(255,255,255,.3);" colspan="2">Suma Tipo</th>
             <th style="padding:4px 4px;text-align:center;font-size:9px;border-bottom:1px solid rgba(255,255,255,.3);" colspan="2">Suma Moneda</th>
           </tr>
-          <tr style="background:#ED8A56;color:rgba(255,255,255,.9);">
+          <tr style="background:#0A3580;color:rgba(255,255,255,.85);">
             <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">GUBCP</th>
             <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">GUBLP</th>
             <th style="padding:4px 3px;text-align:center;font-size:8px;white-space:nowrap;">DEUDA</th>
@@ -6704,8 +6702,8 @@ const ELITE_STRATS = [
     tr.innerHTML = `<td style="padding:5px 8px;font-weight:700;white-space:nowrap;">${s.id}</td>`
       + `<td style="padding:5px 8px;white-space:nowrap;">${s.name}</td>`
       + s.w.map(v => `<td style="padding:4px 3px;text-align:center;">${fmtW(v)}</td>`).join('')
-      + `<td style="padding:4px 3px;text-align:center;background:rgba(212,113,62,.10);">${fmtS(s.sd)}</td>`
-      + `<td style="padding:4px 3px;text-align:center;background:rgba(212,113,62,.10);">${fmtS(s.sc)}</td>`
+      + `<td style="padding:4px 3px;text-align:center;background:rgba(0,32,92,.04);">${fmtS(s.sd)}</td>`
+      + `<td style="padding:4px 3px;text-align:center;background:rgba(0,32,92,.04);">${fmtS(s.sc)}</td>`
       + `<td style="padding:4px 3px;text-align:center;background:rgba(65,187,201,.06);">${fmtS(s.sm)}</td>`
       + `<td style="padding:4px 3px;text-align:center;background:rgba(65,187,201,.06);">${fmtS(s.so)}</td>`;
     tb.appendChild(tr);
@@ -6795,60 +6793,76 @@ let _eliteBtChart = null;
 function renderElitePropuesta(data, strat) {
   const dest = document.getElementById('elite-prop-content');
   if (!dest) return;
-  const fmtP = v => (v != null && !isNaN(v)) ? (v*100).toFixed(2) + '%' : '—';
+  const R = data.rendimientos || {};
+  const fmtR = v => (v == null || isNaN(v)) ? '—' : (v >= 0 ? '+' : '') + Number(v).toFixed(2) + '%';
+  const cls = v => (v == null || isNaN(v)) ? 'rh-val' : (v >= 0 ? 'rh-val pos' : 'rh-val neg');
 
   // Composición (array de {fondo, pct})
   const comp = Array.isArray(data.composicion) ? data.composicion : [];
   const compRows = comp.filter(c => (c.pct||0) > 0).sort((a,b) => b.pct - a.pct)
-    .map(c => `<tr><td style="padding:5px 10px;border-bottom:1px solid #F0F2F4;">${c.fondo || c.nombre || c.ticker || ''}</td><td style="padding:5px 10px;text-align:right;font-weight:700;border-bottom:1px solid #F0F2F4;">${Number(c.pct).toFixed(2)}%</td></tr>`).join('');
+    .map(c => `<tr><td style="padding:4px 10px;border-bottom:1px solid #F0F2F4;">${c.fondo || c.nombre || c.ticker || ''}</td><td style="padding:4px 10px;text-align:right;font-weight:700;border-bottom:1px solid #F0F2F4;">${Number(c.pct).toFixed(2)}%</td></tr>`).join('');
 
-  // Rendimiento del periodo desde el backtest (serie base 100)
+  // Rendimiento del rango elegido desde el backtest (serie base 100)
   const bt = Array.isArray(data.bt_portafolio) ? data.bt_portafolio : [];
   let efectivo = null, anualizado = null, years = 0, fIni = '', fFin = '';
   if (bt.length >= 2 && bt[0].valor > 0) {
     const v0 = bt[0].valor, v1 = bt[bt.length - 1].valor;
     fIni = bt[0].fecha; fFin = bt[bt.length - 1].fecha;
-    efectivo = v1 / v0 - 1;
+    efectivo = (v1 / v0 - 1) * 100;
     years = (new Date(fFin) - new Date(fIni)) / (365.25 * 24 * 3600 * 1000);
-    anualizado = years > 0.05 ? Math.pow(v1 / v0, 1 / years) - 1 : efectivo;
+    anualizado = years > 0.05 ? (Math.pow(v1 / v0, 1 / years) - 1) * 100 : efectivo;
   }
 
   // Exposición geográfica (look-through real de los fondos)
   const geo = data.geo || { labels: [], values: [] };
   const geoRows = (geo.labels || []).map((l, i) =>
-    `<tr><td style="padding:5px 10px;border-bottom:1px solid #F0F2F4;">${l}</td><td style="padding:5px 10px;text-align:right;font-weight:700;border-bottom:1px solid #F0F2F4;">${Number(geo.values[i] || 0).toFixed(2)}%</td></tr>`).join('');
+    `<tr><td style="padding:4px 10px;border-bottom:1px solid #F0F2F4;">${l}</td><td style="padding:4px 10px;text-align:right;font-weight:700;border-bottom:1px solid #F0F2F4;">${Number(geo.values[i] || 0).toFixed(2)}%</td></tr>`).join('');
 
   const btLabels = bt.map(p => String(p.fecha));
   const btValues = bt.map(p => p.valor);
 
   dest.innerHTML = `
-    <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-      <div style="background:linear-gradient(135deg,#ED8A56,#D4713E);border-radius:10px;padding:16px 20px;color:#fff;font-family:'Montserrat',sans-serif;">
-        <div style="font-size:13px;font-weight:700;opacity:.92;">Rendimiento Efectivo (acumulado)</div>
-        <div style="font-size:30px;font-weight:800;margin-top:4px;">${fmtP(efectivo)}</div>
-        <div style="font-size:11px;opacity:.85;margin-top:2px;">${fIni ? fIni + '  &rarr;  ' + fFin : ''}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px;align-items:start;">
+      <div class="pcard">
+        <div class="ph">Rendimientos — ${strat.id}</div>
+        <div class="pb" style="padding:10px;">
+          <div class="rh-grid">
+            <div class="rh-block"><span class="rh-pill">MTD</span><span class="${cls(R.mtd)}">${fmtR(R.mtd)}</span></div>
+            <div class="rh-block"><span class="rh-pill">3 Meses</span><span class="${cls(R.r3m)}">${fmtR(R.r3m)}</span></div>
+            <div class="rh-block"><span class="rh-pill">YTD</span><span class="${cls(R.ytd)}">${fmtR(R.ytd)}</span></div>
+            <div class="rh-block"><span class="rh-pill">12 Meses</span><span class="${cls(R.r1y)}">${fmtR(R.r1y)}</span></div>
+            <div class="rh-block"><span class="rh-pill">24 Meses</span><span class="${cls(R.r2y)}">${fmtR(R.r2y)}</span></div>
+            <div class="rh-block"><span class="rh-pill">36 Meses</span><span class="${cls(R.r3y)}">${fmtR(R.r3y)}</span></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+            <div style="border:1px solid #E8ECF0;border-left:3px solid #ED8A56;border-radius:6px;padding:7px 10px;">
+              <div style="font-size:11px;color:var(--gray);font-weight:700;font-family:'Montserrat',sans-serif;">Efectivo (periodo)</div>
+              <div class="${cls(efectivo)}" style="font-size:17px;">${fmtR(efectivo)}</div>
+            </div>
+            <div style="border:1px solid #E8ECF0;border-left:3px solid #ED8A56;border-radius:6px;padding:7px 10px;">
+              <div style="font-size:11px;color:var(--gray);font-weight:700;font-family:'Montserrat',sans-serif;">Anualizado (periodo)</div>
+              <div class="${cls(anualizado)}" style="font-size:17px;">${fmtR(anualizado)}</div>
+            </div>
+          </div>
+          <div style="font-size:10px;color:var(--gray);margin-top:6px;font-family:'Montserrat',sans-serif;">${fIni ? fIni + ' &rarr; ' + fFin + ' &middot; ' + years.toFixed(1) + ' a&ntilde;os' : ''}</div>
+        </div>
       </div>
-      <div style="background:linear-gradient(135deg,#D4713E,#B4592C);border-radius:10px;padding:16px 20px;color:#fff;font-family:'Montserrat',sans-serif;">
-        <div style="font-size:13px;font-weight:700;opacity:.92;">Rendimiento Anualizado</div>
-        <div style="font-size:30px;font-weight:800;margin-top:4px;">${fmtP(anualizado)}</div>
-        <div style="font-size:11px;opacity:.85;margin-top:2px;">${years > 0 ? years.toFixed(1) + ' a&ntilde;os' : ''}</div>
+      <div class="pcard">
+        <div class="ph">Composici&oacute;n</div>
+        <div class="pb" style="padding:0;"><table style="width:100%;border-collapse:collapse;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);">${compRows}</table></div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;">
-      <div>
-        <div style="background:var(--navy);color:#fff;padding:8px 12px;font-weight:700;font-size:13px;border-radius:6px 6px 0 0;font-family:'Montserrat',sans-serif;">Composici&oacute;n — ${strat.id}</div>
-        <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);border:1px solid #D3DDE6;border-top:none;">${compRows}</table>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;align-items:start;">
+      <div class="pcard">
+        <div class="ph">Backtesting (base 100)</div>
+        <div class="pb" style="padding:10px;"><div style="position:relative;height:260px;"><canvas id="elite-bt-chart"></canvas></div></div>
       </div>
-      <div>
-        <div style="background:var(--navy);color:#fff;padding:8px 12px;font-weight:700;font-size:13px;border-radius:6px 6px 0 0;font-family:'Montserrat',sans-serif;">Exposici&oacute;n Geogr&aacute;fica (RV)</div>
-        <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);border:1px solid #D3DDE6;border-top:none;">${geoRows || '<tr><td style="padding:8px 10px;color:#888;">Sin renta variable</td></tr>'}</table>
+      <div class="pcard">
+        <div class="ph">Exposici&oacute;n Geogr&aacute;fica (RV)</div>
+        <div class="pb" style="padding:0;"><table style="width:100%;border-collapse:collapse;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);">${geoRows || '<tr><td style="padding:8px 10px;color:#888;">Sin renta variable</td></tr>'}</table></div>
       </div>
     </div>
-    <div style="margin-top:16px;border:1px solid #D3DDE6;border-radius:8px;padding:14px;">
-      <div style="font-weight:700;font-size:13px;color:var(--navy);margin-bottom:8px;font-family:'Montserrat',sans-serif;">Backtesting (base 100)</div>
-      <div style="position:relative;height:280px;"><canvas id="elite-bt-chart"></canvas></div>
-    </div>
-    <p style="font-size:11px;color:#888;margin-top:8px;font-family:'Montserrat',sans-serif;">Rendimiento con NAVs de Morningstar de la serie seleccionada en Configuraci&oacute;n (neto de comisiones de la serie), sobre el rango de fechas elegido. Exposici&oacute;n geogr&aacute;fica por transparencia (look-through) de los fondos.</p>
+    <p style="font-size:11px;color:#888;margin-top:8px;font-family:'Montserrat',sans-serif;">Rendimientos con NAVs de Morningstar de la serie seleccionada en Configuraci&oacute;n (neto de comisiones de la serie). "Efectivo/Anualizado (periodo)" sobre el rango de fechas elegido; MTD/3M/YTD/12M/24M/36M son ventanas est&aacute;ndar. Exposici&oacute;n geogr&aacute;fica por look-through de los fondos.</p>
   `;
 
   // Backtest chart (destruye la instancia previa para evitar "canvas already in use")
@@ -6864,10 +6878,10 @@ function renderElitePropuesta(data, strat) {
         },
         options: {
           responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { display: false }, tooltip: { backgroundColor: '#D4713E', cornerRadius: 6 } },
+          plugins: { legend: { display: false }, tooltip: { backgroundColor: '#00205C', cornerRadius: 6 } },
           scales: {
-            y: { ticks: { font: { size: 12, family: 'Montserrat' }, color: '#D4713E' }, grid: { display: false }, border: { display: false } },
-            x: { ticks: { font: { size: 10, family: 'Montserrat' }, color: '#D4713E', maxTicksLimit: 8, maxRotation: 0 }, grid: { display: false }, border: { display: false } }
+            y: { ticks: { font: { size: 12, family: 'Montserrat' }, color: '#00205C' }, grid: { display: false }, border: { display: false } },
+            x: { ticks: { font: { size: 10, family: 'Montserrat' }, color: '#00205C', maxTicksLimit: 8, maxRotation: 0 }, grid: { display: false }, border: { display: false } }
           }
         }
       });
