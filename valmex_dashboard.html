@@ -332,7 +332,10 @@ input,textarea,select{-webkit-user-select:text;-moz-user-select:text;-ms-user-se
 #page-elite .cmp2-vf-btn.active{background:#ED8A56;color:#fff;}
 #page-elite .cmp2-vf-btn:hover:not(.active){background:rgba(245,158,11,.08);}
 .elite-strat-row:hover{outline:2px solid rgba(237,138,86,.45);outline-offset:-2px;}
-/* Dashboard de Elite: colores IDÉNTICOS a la pestaña Propuesta (navy). Sin override de color. */
+/* Dashboard de Elite: colores IDÉNTICOS a la pestaña Propuesta (navy), SALVO 4 elementos en naranja:
+   subtítulo, barra de acento del título, barras de composición y línea del backtesting. */
+#elite-dash-mount #prop-title-sub{color:#ED8A56!important;}
+#elite-dash-mount .prop-accent{background:#ED8A56!important;}
 
 /* ══ TABLET PORTRAIT (≤1024px vertical) ══ */
 @media(max-width:1024px) and (orientation:portrait){
@@ -6846,33 +6849,33 @@ function loadEliteStrategy() {
     const ts = document.getElementById('prop-title-sub');
     if (tm) tm.textContent = 'VALMEX Elite — ' + strat.id;
     if (ts) ts.textContent = strat.name + ' · ' + tipoCliente;
+    _eliteRecolorCharts();   // solo barras de composición + línea del backtest en naranja
   })
   .catch(e => { if (loading) loading.style.display = 'none'; console.error('[Elite]', e); });
 }
 
-// Paleta MINIMALISTA para el dashboard de Elite: naranja VIBRANTE en las rebanadas grandes +
-// grises pizarra en las chicas. Limpia, moderna, sin tonos tierra. En Propuesta, aplicarDatos
-// re-asigna los colores originales; la línea se resetea aparte en _eliteReturnDash.
-const _ELITE_PAL = ['#EA580C','#F97316','#FB923C','#FDBA74','#94A3B8','#CBD5E1','#64748B','#FED7AA','#E2E8F0'];
+// NARANJA sólo en: barras de Composición, línea del Backtesting y el navy de las DONAS (pies).
+// Los headers (placeholders) y demás azules se quedan igual. aplicarDatos re-asigna los colores
+// originales en Propuesta; la línea se resetea a navy en _eliteReturnDash.
 function _eliteRecolorCharts() {
+  const ORANGE = '#ED8A56';
+  const sub = v => (typeof v === 'string' && v.toUpperCase() === '#00205C') ? ORANGE : v;
   try {
-    // Composición (barra) -> naranja vibrante
     if (charts.comp && charts.comp.data.datasets[0]) {
-      charts.comp.data.datasets[0].backgroundColor = '#F97316';
+      charts.comp.data.datasets[0].backgroundColor = ORANGE;
       charts.comp.update('none');
     }
-    // Backtest (línea) -> naranja vibrante con relleno muy suave
     if (charts.linea && charts.linea.data.datasets[0]) {
       const d0 = charts.linea.data.datasets[0];
-      d0.borderColor = '#EA580C'; d0.backgroundColor = 'rgba(249,115,22,.10)'; d0.pointHoverBackgroundColor = '#EA580C';
+      d0.borderColor = ORANGE; d0.backgroundColor = 'rgba(237,138,86,.10)'; d0.pointHoverBackgroundColor = ORANGE;
       charts.linea.update('none');
     }
-    // Donas -> naranja vibrante + grises (minimalista, sin tonos tierra)
+    // Donas (pies): sólo el navy (#00205C) -> naranja; el resto de colores se queda igual
     ['clase','geo','sector'].forEach(k => {
       const c = charts[k];
-      if (c && c.data.datasets[0] && Array.isArray(c.data.datasets[0].data)) {
-        const n = c.data.datasets[0].data.length;
-        c.data.datasets[0].backgroundColor = Array.from({ length: n }, (_, i) => _ELITE_PAL[i % _ELITE_PAL.length]);
+      if (c && c.data.datasets[0]) {
+        const bg = c.data.datasets[0].backgroundColor;
+        c.data.datasets[0].backgroundColor = Array.isArray(bg) ? bg.map(sub) : sub(bg);
         c.update('none');
       }
     });
