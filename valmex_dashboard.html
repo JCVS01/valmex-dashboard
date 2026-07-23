@@ -7412,7 +7412,9 @@ function ceCalc() {
     if (re != null) { cumE *= (1 + re); nE += yFrac; }
     if (ri != null) { cumI *= (1 + ri); nI += yFrac; }
     n += yFrac;
-    rows.push({ year: y, cetes: rc, vlmxetf: re, infl: ri, retProv: rp, isFwd });
+    // Año vigente = parcial (YTD): entra prorrateado (yFrac) en la anualización, NO como año completo
+    const isYtd = !isFwd && y === currentYear && yFrac < 1;
+    rows.push({ year: y, cetes: rc, vlmxetf: re, infl: ri, retProv: rp, isFwd, isYtd });
   }
 
   const rendC = nC > 0 ? Math.pow(cumC, 1/nC) - 1 : 0;   // annualized CETES
@@ -7515,7 +7517,7 @@ function ceCalc() {
   const tbody = document.getElementById('ce-year-tbody');
   tbody.innerHTML = rows.map(r =>
     `<tr style="border-bottom:1px solid #E8ECF0;${r.isFwd ? 'background:#F5F9FC;' : ''}">
-      <td style="padding:5px 10px;font-weight:600;color:var(--navy);">${r.year}${r.isFwd ? ' <span style="font-size:10px;color:var(--sky);font-weight:700;">proy.</span>' : ''}</td>
+      <td style="padding:5px 10px;font-weight:600;color:var(--navy);">${r.year}${r.isFwd ? ' <span style="font-size:10px;color:var(--sky);font-weight:700;">proy.</span>' : (r.isYtd ? ' <span style="font-size:10px;color:#b45309;font-weight:700;" title="Año en curso: rendimiento parcial (YTD), no anualizado. Entra prorrateado en el cálculo anualizado.">YTD</span>' : '')}</td>
       <td style="padding:5px 10px;text-align:right;${r.isFwd ? 'font-style:italic;color:#5B6670;' : ''}">${r.cetes != null ? (r.cetes*100).toFixed(2)+'%' : '—'}</td>
       <td style="padding:5px 10px;text-align:right;${r.isFwd ? 'font-style:italic;color:#5B6670;' : ''}">${r.vlmxetf != null ? (r.vlmxetf*100).toFixed(2)+'%' : '—'}</td>
       <td style="padding:5px 10px;text-align:right;${r.isFwd ? 'font-style:italic;color:#5B6670;' : ''}">${r.infl != null ? (r.infl*100).toFixed(2)+'%' : '—'}</td>
@@ -7543,7 +7545,8 @@ function ceCalc() {
   const _fwdNote = _hasFwd && _ceFwdRate != null
     ? ` Años marcados "proy." proyectados con la expectativa de largo plazo de J.P. Morgan para deuda de corto plazo (CETES México) = ${(_ceFwdRate*100).toFixed(2)}% anual (mismos supuestos que Portafolios); inflación proyectada = ${(_ceFwdInfl!=null?(_ceFwdInfl*100).toFixed(2):'—')}%. Ambos instrumentos usan la misma tasa bruta; la diferencia es el tratamiento fiscal.`
     : '';
-  document.getElementById('ce-note').textContent = `Rendimientos brutos anuales. CETES 28d: promedio de tasa Banxico. VLMXETF: NAV Morningstar (serie seleccionada). ISR CETES: ${(isrRate*100).toFixed(0)}% sobre intereses reales. Retención provisional: Art. 21 LIF / Art. 54 y 135 LISR (tasa por año del SAT). ISR VLMXETF: 10% sobre intereses reales. Inflación: INPC Banxico.` + _fwdNote;
+  const _ytdNote = rows.some(r => r.isYtd) ? ` El año en curso (YTD) es un rendimiento PARCIAL, no anualizado: entra prorrateado (meses transcurridos/12) en el cálculo anualizado; los años completos entran como efectivo anual.` : '';
+  document.getElementById('ce-note').textContent = `Rendimientos brutos anuales. CETES 28d: promedio de tasa Banxico. VLMXETF: NAV Morningstar (serie seleccionada). ISR CETES: ${(isrRate*100).toFixed(0)}% sobre intereses reales. Retención provisional: Art. 21 LIF / Art. 54 y 135 LISR (tasa por año del SAT). ISR VLMXETF: 10% sobre intereses reales. Inflación: INPC Banxico.` + _ytdNote + _fwdNote;
 
   // Charts
   ceDrawCharts(rows, monto, isrRate);
