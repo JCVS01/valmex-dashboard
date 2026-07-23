@@ -6776,11 +6776,16 @@ function _eliteReturnDash() {
     _propDashHome.appendChild(scaler);
     _propuestaCargada = false;   // que la pestaña Propuesta re-renderice sus propios datos
     _eliteHideDash();            // ocultar (aún con datos Elite) hasta que Propuesta re-renderice: evita el glitch
-    // La línea del backtest no la re-colorea aplicarDatos: resetear a navy para Propuesta
+    // La línea del backtest y los tickers de composición no los re-colorea aplicarDatos:
+    // resetearlos a navy para la pestaña Propuesta.
     if (typeof charts !== 'undefined' && charts.linea && charts.linea.data.datasets[0]) {
       const d0 = charts.linea.data.datasets[0];
       d0.borderColor = '#00205C'; d0.backgroundColor = 'rgba(61,165,224,0.08)'; d0.pointHoverBackgroundColor = '#00205C';
       charts.linea.update('none');
+    }
+    if (typeof charts !== 'undefined' && charts.comp && charts.comp.options?.scales?.y?.ticks) {
+      charts.comp.options.scales.y.ticks.color = '#00205C';
+      charts.comp.update('none');
     }
     // Limpiar de inmediato el branding Elite: la pestaña Propuesta NO debe mostrar nada de VALMEX Elite
     const tm = document.getElementById('prop-title-main');
@@ -6863,6 +6868,7 @@ function _eliteRecolorCharts() {
   try {
     if (charts.comp && charts.comp.data.datasets[0]) {
       charts.comp.data.datasets[0].backgroundColor = ORANGE;
+      if (charts.comp.options?.scales?.y?.ticks) charts.comp.options.scales.y.ticks.color = ORANGE;  // tickers de fondos
       charts.comp.update('none');
     }
     if (charts.linea && charts.linea.data.datasets[0]) {
