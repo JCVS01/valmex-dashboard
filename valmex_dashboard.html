@@ -6852,8 +6852,8 @@ function loadEliteStrategy() {
     aplicarDatos(data, 'propuesta');
     const tm = document.getElementById('prop-title-main');
     const ts = document.getElementById('prop-title-sub');
-    if (tm) tm.textContent = 'VALMEX Elite — ' + strat.id;
-    if (ts) ts.textContent = strat.name + ' · ' + tipoCliente;
+    if (tm) tm.textContent = strat.name;
+    if (ts) ts.textContent = 'VALMEX Elite · Estrategia de inversión';
     _eliteRecolorCharts();   // solo barras de composición + línea del backtest en naranja
   })
   .catch(e => { if (loading) loading.style.display = 'none'; console.error('[Elite]', e); });
