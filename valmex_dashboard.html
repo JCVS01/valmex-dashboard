@@ -6765,6 +6765,11 @@ function _eliteReturnDash() {
   if (scaler && _propDashHome && scaler.parentElement !== _propDashHome) {
     _propDashHome.appendChild(scaler);
     _propuestaCargada = false;   // que la pestaña Propuesta re-renderice sus propios datos
+    // Limpiar de inmediato el branding Elite: la pestaña Propuesta NO debe mostrar nada de VALMEX Elite
+    const tm = document.getElementById('prop-title-main');
+    const ts = document.getElementById('prop-title-sub');
+    if (tm) tm.textContent = 'Estrategia de inversión';
+    if (ts) ts.textContent = '';
   }
 }
 function _eliteShowPresentacion() {
@@ -6781,22 +6786,16 @@ function _initElitePresentacion() {
   if (!dest) return;
   const selHtml = ELITE_STRATS.map((s, i) => `<option value="elite_${i}">${s.id} — ${s.name}</option>`).join('');
   dest.innerHTML = `
-    <div style="display:flex;align-items:center;gap:10px;padding:10px 20px;font-family:'Montserrat',sans-serif;flex-wrap:wrap;">
-      <label style="font-weight:700;font-size:14px;color:var(--navy);">Estrategia:</label>
-      <select id="elite-selector" onchange="loadEliteStrategy()" style="padding:6px 12px;border:1px solid #D3DDE6;border-radius:6px;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);min-width:230px;">${selHtml}</select>
-      <label style="font-weight:700;font-size:14px;color:var(--navy);">Del</label>
-      <input type="date" id="elite-fecha-ini" onchange="loadEliteStrategy()" style="padding:5px 8px;border:1px solid #D3DDE6;border-radius:6px;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);">
-      <label style="font-weight:700;font-size:14px;color:var(--navy);">al</label>
-      <input type="date" id="elite-fecha-fin" onchange="loadEliteStrategy()" style="padding:5px 8px;border:1px solid #D3DDE6;border-radius:6px;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);">
-      <button onclick="document.getElementById('btn-pdf').click()" style="padding:6px 14px;background:#ED8A56;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;font-family:'Montserrat',sans-serif;cursor:pointer;">Descargar PDF</button>
-      <span id="elite-loading" style="display:none;font-size:12px;color:var(--gray);">Cargando...</span>
+    <div class="prop-titlebar">
+      <div></div>
+      <div class="prop-right" style="gap:8px;flex-wrap:wrap;align-items:center;">
+        <select id="elite-selector" onchange="loadEliteStrategy()" style="padding:7px 12px;border:1.5px solid #D3DDE6;border-radius:7px;font-size:13px;font-family:'Montserrat',sans-serif;font-weight:600;color:#00205C;background:#fff;outline:none;cursor:pointer;max-width:270px;" onfocus="this.style.borderColor='#41BBC9'" onblur="this.style.borderColor='#D3DDE6'">${selHtml}</select>
+        <button class="btn-dl" onclick="document.getElementById('btn-pdf').click()" title="Descargar PDF"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+        <span id="elite-loading" style="display:none;font-size:12px;color:var(--gray);">Cargando...</span>
+      </div>
     </div>
     <div id="elite-dash-mount" style="padding:0 8px;"></div>
   `;
-  const _ef = document.getElementById('elite-fecha-fin');
-  const _ei = document.getElementById('elite-fecha-ini');
-  if (_ef && !_ef.value) _ef.value = new Date().toISOString().slice(0, 10);
-  if (_ei && !_ei.value) _ei.value = '2024-01-01';
 }
 
 function loadEliteStrategy() {
@@ -6812,8 +6811,8 @@ function loadEliteStrategy() {
   strat.w.forEach((w, i) => { if (w > 0) fondos[fundKeys[i]] = w; });
 
   const tipoCliente = 'VALMEX Elite';   // Elite siempre usa sus series institucionales (B0NC/B0 por fondo)
-  const btIni = document.getElementById('elite-fecha-ini')?.value || '2024-01-01';
-  const btFin = document.getElementById('elite-fecha-fin')?.value || new Date().toISOString().slice(0, 10);
+  const btIni = document.getElementById('cfg-fecha-ini')?.value || '2016-01-01';
+  const btFin = document.getElementById('cfg-fecha-fin')?.value || new Date().toISOString().slice(0, 10);
 
   const loading = document.getElementById('elite-loading');
   if (loading) loading.style.display = '';
