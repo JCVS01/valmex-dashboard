@@ -6627,6 +6627,9 @@ function aplicarDatos(data, valor) {
     const lbl = labelMap[valor] || 'Estrategia Portafolio';
     propTitleSub.textContent = lbl;
   }
+  // Revelar el dashboard ya renderizado (se oculta durante la transición Elite <-> Propuesta)
+  const _pd = document.getElementById('prop-dash');
+  if (_pd) _pd.style.opacity = '1';
 }
 
 function guardarPropuesta() {
@@ -6753,18 +6756,30 @@ function showEliteTab(tab, btn) {
 
 // ── Reutiliza el MISMO dashboard de Propuesta (prop-dash) dentro de Elite ──
 let _propDashHome = null;
+// Oculta el dashboard durante la transición Elite<->Propuesta; se revela al re-renderizar
+// (aplicarDatos). Red de seguridad: si el render falla, se revela igual tras 2.5s.
+function _eliteHideDash() {
+  const dash = document.getElementById('prop-dash');
+  if (!dash) return;
+  dash.style.opacity = '0';
+  setTimeout(() => { const d = document.getElementById('prop-dash'); if (d) d.style.opacity = '1'; }, 2500);
+}
 function _eliteMountDash() {
   const scaler = document.getElementById('prop-dash-scaler');
   const mount  = document.getElementById('elite-dash-mount');
   if (!scaler || !mount) return;
   if (!_propDashHome) _propDashHome = scaler.parentElement;   // su lugar original (pestaña Propuesta)
-  if (scaler.parentElement !== mount) mount.appendChild(scaler);
+  if (scaler.parentElement !== mount) {
+    _eliteHideDash();   // ocultar hasta que Elite lo re-renderice (evita flash)
+    mount.appendChild(scaler);
+  }
 }
 function _eliteReturnDash() {
   const scaler = document.getElementById('prop-dash-scaler');
   if (scaler && _propDashHome && scaler.parentElement !== _propDashHome) {
     _propDashHome.appendChild(scaler);
     _propuestaCargada = false;   // que la pestaña Propuesta re-renderice sus propios datos
+    _eliteHideDash();            // ocultar (aún con datos Elite) hasta que Propuesta re-renderice: evita el glitch
     // Limpiar de inmediato el branding Elite: la pestaña Propuesta NO debe mostrar nada de VALMEX Elite
     const tm = document.getElementById('prop-title-main');
     const ts = document.getElementById('prop-title-sub');
