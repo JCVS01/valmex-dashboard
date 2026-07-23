@@ -6780,6 +6780,12 @@ function _eliteReturnDash() {
     _propDashHome.appendChild(scaler);
     _propuestaCargada = false;   // que la pestaña Propuesta re-renderice sus propios datos
     _eliteHideDash();            // ocultar (aún con datos Elite) hasta que Propuesta re-renderice: evita el glitch
+    // La línea del backtest no la re-colorea aplicarDatos: resetear a navy para Propuesta
+    if (typeof charts !== 'undefined' && charts.linea && charts.linea.data.datasets[0]) {
+      const d0 = charts.linea.data.datasets[0];
+      d0.borderColor = '#00205C'; d0.backgroundColor = 'rgba(61,165,224,0.08)'; d0.pointHoverBackgroundColor = '#00205C';
+      charts.linea.update('none');
+    }
     // Limpiar de inmediato el branding Elite: la pestaña Propuesta NO debe mostrar nada de VALMEX Elite
     const tm = document.getElementById('prop-title-main');
     const ts = document.getElementById('prop-title-sub');
@@ -6847,8 +6853,35 @@ function loadEliteStrategy() {
     const ts = document.getElementById('prop-title-sub');
     if (tm) tm.textContent = 'VALMEX Elite — ' + strat.id;
     if (ts) ts.textContent = strat.name + ' · ' + tipoCliente;
+    _eliteRecolorCharts();   // gráficas en tonos cálidos para combinar con los headers naranja
   })
   .catch(e => { if (loading) loading.style.display = 'none'; console.error('[Elite]', e); });
+}
+
+// Recolorea las gráficas del dashboard a paleta cálida (naranja/ámbar) para que combinen con los
+// encabezados naranja de Elite. En Propuesta, aplicarDatos re-asigna navy en comp/clase/geo/sector;
+// la línea del backtest se resetea aparte en _eliteReturnDash.
+function _eliteRecolorCharts() {
+  const WARM = ['#D4713E','#ED8A56','#C15A2B','#F0A875','#E8985C','#9A4620','#F5C89E','#B4592C','#FBD9A8'];
+  try {
+    if (charts.comp && charts.comp.data.datasets[0]) {
+      charts.comp.data.datasets[0].backgroundColor = '#ED8A56';
+      charts.comp.update('none');
+    }
+    if (charts.linea && charts.linea.data.datasets[0]) {
+      const d0 = charts.linea.data.datasets[0];
+      d0.borderColor = '#D4713E'; d0.backgroundColor = 'rgba(237,138,86,.14)'; d0.pointHoverBackgroundColor = '#D4713E';
+      charts.linea.update('none');
+    }
+    ['clase','geo','sector'].forEach(k => {
+      const c = charts[k];
+      if (c && c.data.datasets[0] && Array.isArray(c.data.datasets[0].data)) {
+        const n = c.data.datasets[0].data.length;
+        c.data.datasets[0].backgroundColor = Array.from({ length: n }, (_, i) => WARM[i % WARM.length]);
+        c.update('none');
+      }
+    });
+  } catch (e) {}
 }
 
 let _eliteBtChart = null;
