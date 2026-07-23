@@ -6780,7 +6780,7 @@ function _initElitePresentacion() {
   const dest = document.getElementById('etab-presentacion');
   if (!dest) return;
   const selHtml = ELITE_STRATS.map((s, i) => `<option value="elite_${i}">${s.id} — ${s.name}</option>`).join('');
-  const serieOpts = ['Serie A','Persona Física - B1FI/B1','Persona Física con Fee - B0FI/B0','Plan Personal de Retiro - B1NC/B1CF','Persona Moral - B1CO','Persona Moral con Fee - B0CO']
+  const serieOpts = ['VALMEX Elite','Serie A','Persona Física - B1FI/B1','Persona Física con Fee - B0FI/B0','Plan Personal de Retiro - B1NC/B1CF','Persona Moral - B1CO','Persona Moral con Fee - B0CO']
     .map(o => `<option>${o}</option>`).join('');
   dest.innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;padding:10px 20px;font-family:'Montserrat',sans-serif;flex-wrap:wrap;">
