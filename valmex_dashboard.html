@@ -6780,14 +6780,10 @@ function _initElitePresentacion() {
   const dest = document.getElementById('etab-presentacion');
   if (!dest) return;
   const selHtml = ELITE_STRATS.map((s, i) => `<option value="elite_${i}">${s.id} — ${s.name}</option>`).join('');
-  const serieOpts = ['VALMEX Elite','Serie A','Persona Física - B1FI/B1','Persona Física con Fee - B0FI/B0','Plan Personal de Retiro - B1NC/B1CF','Persona Moral - B1CO','Persona Moral con Fee - B0CO']
-    .map(o => `<option>${o}</option>`).join('');
   dest.innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;padding:10px 20px;font-family:'Montserrat',sans-serif;flex-wrap:wrap;">
       <label style="font-weight:700;font-size:14px;color:var(--navy);">Estrategia:</label>
       <select id="elite-selector" onchange="loadEliteStrategy()" style="padding:6px 12px;border:1px solid #D3DDE6;border-radius:6px;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);min-width:230px;">${selHtml}</select>
-      <label style="font-weight:700;font-size:14px;color:var(--navy);">Serie:</label>
-      <select id="elite-serie" onchange="loadEliteStrategy()" style="padding:6px 12px;border:1px solid #D3DDE6;border-radius:6px;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);">${serieOpts}</select>
       <label style="font-weight:700;font-size:14px;color:var(--navy);">Del</label>
       <input type="date" id="elite-fecha-ini" onchange="loadEliteStrategy()" style="padding:5px 8px;border:1px solid #D3DDE6;border-radius:6px;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);">
       <label style="font-weight:700;font-size:14px;color:var(--navy);">al</label>
@@ -6815,7 +6811,7 @@ function loadEliteStrategy() {
   const fondos = {};
   strat.w.forEach((w, i) => { if (w > 0) fondos[fundKeys[i]] = w; });
 
-  const tipoCliente = document.getElementById('elite-serie')?.value || 'Serie A';
+  const tipoCliente = 'VALMEX Elite';   // Elite siempre usa sus series institucionales (B0NC/B0 por fondo)
   const btIni = document.getElementById('elite-fecha-ini')?.value || '2024-01-01';
   const btFin = document.getElementById('elite-fecha-fin')?.value || new Date().toISOString().slice(0, 10);
 
