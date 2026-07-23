@@ -1772,18 +1772,18 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
         <thead>
           <tr style="background:var(--navy);color:#fff;">
             <th style="padding:11px 12px;text-align:left;font-size:11px;white-space:nowrap;letter-spacing:.3px;" rowspan="2">Estrategia</th>
-            <th style="padding:7px 4px;text-align:center;font-size:10px;font-weight:800;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,.22);border-left:1px solid rgba(255,255,255,.14);" colspan="5">DEUDA</th>
-            <th style="padding:7px 4px;text-align:center;font-size:10px;font-weight:800;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,.22);border-left:1px solid rgba(255,255,255,.14);" colspan="8">CAPITALES</th>
-            <th style="padding:7px 4px;text-align:center;font-size:10px;font-weight:800;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,.22);border-left:1px solid rgba(255,255,255,.14);" colspan="2">SUMA TIPO</th>
-            <th style="padding:7px 4px;text-align:center;font-size:10px;font-weight:800;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,.22);border-left:1px solid rgba(255,255,255,.14);" colspan="2">SUMA MONEDA</th>
+            <th style="padding:7px 4px;text-align:center;font-size:10px;font-weight:800;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,.22);border-left:2px solid rgba(255,255,255,.5);" colspan="5">DEUDA</th>
+            <th style="padding:7px 4px;text-align:center;font-size:10px;font-weight:800;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,.22);border-left:2px solid rgba(255,255,255,.5);" colspan="8">CAPITALES</th>
+            <th style="padding:7px 4px;text-align:center;font-size:10px;font-weight:800;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,.22);border-left:2px solid rgba(255,255,255,.5);" colspan="2">SUMA TIPO</th>
+            <th style="padding:7px 4px;text-align:center;font-size:10px;font-weight:800;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,.22);border-left:2px solid rgba(255,255,255,.5);" colspan="2">SUMA MONEDA</th>
           </tr>
           <tr style="background:#0A3580;color:rgba(255,255,255,.92);">
-            <th style="padding:6px 4px;text-align:center;font-size:9px;font-weight:700;white-space:nowrap;border-left:1px solid rgba(255,255,255,.10);">VXGUBCP</th>
+            <th style="padding:6px 4px;text-align:center;font-size:9px;font-weight:700;white-space:nowrap;border-left:2px solid rgba(255,255,255,.5);">VXGUBCP</th>
             <th style="padding:6px 4px;text-align:center;font-size:9px;font-weight:700;white-space:nowrap;">VXGUBLP</th>
             <th style="padding:6px 4px;text-align:center;font-size:9px;font-weight:700;white-space:nowrap;">VXDEUDA</th>
             <th style="padding:6px 4px;text-align:center;font-size:9px;font-weight:700;white-space:nowrap;">VXUDIMP</th>
             <th style="padding:6px 4px;text-align:center;font-size:9px;font-weight:700;white-space:nowrap;">VXTBILL</th>
-            <th style="padding:6px 4px;text-align:center;font-size:9px;font-weight:700;white-space:nowrap;border-left:1px solid rgba(255,255,255,.10);">VLMXDME</th>
+            <th style="padding:6px 4px;text-align:center;font-size:9px;font-weight:700;white-space:nowrap;border-left:2px solid rgba(255,255,255,.5);">VLMXDME</th>
             <th style="padding:6px 4px;text-align:center;font-size:9px;font-weight:700;white-space:nowrap;">VALMX20</th>
             <th style="padding:6px 4px;text-align:center;font-size:9px;font-weight:700;white-space:nowrap;">VALMX28</th>
             <th style="padding:6px 4px;text-align:center;font-size:9px;font-weight:700;white-space:nowrap;">VLMXTEC</th>
@@ -1791,9 +1791,9 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
             <th style="padding:6px 4px;text-align:center;font-size:9px;font-weight:700;white-space:nowrap;">VALMXHC</th>
             <th style="padding:6px 4px;text-align:center;font-size:9px;font-weight:700;white-space:nowrap;">VALMXES</th>
             <th style="padding:6px 4px;text-align:center;font-size:9px;font-weight:700;white-space:nowrap;">VALMXVL</th>
-            <th style="padding:6px 4px;text-align:center;font-size:9.5px;font-weight:700;border-left:1px solid rgba(255,255,255,.10);">Deuda</th>
+            <th style="padding:6px 4px;text-align:center;font-size:9.5px;font-weight:700;border-left:2px solid rgba(255,255,255,.5);">Deuda</th>
             <th style="padding:6px 4px;text-align:center;font-size:9.5px;font-weight:700;">Cap.</th>
-            <th style="padding:6px 4px;text-align:center;font-size:9.5px;font-weight:700;border-left:1px solid rgba(255,255,255,.10);">MXN</th>
+            <th style="padding:6px 4px;text-align:center;font-size:9.5px;font-weight:700;border-left:2px solid rgba(255,255,255,.5);">MXN</th>
             <th style="padding:6px 4px;text-align:center;font-size:9.5px;font-weight:700;">Otra</th>
           </tr>
         </thead>
@@ -6419,7 +6419,7 @@ function aplicarDatos(data, valor) {
   const fmtR = v => (v == null) ? '—' : ((v * 100) >= 0 ? '+' : '') + (v * 100).toFixed(2) + '%';
   const ordenKeys = ['mtd','r3m','ytd','r1y','r2y','r3y'];
   const orden = ordenKeys.map(k => r[k]); // portafolio: siempre efectivo
-  document.querySelectorAll('#page-propuesta .rh-val').forEach((el, i) => {
+  document.querySelectorAll('#prop-dash .card-rend .rh-val').forEach((el, i) => {
     if (i < orden.length) {
       el.textContent = fmtR(orden[i]);
       el.className   = 'rh-val ' + ((orden[i] ?? 0) >= 0 ? 'pos' : 'neg');
@@ -6718,24 +6718,26 @@ const ELITE_STRATS = [
 (function initEliteStrats(){
   const tb = document.getElementById('elite-strat-body');
   if(!tb) return;
-  // Celda de peso con heatmap: intensidad navy proporcional al peso; ceros discretos
-  const cellW = v => {
-    if (!v || v === 0) return `<td style="padding:7px 4px;text-align:center;color:#CBD5E1;">·</td>`;
+  const SEP = 'border-left:2px solid #A9B4C4;';   // separador visible entre grupos de columnas
+  // Celda de peso con heatmap; i=0 (inicio DEUDA) e i=5 (inicio CAPITALES) llevan separador
+  const cellW = (v, i) => {
+    const b = (i === 0 || i === 5) ? SEP : '';
+    if (!v || v === 0) return `<td style="padding:7px 4px;text-align:center;color:#CBD5E1;${b}">·</td>`;
     const a = Math.min(0.5, 0.06 + (v / 100) * 0.6);
     const strong = v >= 25;
-    return `<td style="padding:7px 4px;text-align:center;background:rgba(0,32,92,${a.toFixed(3)});color:${strong ? '#fff' : '#00205C'};font-weight:${strong ? '800' : '700'};font-variant-numeric:tabular-nums;">${v.toFixed(1)}<span style="font-size:9px;opacity:.65;">%</span></td>`;
+    return `<td style="padding:7px 4px;text-align:center;${b}background:rgba(0,32,92,${a.toFixed(3)});color:${strong ? '#fff' : '#00205C'};font-weight:${strong ? '800' : '700'};font-variant-numeric:tabular-nums;">${v.toFixed(1)}<span style="font-size:9px;opacity:.65;">%</span></td>`;
   };
-  const sumaW = (v, tint) => `<td style="padding:7px 4px;text-align:center;background:${tint};color:#00205C;font-weight:800;font-variant-numeric:tabular-nums;">${v.toFixed(1)}%</td>`;
+  const sumaW = (v, tint, sep) => `<td style="padding:7px 4px;text-align:center;${sep ? SEP : ''}background:${tint};color:#00205C;font-weight:800;font-variant-numeric:tabular-nums;">${v.toFixed(1)}%</td>`;
   ELITE_STRATS.forEach((s) => {
     const tr = document.createElement('tr');
     tr.className = 'elite-strat-row';
     tr.style.borderTop = '1px solid #EEF1F5';
     tr.innerHTML = `<td style="padding:8px 12px;font-weight:800;white-space:nowrap;color:var(--navy);">${s.id}</td>`
-      + s.w.map(cellW).join('')
-      + sumaW(s.sd, 'rgba(0,32,92,.05)')
-      + sumaW(s.sc, 'rgba(237,138,86,.12)')
-      + sumaW(s.sm, 'rgba(0,32,92,.05)')
-      + sumaW(s.so, 'rgba(65,187,201,.10)');
+      + s.w.map((v, i) => cellW(v, i)).join('')
+      + sumaW(s.sd, 'rgba(0,32,92,.05)', true)
+      + sumaW(s.sc, 'rgba(237,138,86,.12)', false)
+      + sumaW(s.sm, 'rgba(0,32,92,.05)', true)
+      + sumaW(s.so, 'rgba(65,187,201,.10)', false);
     tb.appendChild(tr);
   });
 })();
@@ -6782,10 +6784,6 @@ function _eliteReturnDash() {
       const d0 = charts.linea.data.datasets[0];
       d0.borderColor = '#00205C'; d0.backgroundColor = 'rgba(61,165,224,0.08)'; d0.pointHoverBackgroundColor = '#00205C';
       charts.linea.update('none');
-    }
-    if (typeof charts !== 'undefined' && charts.comp && charts.comp.options?.scales?.y?.ticks) {
-      charts.comp.options.scales.y.ticks.color = '#00205C';
-      charts.comp.update('none');
     }
     // Limpiar de inmediato el branding Elite: la pestaña Propuesta NO debe mostrar nada de VALMEX Elite
     const tm = document.getElementById('prop-title-main');
@@ -6867,8 +6865,7 @@ function _eliteRecolorCharts() {
   const sub = v => (typeof v === 'string' && v.toUpperCase() === '#00205C') ? ORANGE : v;
   try {
     if (charts.comp && charts.comp.data.datasets[0]) {
-      charts.comp.data.datasets[0].backgroundColor = ORANGE;
-      if (charts.comp.options?.scales?.y?.ticks) charts.comp.options.scales.y.ticks.color = ORANGE;  // tickers de fondos
+      charts.comp.data.datasets[0].backgroundColor = ORANGE;   // solo la BARRA en naranja (el label queda navy)
       charts.comp.update('none');
     }
     if (charts.linea && charts.linea.data.datasets[0]) {
