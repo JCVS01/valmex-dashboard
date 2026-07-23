@@ -6458,7 +6458,8 @@ function aplicarDatos(data, valor) {
       return name;
     });
     charts.comp.data.datasets[0].data = sorted.map(f => f.pct);
-    charts.comp.data.datasets[0].backgroundColor = '#3DA5E0';
+    // Naranja SOLO en VALMEX Elite (flag); en Propuesta queda el azul de siempre, intacto.
+    charts.comp.data.datasets[0].backgroundColor = window._eliteActive ? '#ED8A56' : '#3DA5E0';
     const maxVal = Math.max(...sorted.map(f => f.pct));
     charts.comp.options.scales.x.max  = maxVal * 1.18;  // 18% extra for outside labels
     // Barras: ajustar grosor según cantidad
@@ -6776,6 +6777,7 @@ function _eliteReturnDash() {
   const scaler = document.getElementById('prop-dash-scaler');
   if (scaler && _propDashHome && scaler.parentElement !== _propDashHome) {
     _propDashHome.appendChild(scaler);
+    window._eliteActive = false;  // Propuesta vuelve a pintar su barra de composicion en azul
     _propuestaCargada = false;   // que la pestaña Propuesta re-renderice sus propios datos
     _eliteHideDash();            // ocultar (aún con datos Elite) hasta que Propuesta re-renderice: evita el glitch
     // La línea del backtest y los tickers de composición no los re-colorea aplicarDatos:
@@ -6847,6 +6849,7 @@ function loadEliteStrategy() {
     if (loading) loading.style.display = 'none';
     if (data.error) { vxToast('Error: ' + data.error); return; }
     // MISMO dashboard que Propuesta, alimentado con la estrategia + serie Elite
+    window._eliteActive = true;   // que aplicarDatos pinte la barra de composicion en naranja
     aplicarDatos(data, 'propuesta');
     const tm = document.getElementById('prop-title-main');
     const ts = document.getElementById('prop-title-sub');
