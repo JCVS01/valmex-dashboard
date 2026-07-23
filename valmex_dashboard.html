@@ -6853,6 +6853,9 @@ function loadEliteStrategy() {
     if (tm) tm.textContent = strat.name;
     if (ts) ts.textContent = 'VALMEX Elite · Estrategia de inversión';
     _eliteRecolorCharts();   // solo barras de composición + línea del backtest en naranja
+    // aplicarDatos re-pinta la barra a azul en un update diferido a 50ms -> re-aplicamos
+    // el naranja DESPUES de ese setTimeout para que gane (solo afecta a VALMEX Elite).
+    setTimeout(_eliteRecolorCharts, 90);
   })
   .catch(e => { if (loading) loading.style.display = 'none'; console.error('[Elite]', e); });
 }
