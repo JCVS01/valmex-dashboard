@@ -6736,17 +6736,26 @@ function _initElitePresentacion() {
   ).join('');
 
   dest.innerHTML = `
-    <div style="display:flex;align-items:center;gap:12px;padding:10px 20px;font-family:'Montserrat',sans-serif;">
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 20px;font-family:'Montserrat',sans-serif;flex-wrap:wrap;">
       <label style="font-weight:700;font-size:14px;color:var(--navy);">Estrategia:</label>
-      <select id="elite-selector" onchange="loadEliteStrategy()" style="padding:6px 12px;border:1px solid #D3DDE6;border-radius:6px;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);min-width:260px;">
+      <select id="elite-selector" onchange="loadEliteStrategy()" style="padding:6px 12px;border:1px solid #D3DDE6;border-radius:6px;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);min-width:240px;">
         ${selHtml}
       </select>
+      <label style="font-weight:700;font-size:14px;color:var(--navy);">Del</label>
+      <input type="date" id="elite-fecha-ini" onchange="loadEliteStrategy()" style="padding:5px 8px;border:1px solid #D3DDE6;border-radius:6px;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);">
+      <label style="font-weight:700;font-size:14px;color:var(--navy);">al</label>
+      <input type="date" id="elite-fecha-fin" onchange="loadEliteStrategy()" style="padding:5px 8px;border:1px solid #D3DDE6;border-radius:6px;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);">
       <span id="elite-loading" style="display:none;font-size:12px;color:var(--gray);">Cargando...</span>
     </div>
     <div id="elite-prop-content" style="padding:0 20px;">
       <div style="text-align:center;padding:40px;color:var(--gray);font-family:'Montserrat',sans-serif;">Selecciona una estrategia</div>
     </div>
   `;
+  // Rango de fechas por defecto (Elite tiene su propio rango, como la hoja GNP)
+  const _ef = document.getElementById('elite-fecha-fin');
+  const _ei = document.getElementById('elite-fecha-ini');
+  if (_ef && !_ef.value) _ef.value = new Date().toISOString().slice(0, 10);
+  if (_ei && !_ei.value) _ei.value = '2024-01-01';
   loadEliteStrategy();
 }
 
@@ -6762,8 +6771,8 @@ function loadEliteStrategy() {
   strat.w.forEach((w, i) => { if (w > 0) fondos[fundKeys[i]] = w; });
 
   const tipoCliente = document.getElementById('cfg-serie')?.value || 'Serie A';
-  const btIni = document.getElementById('cfg-fecha-ini')?.value || '';
-  const btFin = document.getElementById('cfg-fecha-fin')?.value || '';
+  const btIni = document.getElementById('elite-fecha-ini')?.value || document.getElementById('cfg-fecha-ini')?.value || '2024-01-01';
+  const btFin = document.getElementById('elite-fecha-fin')?.value || document.getElementById('cfg-fecha-fin')?.value || new Date().toISOString().slice(0, 10);
 
   const loading = document.getElementById('elite-loading');
   if (loading) loading.style.display = '';
@@ -6782,62 +6791,76 @@ function loadEliteStrategy() {
   .catch(e => { if (loading) loading.style.display = 'none'; console.error('[Elite]', e); });
 }
 
+let _eliteBtChart = null;
 function renderElitePropuesta(data, strat) {
   const dest = document.getElementById('elite-prop-content');
   if (!dest) return;
+  const fmtP = v => (v != null && !isNaN(v)) ? (v*100).toFixed(2) + '%' : '—';
 
-  const comp = data.composicion || {};
-  const kpis = data.kpis || {};
-  const bt = data.backtesting || {};
-  const fmtP = v => v != null ? (v*100).toFixed(2) + '%' : '—';
-  const fmtM = v => v != null ? '$' + Number(v).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) : '—';
+  // Composición (array de {fondo, pct})
+  const comp = Array.isArray(data.composicion) ? data.composicion : [];
+  const compRows = comp.filter(c => (c.pct||0) > 0).sort((a,b) => b.pct - a.pct)
+    .map(c => `<tr><td style="padding:5px 10px;border-bottom:1px solid #F0F2F4;">${c.fondo || c.nombre || c.ticker || ''}</td><td style="padding:5px 10px;text-align:right;font-weight:700;border-bottom:1px solid #F0F2F4;">${Number(c.pct).toFixed(2)}%</td></tr>`).join('');
 
-  // Composition table
-  const fondos = Object.entries(comp).filter(([k,v]) => v > 0).sort((a,b) => b[1]-a[1]);
-  let compRows = fondos.map(([f,w]) => `<tr><td style="padding:4px 8px;">${f}</td><td style="padding:4px 8px;text-align:right;font-weight:700;">${w.toFixed(1)}%</td></tr>`).join('');
+  // Rendimiento del periodo desde el backtest (serie base 100)
+  const bt = Array.isArray(data.bt_portafolio) ? data.bt_portafolio : [];
+  let efectivo = null, anualizado = null, years = 0, fIni = '', fFin = '';
+  if (bt.length >= 2 && bt[0].valor > 0) {
+    const v0 = bt[0].valor, v1 = bt[bt.length - 1].valor;
+    fIni = bt[0].fecha; fFin = bt[bt.length - 1].fecha;
+    efectivo = v1 / v0 - 1;
+    years = (new Date(fFin) - new Date(fIni)) / (365.25 * 24 * 3600 * 1000);
+    anualizado = years > 0.05 ? Math.pow(v1 / v0, 1 / years) - 1 : efectivo;
+  }
 
-  // KPIs
-  const kpiRows = [
-    ['Rendimiento', fmtP(kpis.rendimiento)],
-    ['Volatilidad', fmtP(kpis.volatilidad)],
-    ['Sharpe', kpis.sharpe != null ? kpis.sharpe.toFixed(2) : '—'],
-    ['Max Drawdown', fmtP(kpis.max_drawdown)],
-  ].map(([k,v]) => `<tr><td style="padding:4px 8px;">${k}</td><td style="padding:4px 8px;text-align:right;font-weight:700;">${v}</td></tr>`).join('');
+  // Exposición geográfica (look-through real de los fondos)
+  const geo = data.geo || { labels: [], values: [] };
+  const geoRows = (geo.labels || []).map((l, i) =>
+    `<tr><td style="padding:5px 10px;border-bottom:1px solid #F0F2F4;">${l}</td><td style="padding:5px 10px;text-align:right;font-weight:700;border-bottom:1px solid #F0F2F4;">${Number(geo.values[i] || 0).toFixed(2)}%</td></tr>`).join('');
 
-  // Backtesting chart data
-  const btLabels = bt.fechas || [];
-  const btValues = bt.valores || [];
+  const btLabels = bt.map(p => String(p.fecha));
+  const btValues = bt.map(p => p.valor);
 
   dest.innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:12px;">
+    <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div style="background:linear-gradient(135deg,#ED8A56,#D4713E);border-radius:10px;padding:16px 20px;color:#fff;font-family:'Montserrat',sans-serif;">
+        <div style="font-size:13px;font-weight:700;opacity:.92;">Rendimiento Efectivo (acumulado)</div>
+        <div style="font-size:30px;font-weight:800;margin-top:4px;">${fmtP(efectivo)}</div>
+        <div style="font-size:11px;opacity:.85;margin-top:2px;">${fIni ? fIni + '  &rarr;  ' + fFin : ''}</div>
+      </div>
+      <div style="background:linear-gradient(135deg,#D4713E,#B4592C);border-radius:10px;padding:16px 20px;color:#fff;font-family:'Montserrat',sans-serif;">
+        <div style="font-size:13px;font-weight:700;opacity:.92;">Rendimiento Anualizado</div>
+        <div style="font-size:30px;font-weight:800;margin-top:4px;">${fmtP(anualizado)}</div>
+        <div style="font-size:11px;opacity:.85;margin-top:2px;">${years > 0 ? years.toFixed(1) + ' a&ntilde;os' : ''}</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;">
       <div>
         <div style="background:var(--navy);color:#fff;padding:8px 12px;font-weight:700;font-size:13px;border-radius:6px 6px 0 0;font-family:'Montserrat',sans-serif;">Composici&oacute;n — ${strat.id}</div>
-        <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);border:1px solid #D3DDE6;border-top:none;">
-          ${compRows}
-        </table>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);border:1px solid #D3DDE6;border-top:none;">${compRows}</table>
       </div>
       <div>
-        <div style="background:var(--navy);color:#fff;padding:8px 12px;font-weight:700;font-size:13px;border-radius:6px 6px 0 0;font-family:'Montserrat',sans-serif;">KPIs</div>
-        <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);border:1px solid #D3DDE6;border-top:none;">
-          ${kpiRows}
-        </table>
+        <div style="background:var(--navy);color:#fff;padding:8px 12px;font-weight:700;font-size:13px;border-radius:6px 6px 0 0;font-family:'Montserrat',sans-serif;">Exposici&oacute;n Geogr&aacute;fica (RV)</div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;font-family:'Montserrat',sans-serif;color:var(--navy);border:1px solid #D3DDE6;border-top:none;">${geoRows || '<tr><td style="padding:8px 10px;color:#888;">Sin renta variable</td></tr>'}</table>
       </div>
     </div>
     <div style="margin-top:16px;border:1px solid #D3DDE6;border-radius:8px;padding:14px;">
-      <div style="font-weight:700;font-size:13px;color:var(--navy);margin-bottom:8px;font-family:'Montserrat',sans-serif;">Backtesting</div>
-      <div style="position:relative;height:260px;"><canvas id="elite-bt-chart"></canvas></div>
+      <div style="font-weight:700;font-size:13px;color:var(--navy);margin-bottom:8px;font-family:'Montserrat',sans-serif;">Backtesting (base 100)</div>
+      <div style="position:relative;height:280px;"><canvas id="elite-bt-chart"></canvas></div>
     </div>
+    <p style="font-size:11px;color:#888;margin-top:8px;font-family:'Montserrat',sans-serif;">Rendimiento con NAVs de Morningstar de la serie seleccionada en Configuraci&oacute;n (neto de comisiones de la serie), sobre el rango de fechas elegido. Exposici&oacute;n geogr&aacute;fica por transparencia (look-through) de los fondos.</p>
   `;
 
-  // Render backtesting chart
+  // Backtest chart (destruye la instancia previa para evitar "canvas already in use")
+  if (_eliteBtChart) { try { _eliteBtChart.destroy(); } catch (e) {} _eliteBtChart = null; }
   if (btLabels.length > 0) {
     const ctx = document.getElementById('elite-bt-chart')?.getContext('2d');
     if (ctx) {
-      new Chart(ctx, {
+      _eliteBtChart = new Chart(ctx, {
         type: 'line',
         data: {
           labels: btLabels.map(d => d.slice(0,7)),
-          datasets: [{ label: strat.id, data: btValues, borderColor: '#ED8A56', backgroundColor: 'rgba(237,138,86,.06)', fill: true, borderWidth: 1.5, pointRadius: 0, pointHitRadius: 4, tension: 0.35 }]
+          datasets: [{ label: strat.id, data: btValues, borderColor: '#ED8A56', backgroundColor: 'rgba(237,138,86,.08)', fill: true, borderWidth: 2, pointRadius: 0, pointHitRadius: 4, tension: 0.3 }]
         },
         options: {
           responsive: true, maintainAspectRatio: false,
