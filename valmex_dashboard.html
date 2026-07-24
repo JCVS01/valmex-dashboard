@@ -334,7 +334,7 @@ input,textarea,select{-webkit-user-select:text;-moz-user-select:text;-ms-user-se
 .elite-strat-row:hover{outline:2px solid rgba(237,138,86,.45);outline-offset:-2px;}
 /* Dashboard de Elite: colores IDÉNTICOS a la pestaña Propuesta (navy), SALVO 4 elementos en naranja:
    subtítulo, barra de acento del título, barras de composición y línea del backtesting. */
-#elite-dash-mount #prop-title-sub{color:#ED8A56!important;}
+#elite-dash-mount [id^="prop-title-sub"]{color:#ED8A56!important;}
 #elite-dash-mount .prop-accent{background:#ED8A56!important;}
 
 /* ══ TABLET PORTRAIT (≤1024px vertical) ══ */
@@ -3544,13 +3544,21 @@ Chart.defaults.font.size   = 10;
 Chart.defaults.color       = '#00205C';
 
 const PAL = ['#00205C','#3DA5E0','#41BBC9','#27325C','#FECB46','#3F559E','#75A1DE','#9EC8FF','#CBE1FF','#5B6670','#D3DDE6'];
+// ══════════════════════════════════════════════════════════════════════════
+// Fábrica de gráficas del dashboard. Se llama DOS veces con sets/DOM distintos:
+//   • Propuesta  -> objeto `charts`,  canvases c-comp / c-linea / ... (sfx '')
+//   • VALMEX Elite -> objeto `eliteCharts`, canvases c-comp-e / ...  (sfx '-e')
+// Así Propuesta y Elite son 100% independientes (DOM propio + gráficas propias),
+// sin reubicar nodos ni compartir instancias. `col` define los colores del set.
+// ══════════════════════════════════════════════════════════════════════════
 const charts = {};
 
-charts.comp = new Chart(document.getElementById('c-comp'),{
+function buildDashCharts(C, sfx, col){
+  C.comp = new Chart(document.getElementById('c-comp'+sfx),{
   type:'bar',
   data:{
     labels:[],
-    datasets:[{data:[],backgroundColor:'#3DA5E0',borderRadius:3,barPercentage:.82,categoryPercentage:.92}]
+    datasets:[{data:[],backgroundColor:col.bar,borderRadius:3,barPercentage:.82,categoryPercentage:.92}]
   },
   options:{
     indexAxis:'y',responsive:true,maintainAspectRatio:false,
@@ -3581,12 +3589,12 @@ charts.comp = new Chart(document.getElementById('c-comp'),{
   }}]
 });
 
-charts.linea = new Chart(document.getElementById('c-linea'),{
+  C.linea = new Chart(document.getElementById('c-linea'+sfx),{
   type:'line',
   data:{
     labels:['2016','2017','2018','2019','2020','2021','2022','2023','2024'],
     datasets:[
-      {label:'Propuesta',data:[100,108,112,122,115,140,150,170,200],borderColor:'#00205C',backgroundColor:'rgba(61,165,224,0.08)',fill:true,borderWidth:2,pointRadius:0,pointHitRadius:6,pointHoverRadius:4,pointHoverBackgroundColor:'#00205C',tension:.35},
+      {label:'Propuesta',data:[100,108,112,122,115,140,150,170,200],borderColor:col.line,backgroundColor:col.lineFill,fill:true,borderWidth:2,pointRadius:0,pointHitRadius:6,pointHoverRadius:4,pointHoverBackgroundColor:col.line,tension:.35},
       {label:'Referencia',data:[100,106,110,118,112,134,144,162,193],borderColor:'#41BBC9',backgroundColor:'transparent',borderWidth:1.5,borderDash:[5,4],pointRadius:0,pointHitRadius:6,pointHoverRadius:4,pointHoverBackgroundColor:'#41BBC9',tension:.35}
     ]
   },
@@ -3616,6 +3624,15 @@ charts.linea = new Chart(document.getElementById('c-linea'),{
     ctx.restore();
   }}]
 });
+
+  C.sector = donut('c-sector'+sfx,['Tecnología','Financiero','Salud','Comunicaciones','Industriales','Consumo discrecional','Consumo básico','Materiales','Energía'],[32.57,15.25,12.64,8.51,8.4,7.93,5.13,4.2,3.0],null,null,true);
+  requestAnimationFrame(()=>{
+    const sectorMeta = C.sector.getDatasetMeta(0);
+    const refRadius = sectorMeta.data[0] ? sectorMeta.data[0].outerRadius : null;
+    C.clase  = donut('c-clase'+sfx, ['Deuda','Renta Variable'],[80,20],[col.pieNavy,'#3DA5E0'],refRadius);
+    C.geo    = donut('c-geo'+sfx,   ['Norte-América','Eurozona','Europa','América Latina','Otros emergentes','Asia Emergente','Japón','Asia-Pacífico'],[65.49,12.81,7.66,3.89,3.25,2.37,2.3,2.23],PAL.slice(0,8),refRadius);
+  });
+}
 
 function donut(id,labels,data,colors,radius,compact){
   const lblSize = 12;
@@ -3648,13 +3665,30 @@ function donut(id,labels,data,colors,radius,compact){
   });
 }
 
-charts.sector = donut('c-sector',['Tecnología','Financiero','Salud','Comunicaciones','Industriales','Consumo discrecional','Consumo básico','Materiales','Energía'],[32.57,15.25,12.64,8.51,8.4,7.93,5.13,4.2,3.0],null,null,true);
-requestAnimationFrame(()=>{
-  const sectorMeta = charts.sector.getDatasetMeta(0);
-  const refRadius = sectorMeta.data[0] ? sectorMeta.data[0].outerRadius : null;
-  charts.clase  = donut('c-clase', ['Deuda','Renta Variable'],[80,20],['#00205C','#3DA5E0'],refRadius);
-  charts.geo    = donut('c-geo',   ['Norte-América','Eurozona','Europa','América Latina','Otros emergentes','Asia Emergente','Japón','Asia-Pacífico'],[65.49,12.81,7.66,3.89,3.25,2.37,2.3,2.23],PAL.slice(0,8),refRadius);
-});
+// Set de gráficas de la pestaña Propuesta (colores originales: barra azul, línea navy)
+buildDashCharts(charts, '', {bar:'#3DA5E0', line:'#00205C', lineFill:'rgba(61,165,224,0.08)', pieNavy:'#00205C'});
+
+// Set de gráficas de VALMEX Elite: creado bajo demanda sobre un CLON del dashboard
+// (DOM propio, ids con sufijo '-e'), con colores naranja. Totalmente independiente.
+let eliteCharts = null;
+let ELITE_CTX = null;
+function _ensureEliteDash(){
+  if (ELITE_CTX) return ELITE_CTX;
+  const mount = document.getElementById('elite-dash-mount');
+  const orig  = document.getElementById('prop-dash-scaler');
+  if (!mount || !orig) return null;
+  // Clonar el dashboard de Propuesta y renombrar TODOS los ids con sufijo '-e'
+  const clone = orig.cloneNode(true);
+  clone.id = 'prop-dash-scaler-e';
+  clone.querySelectorAll('[id]').forEach(el => { el.id = el.id + '-e'; });
+  mount.innerHTML = '';
+  mount.appendChild(clone);
+  // Gráficas propias de Elite sobre los canvases clonados (c-comp-e, c-linea-e, ...)
+  eliteCharts = {};
+  buildDashCharts(eliteCharts, '-e', {bar:'#ED8A56', line:'#ED8A56', lineFill:'rgba(237,138,86,.10)', pieNavy:'#ED8A56'});
+  ELITE_CTX = { charts: eliteCharts, sfx:'-e', colors:{bar:'#ED8A56', pieNavy:'#ED8A56'}, isElite:true };
+  return ELITE_CTX;
+}
 
 // ══════════════════════════════════════════════════════════════════════════
 // Shared utilities — Rendimientos & Risk Metrics
@@ -5465,12 +5499,17 @@ async function loadCmp2Quilts(retryCount) {
 }
 
 // PDF Export
-document.getElementById('btn-pdf').addEventListener('click', async () => {
+// PDF del dashboard, parametrizado por sufijo de ids: '' = Propuesta, '-e' = VALMEX Elite.
+// Cada uno captura SU propio DOM/gráficas (independientes), con su propio nombre de archivo.
+async function generateDashPdf(sfx, fileName) {
+  sfx = sfx || '';
+  const chartSet = (sfx === '-e' && eliteCharts) ? eliteCharts : charts;
   const {jsPDF} = window.jspdf;
-  const el = document.getElementById('prop-dash');
+  const el = document.getElementById('prop-dash' + sfx);
+  if (!el) return;
 
-  const deudaVisible  = document.querySelector('.card-deuda')?.style.display !== 'none';
-  const sectorVisible = document.getElementById('pcard-sector')?.style.display !== 'none';
+  const deudaVisible  = el.querySelector('.card-deuda')?.style.display !== 'none';
+  const sectorVisible = document.getElementById('pcard-sector' + sfx)?.style.display !== 'none';
   const backSpan  = deudaVisible ? 'span 3' : 'span 4';
   const pieSpan   = sectorVisible ? 'span 2' : 'span 3';
 
@@ -5480,7 +5519,7 @@ document.getElementById('btn-pdf').addEventListener('click', async () => {
   const rowH = Math.round((targetH - overhead - 14) / 2); // 2 rows, -14 for gap
 
   const tmpStyle = document.createElement('style'); tmpStyle.id='pdf-override';
-  tmpStyle.textContent = `
+  let _cssTpl = `
     /* Force desktop grid */
     .prop-dash-scaler{overflow:visible!important;padding:0!important;}
     #prop-dash{width:${W}px!important;min-width:${W}px!important;display:grid!important;grid-template-columns:repeat(6,1fr)!important;gap:14px!important;padding:12px 16px!important;}
@@ -5517,18 +5556,28 @@ document.getElementById('btn-pdf').addEventListener('click', async () => {
     #prop-dash .card-pie .pb{padding:10px!important;}
     #prop-dash .prop-note{font-size:11px!important;display:block!important;}
   `;
+  // Reescribir los selectores por ids al dashboard destino (clon Elite => sufijo '-e')
+  if (sfx) {
+    _cssTpl = _cssTpl
+      .split('#prop-dash').join('#prop-dash' + sfx)
+      .split('#prop-title-sub').join('#prop-title-sub' + sfx)
+      .split('#pcard-sector').join('#pcard-sector' + sfx)
+      .split('#pcard-clase').join('#pcard-clase' + sfx)
+      .split('#pcard-geo').join('#pcard-geo' + sfx);
+  }
+  tmpStyle.textContent = _cssTpl;
   document.head.appendChild(tmpStyle);
   // Force layout reflow so containers reach desktop size before Chart.js resize
   void el.offsetWidth;
   // Resize each chart to its actual new container dimensions (forces canvas re-render)
-  Object.values(charts).forEach(c => {
+  Object.values(chartSet).forEach(c => {
     if(c?.canvas?.parentElement){const p=c.canvas.parentElement;c.resize(p.clientWidth,p.clientHeight);}
   });
   await new Promise(r => setTimeout(r, 500));
   const cv = await html2canvas(el, {scale:2, useCORS:true, backgroundColor:'#fff', logging:false, scrollX:0, scrollY:0, width:W});
   tmpStyle.remove();
   void el.offsetWidth;
-  Object.values(charts).forEach(c => {
+  Object.values(chartSet).forEach(c => {
     if(c?.canvas?.parentElement){const p=c.canvas.parentElement;c.resize(p.clientWidth,p.clientHeight);}
   });
 
@@ -5540,10 +5589,14 @@ document.getElementById('btn-pdf').addEventListener('click', async () => {
   const imgH = usableW * (cv.height / cv.width);
   const y = Math.min(mt, ph - imgH - mb);
   pdf.addImage(cv.toDataURL('image/jpeg', 0.92), 'JPEG', mx, Math.max(mt, y), usableW, imgH);
-  const contrato = document.getElementById('cfg-contrato')?.value?.trim() || '';
-  const propName = contrato ? `Estrategia de Inversión - ${contrato}.pdf` : 'Estrategia de Inversión - VALMEX.pdf';
-  pdf.save(propName);
-});
+  let outName = fileName;
+  if (!outName) {
+    const contrato = document.getElementById('cfg-contrato')?.value?.trim() || '';
+    outName = contrato ? `Estrategia de Inversión - ${contrato}.pdf` : 'Estrategia de Inversión - VALMEX.pdf';
+  }
+  pdf.save(outName);
+}
+document.getElementById('btn-pdf').addEventListener('click', () => generateDashPdf(''));
 
 // ── PDF Comparativa 2 (3-Way) — Menu toggle ──
 document.getElementById('btn-pdf-cmp2-toggle').addEventListener('click', (e) => {
@@ -6412,14 +6465,25 @@ function buildApiBody(valor) {
   return body;
 }
 
-function aplicarDatos(data, valor) {
+// ctx (opcional) permite renderizar en un dashboard independiente. Por defecto = Propuesta.
+//   PROP_CTX  -> objeto `charts`, ids sin sufijo, barra azul, donas navy.
+//   ELITE_CTX -> objeto `eliteCharts`, ids con sufijo '-e', barra/línea/donas naranja.
+const PROP_CTX = { charts: charts, sfx:'', colors:{bar:'#3DA5E0', pieNavy:'#00205C'}, isElite:false };
+function aplicarDatos(data, valor, ctx) {
+  ctx = ctx || PROP_CTX;
+  const C    = ctx.charts;                                  // set de gráficas del dashboard destino
+  const sfx  = ctx.sfx || '';
+  const byId = id => document.getElementById(id + sfx);     // ids del dashboard destino (clon => sufijo)
+  const ROOT = byId('prop-dash');                           // raíz del dashboard destino (para scoping por clase)
+  // Donas: en Elite el navy (#00205C) de los pies pasa a naranja; en Propuesta se queda igual.
+  const paint = arr => ctx.isElite ? arr.map(c => (typeof c === 'string' && c.toUpperCase() === '#00205C') ? '#ED8A56' : c) : arr;
 
   // ── Rendimientos (desde backtesting real) — portafolio siempre efectivo ──
   const r = calcRendFromBt(data.bt_portafolio);
   const fmtR = v => (v == null) ? '—' : ((v * 100) >= 0 ? '+' : '') + (v * 100).toFixed(2) + '%';
   const ordenKeys = ['mtd','r3m','ytd','r1y','r2y','r3y'];
   const orden = ordenKeys.map(k => r[k]); // portafolio: siempre efectivo
-  document.querySelectorAll('#prop-dash .card-rend .rh-val').forEach((el, i) => {
+  (ROOT ? ROOT.querySelectorAll('.card-rend .rh-val') : []).forEach((el, i) => {
     if (i < orden.length) {
       el.textContent = fmtR(orden[i]);
       el.className   = 'rh-val ' + ((orden[i] ?? 0) >= 0 ? 'pos' : 'neg');
@@ -6427,8 +6491,8 @@ function aplicarDatos(data, valor) {
   });
 
   // ── Ocultar/mostrar card deuda según has_deuda ──
-  const cardDeuda = document.querySelector('.card-deuda');
-  const cardBack  = document.querySelector('.card-back');
+  const cardDeuda = ROOT ? ROOT.querySelector('.card-deuda') : null;
+  const cardBack  = ROOT ? ROOT.querySelector('.card-back') : null;
   if (data.has_deuda === false) {
     if (cardDeuda) cardDeuda.style.display = 'none';
     if (cardBack)  cardBack.style.gridColumn = 'span 4';
@@ -6438,7 +6502,7 @@ function aplicarDatos(data, valor) {
   }
 
   // ── Composición ──
-  if (charts.comp && data.composicion?.length) {
+  if (C.comp && data.composicion?.length) {
     const FUND_ORDER = ['Reporto MXN','Reporto USD','VXREPO1','VXGUBCP','VLMXETF','VXUDIMP','VXDEUDA','VXGUBLP','VXCOBER','VXTBILL','VLMXDME','VALMXA','VALMX28','VALMX20','VALMXVL','VALMXES','VLMXTEC','VLMXESG','VALMXHC','VXINFRA','Fondos Ciclo de Vida','Acciones',"ETF's"];
     const sorted = [...data.composicion].sort((a,b) => {
       const iA = FUND_ORDER.indexOf(a.fondo), iB = FUND_ORDER.indexOf(b.fondo);
@@ -6448,7 +6512,7 @@ function aplicarDatos(data, valor) {
       return a.fondo.localeCompare(b.fondo);
     });
     // Labels multi-línea para nombres largos (Chart.js acepta arrays)
-    charts.comp.data.labels           = sorted.map(f => {
+    C.comp.data.labels           = sorted.map(f => {
       const name = f.fondo;
       if (name.length > 10 && name.includes(' ')) {
         const parts = name.split(' ');
@@ -6457,95 +6521,94 @@ function aplicarDatos(data, valor) {
       }
       return name;
     });
-    charts.comp.data.datasets[0].data = sorted.map(f => f.pct);
-    // Naranja SOLO en VALMEX Elite (flag); en Propuesta queda el azul de siempre, intacto.
-    charts.comp.data.datasets[0].backgroundColor = window._eliteActive ? '#ED8A56' : '#3DA5E0';
+    C.comp.data.datasets[0].data = sorted.map(f => f.pct);
+    C.comp.data.datasets[0].backgroundColor = ctx.colors.bar;   // azul (Propuesta) o naranja (Elite)
     const maxVal = Math.max(...sorted.map(f => f.pct));
-    charts.comp.options.scales.x.max  = maxVal * 1.18;  // 18% extra for outside labels
+    C.comp.options.scales.x.max  = maxVal * 1.18;  // 18% extra for outside labels
     // Barras: ajustar grosor según cantidad
     const n = sorted.length;
-    charts.comp.data.datasets[0].barPercentage    = n <= 3 ? 0.98 : n <= 5 ? 0.95 : n <= 10 ? 0.90 : 0.85;
-    charts.comp.data.datasets[0].categoryPercentage = n <= 3 ? 0.99 : n <= 5 ? 0.98 : n <= 10 ? 0.95 : 0.92;
-    charts.comp.update();
-    setTimeout(() => { charts.comp.resize(); charts.comp.update('none'); }, 50);
+    C.comp.data.datasets[0].barPercentage    = n <= 3 ? 0.98 : n <= 5 ? 0.95 : n <= 10 ? 0.90 : 0.85;
+    C.comp.data.datasets[0].categoryPercentage = n <= 3 ? 0.99 : n <= 5 ? 0.98 : n <= 10 ? 0.95 : 0.92;
+    C.comp.update();
+    setTimeout(() => { C.comp.resize(); C.comp.update('none'); }, 50);
   }
 
   // ── Backtesting: bt_portafolio como curva principal, bt_repo como secundaria ──
-  if (charts.linea) {
+  if (C.linea) {
     const btPort = btToSerie(data.bt_portafolio);
 
     if (btPort) {
       // Curva única consolidada (fondos + acciones/ETFs + reporto)
-      charts.linea.data.labels = btPort.labels;
-      charts.linea.data.datasets = [charts.linea.data.datasets[0]];
-      charts.linea.data.datasets[0].label = 'Portafolio';
-      charts.linea.data.datasets[0].data  = btPort.values;
+      C.linea.data.labels = btPort.labels;
+      C.linea.data.datasets = [C.linea.data.datasets[0]];
+      C.linea.data.datasets[0].label = 'Portafolio';
+      C.linea.data.datasets[0].data  = btPort.values;
 
       // Ajustar escala Y
       const allVals = btPort.values.filter(v => v != null);
-      charts.linea.options.scales.y.min = Math.floor(Math.min(...allVals) * 0.95);
-      charts.linea.update('none');
+      C.linea.options.scales.y.min = Math.floor(Math.min(...allVals) * 0.95);
+      C.linea.update('none');
 
     } else {
       // Sin datos de backtesting — limpiar
-      charts.linea.data.labels = [];
-      charts.linea.data.datasets[0].data = [];
-      if (charts.linea.data.datasets.length > 1) {
-        charts.linea.data.datasets = [charts.linea.data.datasets[0]];
+      C.linea.data.labels = [];
+      C.linea.data.datasets[0].data = [];
+      if (C.linea.data.datasets.length > 1) {
+        C.linea.data.datasets = [C.linea.data.datasets[0]];
       }
-      charts.linea.update('none');
+      C.linea.update('none');
     }
   }
 
   // ── Clase de activos ──
-  if (charts.clase) {
-    charts.clase.data.labels = [];
-    charts.clase.data.datasets[0].data = [];
-    charts.clase.update('none');
+  if (C.clase) {
+    C.clase.data.labels = [];
+    C.clase.data.datasets[0].data = [];
+    C.clase.update('none');
     if (data.clase_activos) {
       const { labels, values, colors } = sortedPie(data.clase_activos.labels, data.clase_activos.values);
-      charts.clase.data.labels = labels;
-      charts.clase.data.datasets[0].data = values;
-      charts.clase.data.datasets[0].backgroundColor = colors;
+      C.clase.data.labels = labels;
+      C.clase.data.datasets[0].data = values;
+      C.clase.data.datasets[0].backgroundColor = paint(colors);
     }
-    charts.clase.update();
+    C.clase.update();
   }
 
   // ── Pie central: Geo RV si hay RV, Tipo de Deuda si solo deuda ──
-  if (charts.geo) {
-    charts.geo.data.labels = [];
-    charts.geo.data.datasets[0].data = [];
-    charts.geo.update('none');
-    const phGeo = document.getElementById('ph-geo');
+  if (C.geo) {
+    C.geo.data.labels = [];
+    C.geo.data.datasets[0].data = [];
+    C.geo.update('none');
+    const phGeo = byId('ph-geo');
     if (data.has_rv && data.geo?.labels?.length) {
       if (phGeo) phGeo.textContent = 'Exposición Geográfica RV';
       const { labels, values, colors } = sortedPie(data.geo.labels, data.geo.values);
-      charts.geo.data.labels = labels;
-      charts.geo.data.datasets[0].data = values;
-      charts.geo.data.datasets[0].backgroundColor = colors;
+      C.geo.data.labels = labels;
+      C.geo.data.datasets[0].data = values;
+      C.geo.data.datasets[0].backgroundColor = paint(colors);
     } else if (!data.has_rv && data.supersectores?.labels?.length) {
       if (phGeo) phGeo.textContent = 'Tipo de Deuda';
       const { labels, values, colors } = sortedPie(data.supersectores.labels, data.supersectores.values);
-      charts.geo.data.labels = labels;
-      charts.geo.data.datasets[0].data = values;
-      charts.geo.data.datasets[0].backgroundColor = colors;
+      C.geo.data.labels = labels;
+      C.geo.data.datasets[0].data = values;
+      C.geo.data.datasets[0].backgroundColor = paint(colors);
     }
-    charts.geo.update();
+    C.geo.update();
   }
 
   // ── Sectores ──
-  if (charts.sector) {
-    const pcardSector = document.getElementById('pcard-sector');
-    charts.sector.data.labels = [];
-    charts.sector.data.datasets[0].data = [];
-    charts.sector.update('none');
-    const pcardClase = document.getElementById('pcard-clase');
-    const pcardGeo   = document.getElementById('pcard-geo');
+  if (C.sector) {
+    const pcardSector = byId('pcard-sector');
+    C.sector.data.labels = [];
+    C.sector.data.datasets[0].data = [];
+    C.sector.update('none');
+    const pcardClase = byId('pcard-clase');
+    const pcardGeo   = byId('pcard-geo');
     if (data.has_rv && data.sectores?.labels?.length) {
       const { labels, values, colors } = sortedPie(data.sectores.labels, data.sectores.values);
-      charts.sector.data.labels = labels;
-      charts.sector.data.datasets[0].data = values;
-      charts.sector.data.datasets[0].backgroundColor = colors;
+      C.sector.data.labels = labels;
+      C.sector.data.datasets[0].data = values;
+      C.sector.data.datasets[0].backgroundColor = paint(colors);
       if (pcardSector) pcardSector.style.display = '';
       // 3 pies visibles: cada una span 2
       if (pcardClase) pcardClase.style.gridColumn = 'span 2';
@@ -6556,7 +6619,7 @@ function aplicarDatos(data, valor) {
       if (pcardClase) pcardClase.style.gridColumn = 'span 3';
       if (pcardGeo)   pcardGeo.style.gridColumn   = 'span 3';
     }
-    charts.sector.update();
+    C.sector.update();
   }
 
   // ── Drilldown Deuda — MXN / USD ──
@@ -6565,7 +6628,7 @@ function aplicarDatos(data, valor) {
 
     // Helpers
     const setVal = (id, txt, empty) => {
-      const el = document.getElementById(id);
+      const el = byId(id);
       if (!el) return;
       el.textContent = txt;
       // Marcar bloque vacío si no hay datos
@@ -6575,7 +6638,7 @@ function aplicarDatos(data, valor) {
 
     // Helper especial para duración — número grande + "años" pequeño misma línea
     const setDur = (id, val, empty) => {
-      const el = document.getElementById(id);
+      const el = byId(id);
       if (!el) return;
       if (empty || !val || val === '—') {
         el.innerHTML = '—';
@@ -6608,15 +6671,17 @@ function aplicarDatos(data, valor) {
   }
 
   // ── Título principal + subtítulo ──
-  const propTitleMain = document.getElementById('prop-title-main');
-  const propTitleSub  = document.getElementById('prop-title-sub');
-  if (propTitleMain) {
+  // En Elite, loadEliteStrategy sobreescribe el título con el nombre de la estrategia
+  // DESPUÉS de aplicarDatos, así que aquí sólo importa para la pestaña Propuesta.
+  const propTitleMain = byId('prop-title-main');
+  const propTitleSub  = byId('prop-title-sub');
+  if (propTitleMain && !ctx.isElite) {
     const contrato = document.getElementById('cfg-contrato')?.value?.trim() || '';
     propTitleMain.textContent = contrato
       ? `Estrategia de inversión - ${contrato}`
       : 'Estrategia de inversión';
   }
-  if (propTitleSub) {
+  if (propTitleSub && !ctx.isElite) {
     const labelMap = {
       perfil_0:'Perfil 0 · 100% RF low risk', perfil_1:'Perfil 1 · 100% RF high risk',
       perfil_2:'Perfil 2 · 80% RF / 20% RV',  perfil_3:'Perfil 3 · 60% RF / 40% RV',
@@ -6625,8 +6690,8 @@ function aplicarDatos(data, valor) {
     const lbl = labelMap[valor] || 'Estrategia Portafolio';
     propTitleSub.textContent = lbl;
   }
-  // Revelar el dashboard ya renderizado (se oculta durante la transición Elite <-> Propuesta)
-  const _pd = document.getElementById('prop-dash');
+  // Revelar el dashboard ya renderizado
+  const _pd = byId('prop-dash');
   if (_pd) _pd.style.opacity = '1';
 }
 
@@ -6753,50 +6818,17 @@ function showEliteTab(tab, btn) {
   else _eliteReturnDash();
 }
 
-// ── Reutiliza el MISMO dashboard de Propuesta (prop-dash) dentro de Elite ──
-let _propDashHome = null;
-// Oculta el dashboard durante la transición Elite<->Propuesta; se revela al re-renderizar
-// (aplicarDatos). Red de seguridad: si el render falla, se revela igual tras 2.5s.
-function _eliteHideDash() {
-  const dash = document.getElementById('prop-dash');
-  if (!dash) return;
-  dash.style.opacity = '0';
-  setTimeout(() => { const d = document.getElementById('prop-dash'); if (d) d.style.opacity = '1'; }, 2500);
-}
-function _eliteMountDash() {
-  const scaler = document.getElementById('prop-dash-scaler');
-  const mount  = document.getElementById('elite-dash-mount');
-  if (!scaler || !mount) return;
-  if (!_propDashHome) _propDashHome = scaler.parentElement;   // su lugar original (pestaña Propuesta)
-  if (scaler.parentElement !== mount) {
-    _eliteHideDash();   // ocultar hasta que Elite lo re-renderice (evita flash)
-    mount.appendChild(scaler);
-  }
-}
-function _eliteReturnDash() {
-  const scaler = document.getElementById('prop-dash-scaler');
-  if (scaler && _propDashHome && scaler.parentElement !== _propDashHome) {
-    _propDashHome.appendChild(scaler);
-    window._eliteActive = false;  // Propuesta vuelve a pintar su barra de composicion en azul
-    _propuestaCargada = false;   // que la pestaña Propuesta re-renderice sus propios datos
-    _eliteHideDash();            // ocultar (aún con datos Elite) hasta que Propuesta re-renderice: evita el glitch
-    // La línea del backtest y los tickers de composición no los re-colorea aplicarDatos:
-    // resetearlos a navy para la pestaña Propuesta.
-    if (typeof charts !== 'undefined' && charts.linea && charts.linea.data.datasets[0]) {
-      const d0 = charts.linea.data.datasets[0];
-      d0.borderColor = '#00205C'; d0.backgroundColor = 'rgba(61,165,224,0.08)'; d0.pointHoverBackgroundColor = '#00205C';
-      charts.linea.update('none');
-    }
-    // Limpiar de inmediato el branding Elite: la pestaña Propuesta NO debe mostrar nada de VALMEX Elite
-    const tm = document.getElementById('prop-title-main');
-    const ts = document.getElementById('prop-title-sub');
-    if (tm) tm.textContent = 'Estrategia de inversión';
-    if (ts) ts.textContent = '';
-  }
-}
+// ── VALMEX Elite: dashboard 100% INDEPENDIENTE de Propuesta ──
+// Elite tiene su propio DOM (clon con ids '-e') y sus propias gráficas (eliteCharts),
+// construidos por _ensureEliteDash(). Ya NO se reubica el nodo de Propuesta ni se
+// comparten instancias, así que no hay glitches ni mezcla de colores/datos/títulos.
+// Estas dos funciones quedan como no-op para no romper a sus invocadores (showPage,
+// showEliteTab): al salir de Elite no hay que "limpiar" nada de Propuesta.
+function _eliteMountDash() { /* independiente: nada que reubicar */ }
+function _eliteReturnDash() { /* independiente: Propuesta nunca se tocó */ }
 function _eliteShowPresentacion() {
   _initElitePresentacion();
-  _eliteMountDash();
+  _ensureEliteDash();
   loadEliteStrategy();
 }
 
@@ -6812,7 +6844,7 @@ function _initElitePresentacion() {
       <div></div>
       <div class="prop-right" style="gap:8px;flex-wrap:wrap;align-items:center;">
         <select id="elite-selector" onchange="loadEliteStrategy()" style="padding:7px 12px;border:1.5px solid #D3DDE6;border-radius:7px;font-size:13px;font-family:'Montserrat',sans-serif;font-weight:600;color:#00205C;background:#fff;outline:none;cursor:pointer;max-width:270px;" onfocus="this.style.borderColor='#41BBC9'" onblur="this.style.borderColor='#D3DDE6'">${selHtml}</select>
-        <button class="btn-dl" onclick="document.getElementById('btn-pdf').click()" title="Descargar PDF"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+        <button class="btn-dl" onclick="generateDashPdf('-e', 'VALMEX Elite - ' + (document.getElementById('prop-title-main-e')?.textContent || 'Estrategia') + '.pdf')" title="Descargar PDF"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
         <span id="elite-loading" style="display:none;font-size:12px;color:var(--gray);">Cargando...</span>
       </div>
     </div>
@@ -6826,7 +6858,8 @@ function loadEliteStrategy() {
   const idx = parseInt(sel.value.replace('elite_', ''));
   const strat = ELITE_STRATS[idx];
   if (!strat) return;
-  _eliteMountDash();
+  const ectx = _ensureEliteDash();   // dashboard propio de Elite (DOM + gráficas independientes)
+  if (!ectx) return;
 
   const fundKeys = ['VXGUBCP','VXGUBLP','VXDEUDA','VXUDIMP','VXTBILL','VLMXDME','VALMX20','VALMX28','VLMXTEC','VLMXESG','VALMXHC','VALMXES','VALMXVL'];
   const fondos = {};
@@ -6848,47 +6881,15 @@ function loadEliteStrategy() {
   .then(data => {
     if (loading) loading.style.display = 'none';
     if (data.error) { vxToast('Error: ' + data.error); return; }
-    // MISMO dashboard que Propuesta, alimentado con la estrategia + serie Elite
-    window._eliteActive = true;   // que aplicarDatos pinte la barra de composicion en naranja
-    aplicarDatos(data, 'propuesta');
-    const tm = document.getElementById('prop-title-main');
-    const ts = document.getElementById('prop-title-sub');
+    // Se renderiza en el dashboard PROPIO de Elite (ELITE_CTX): naranja aplicado desde
+    // el primer render por aplicarDatos. Propuesta ni se entera.
+    aplicarDatos(data, 'propuesta', ectx);
+    const tm = document.getElementById('prop-title-main-e');
+    const ts = document.getElementById('prop-title-sub-e');
     if (tm) tm.textContent = strat.name;
     if (ts) ts.textContent = 'VALMEX Elite · Estrategia de inversión';
-    _eliteRecolorCharts();   // solo barras de composición + línea del backtest en naranja
-    // aplicarDatos re-pinta la barra a azul en un update diferido a 50ms -> re-aplicamos
-    // el naranja DESPUES de ese setTimeout para que gane (solo afecta a VALMEX Elite).
-    setTimeout(_eliteRecolorCharts, 90);
   })
   .catch(e => { if (loading) loading.style.display = 'none'; console.error('[Elite]', e); });
-}
-
-// NARANJA sólo en: barras de Composición, línea del Backtesting y el navy de las DONAS (pies).
-// Los headers (placeholders) y demás azules se quedan igual. aplicarDatos re-asigna los colores
-// originales en Propuesta; la línea se resetea a navy en _eliteReturnDash.
-function _eliteRecolorCharts() {
-  const ORANGE = '#ED8A56';
-  const sub = v => (typeof v === 'string' && v.toUpperCase() === '#00205C') ? ORANGE : v;
-  try {
-    if (charts.comp && charts.comp.data.datasets[0]) {
-      charts.comp.data.datasets[0].backgroundColor = ORANGE;   // solo la BARRA en naranja (el label queda navy)
-      charts.comp.update('none');
-    }
-    if (charts.linea && charts.linea.data.datasets[0]) {
-      const d0 = charts.linea.data.datasets[0];
-      d0.borderColor = ORANGE; d0.backgroundColor = 'rgba(237,138,86,.10)'; d0.pointHoverBackgroundColor = ORANGE;
-      charts.linea.update('none');
-    }
-    // Donas (pies): sólo el navy (#00205C) -> naranja; el resto de colores se queda igual
-    ['clase','geo','sector'].forEach(k => {
-      const c = charts[k];
-      if (c && c.data.datasets[0]) {
-        const bg = c.data.datasets[0].backgroundColor;
-        c.data.datasets[0].backgroundColor = Array.isArray(bg) ? bg.map(sub) : sub(bg);
-        c.update('none');
-      }
-    });
-  } catch (e) {}
 }
 
 let _eliteBtChart = null;
