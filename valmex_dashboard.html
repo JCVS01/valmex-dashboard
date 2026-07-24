@@ -67,7 +67,7 @@ input,textarea,select{-webkit-user-select:text;-moz-user-select:text;-ms-user-se
 /* ── CONTAINER / PAGES ── */
 .container{max-width:1400px;margin:0 auto;padding:24px 20px;background:#fff;} #page-presentacion{margin:-24px -20px;height:calc(100vh - 72px);height:calc(100dvh - 72px);flex-direction:column;}
 
-#prop-dash{
+#prop-dash,#prop-dash-e{
   width:100%;
   background:#fff;
   padding:4px 16px;
@@ -342,7 +342,7 @@ input,textarea,select{-webkit-user-select:text;-moz-user-select:text;-ms-user-se
   .nav-tab{font-size:14px;padding:8px 14px;}
   .advisor-name{max-width:120px;font-size:13px;}
   .brand{padding:0 20px;}
-  #prop-dash{grid-template-columns:repeat(3,1fr)!important;}
+  #prop-dash,#prop-dash-e{grid-template-columns:repeat(3,1fr)!important;}
   .card-comp,.card-rend,.card-deuda{grid-column:span 1!important;}
   .card-back{grid-column:1/-1!important;}
   .card-pie{grid-column:span 1!important;}
@@ -383,7 +383,7 @@ input,textarea,select{-webkit-user-select:text;-moz-user-select:text;-ms-user-se
   /* ── PROPUESTA: institutional mobile layout ── */
   #page-propuesta.active{margin-top:-6px;}
   .prop-dash-scaler{overflow-x:hidden!important;padding:0!important;}
-  #prop-dash{padding:0 10px!important;gap:14px!important;grid-template-columns:1fr!important;}
+  #prop-dash,#prop-dash-e{padding:0 10px!important;gap:14px!important;grid-template-columns:1fr!important;}
 
   /* Toolbar: clean, professional */
   .prop-titlebar{padding:8px 10px!important;margin-bottom:2px!important;}
@@ -401,8 +401,8 @@ input,textarea,select{-webkit-user-select:text;-moz-user-select:text;-ms-user-se
   /* Cards: full-width stacked — institutional sizes + reorder */
   .card-comp,.card-rend,.card-deuda,.card-back,.card-pie{grid-column:1/-1!important;}
   .prop-row1 .pcard,.prop-row2 .pcard{min-height:auto!important;}
-  #prop-dash .prop-dash-title{order:0!important;}
-  #prop-dash .prop-rule-full{order:0!important;}
+  #prop-dash .prop-dash-title,#prop-dash-e .prop-dash-title{order:0!important;}
+  #prop-dash .prop-rule-full,#prop-dash-e .prop-rule-full{order:0!important;}
   .card-comp{height:340px!important;order:1!important;}
   .card-comp .pb{padding:4px 2px!important;}
   .card-back{height:340px!important;order:2!important;}
@@ -487,7 +487,7 @@ input,textarea,select{-webkit-user-select:text;-moz-user-select:text;-ms-user-se
   .advisor-name{display:none;}
   .btn-logout{display:none;}
   .container{padding:8px 12px;}
-  #prop-dash{grid-template-columns:repeat(3,1fr)!important;gap:8px!important;}
+  #prop-dash,#prop-dash-e{grid-template-columns:repeat(3,1fr)!important;gap:8px!important;}
   .card-comp,.card-rend{grid-column:span 1!important;min-height:200px;}
   .card-deuda{grid-column:span 1!important;min-height:260px;height:260px!important;}
   .card-back{grid-column:1/-1!important;min-height:200px;}
@@ -1363,7 +1363,9 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
     <div class="prop-titlebar">
       <div></div>
       <div style="display:flex;justify-content:flex-end;padding-right:20px;">
-        <button id="btn-pdf-recursos" style="padding:7px 16px;background:#00205C;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;font-family:'Montserrat',sans-serif;cursor:pointer;">Descargar PDF</button>
+        <button class="btn-dl" id="btn-pdf-recursos" title="Descargar PDF">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
       </div>
     </div>
     <!-- Sub-tab filter centrado (igual que Comparativa) -->
