@@ -29,7 +29,7 @@ input,textarea,select{-webkit-user-select:text;-moz-user-select:text;-ms-user-se
 .vx-toast-title{font-size:16px;font-weight:800;color:var(--navy);margin-bottom:8px;line-height:1.3;}
 .vx-toast-msg{font-size:13.5px;font-weight:500;color:var(--gray);line-height:1.5;margin-bottom:20px;}
 .vx-toast-btn{background:var(--navy);color:#fff;border:none;border-radius:10px;padding:10px 36px;font-family:'Montserrat',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:background .15s,transform .1s;letter-spacing:.3px;}
-.vx-toast-btn:hover{background:#003080;}
+.vx-toast-btn:hover{}
 .vx-toast-btn:active{transform:scale(.97);}
 /* ── Snackbar (auto-dismiss para ok) ── */
 .vx-snack{position:fixed;bottom:32px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;border-radius:12px;padding:14px 28px;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:600;box-shadow:0 8px 32px rgba(0,32,92,.25);z-index:9999;display:flex;align-items:center;gap:10px;opacity:0;transition:opacity .25s ease,transform .25s cubic-bezier(.34,1.56,.64,1);}
@@ -40,17 +40,17 @@ input,textarea,select{-webkit-user-select:text;-moz-user-select:text;-ms-user-se
 .topbar{background:var(--navy);width:100%;box-shadow:0 2px 12px rgba(0,0,0,.25);position:relative;z-index:100;}
 .brand{max-width:1600px;margin:0 auto;padding:0 40px;height:72px;display:flex;align-items:center;justify-content:space-between;}
 .logo-btn{display:flex;align-items:center;cursor:pointer;background:none;border:none;padding:6px 8px;border-radius:8px;transition:background .18s;flex-shrink:0;}
-.logo-btn:hover{background:rgba(255,255,255,.10);}
+.logo-btn:hover{}
 .logo-img{height:46px;width:auto;}
 .nav{display:flex;align-items:center;gap:16px;overflow-x:auto;-webkit-overflow-scrolling:touch;flex-shrink:1;min-width:0;}
 .nav-tab{color:rgba(255,255,255,.75);background:transparent;border:none;font-family:'Montserrat',sans-serif;font-weight:600;font-size:17px;padding:10px 22px;border-radius:10px;cursor:pointer;transition:all .15s;white-space:nowrap;}
-.nav-tab:hover{background:rgba(255,255,255,.12);color:#fff;}
+.nav-tab:hover{}
 .nav-tab.active{background:#fff;color:var(--navy);font-weight:700;} .logo-active{background:rgba(255,255,255,0.15)!important;border-radius:10px;}
 .header-right{display:flex;align-items:center;gap:10px;flex-shrink:0;}
 .advisor-avatar{width:38px;height:38px;border-radius:50%;background:var(--sky);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--navy);flex-shrink:0;}
 .advisor-name{font-size:15px;color:rgba(255,255,255,.85);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;}
 .btn-logout{background:none;border:none;cursor:pointer;color:rgba(255,255,255,.55);font-size:17px;padding:4px 8px;border-radius:6px;transition:color .15s;}
-.btn-logout:hover{color:#fff;}
+.btn-logout:hover{}
 .hamburger{display:none;background:none;border:none;cursor:pointer;flex-direction:column;gap:5px;padding:6px;}
 .hamburger span{display:block;width:22px;height:2px;background:#fff;border-radius:2px;}
 
@@ -60,9 +60,9 @@ input,textarea,select{-webkit-user-select:text;-moz-user-select:text;-ms-user-se
 .mobile-close{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;align-self:flex-end;margin-bottom:8px;}
 .mobile-user{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.15);margin-bottom:8px;}
 .mobile-tab{color:rgba(255,255,255,.8);background:transparent;border:none;font-family:'Montserrat',sans-serif;font-weight:600;font-size:15px;padding:11px 14px;border-radius:10px;cursor:pointer;text-align:left;width:100%;transition:all .15s;}
-.mobile-tab:hover,.mobile-tab.active{background:rgba(255,255,255,.15);color:#fff;}
+.mobile-tab.active{background:rgba(255,255,255,.15);color:#fff;}
 .mobile-logout{margin-top:auto;padding:11px 14px;color:rgba(255,255,255,.55);background:none;border:none;font-family:'Montserrat',sans-serif;font-size:13px;cursor:pointer;text-align:left;border-radius:10px;transition:all .15s;}
-.mobile-logout:hover{color:#fff;background:rgba(255,255,255,.10);}
+.mobile-logout:hover{}
 
 /* ── CONTAINER / PAGES ── */
 .container{max-width:1400px;margin:0 auto;padding:24px 20px;background:#fff;} #page-presentacion{margin:-24px -20px;height:calc(100vh - 72px);height:calc(100dvh - 72px);flex-direction:column;}
@@ -80,7 +80,7 @@ input,textarea,select{-webkit-user-select:text;-moz-user-select:text;-ms-user-se
 
 /* ── BOTÓN DESCARGA ── */
 .btn-dl{width:36px;height:36px;border-radius:8px;background:var(--navy);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;transition:background .18s;text-decoration:none;flex-shrink:0;}
-.btn-dl:hover{background:var(--sky);}
+.btn-dl:hover{}
 
 /* ── PRESENTACIÓN ── */
 .pres-card{background:#fff;border-radius:0;border:none;box-shadow:none;overflow:hidden;display:flex;flex-direction:column;height:100%;}
@@ -90,7 +90,7 @@ input,textarea,select{-webkit-user-select:text;-moz-user-select:text;-ms-user-se
 .pres-body iframe,.pres-body object{width:100%;height:100%;border:none;display:block;}
 .pres-mobile-fallback{display:none;flex-direction:column;align-items:center;justify-content:center;gap:24px;height:100%;text-align:center;padding:60px 32px;background:linear-gradient(180deg,#f0f4f8 0%,#fff 100%);}
 .pres-mobile-fallback .pres-open-btn{display:inline-flex;align-items:center;gap:10px;padding:16px 36px;background:var(--sky);color:#fff;border:none;border-radius:14px;font-family:'Montserrat',sans-serif;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;transition:all .2s;box-shadow:0 4px 20px rgba(65,187,201,.35);}
-.pres-mobile-fallback .pres-open-btn:hover{background:var(--navy);transform:translateY(-1px);box-shadow:0 6px 24px rgba(0,32,92,.3);}
+.pres-mobile-fallback .pres-open-btn:hover{}
 .pres-mobile-fallback p{font-size:15px;color:var(--navy);max-width:320px;font-weight:600;line-height:1.4;}
 
 /* ── PROPUESTA ── */
@@ -140,7 +140,7 @@ input,textarea,select{-webkit-user-select:text;-moz-user-select:text;-ms-user-se
 .prop-note{font-size:11px;color:var(--gray);margin-top:8px;font-family:'Montserrat',sans-serif;font-style:italic;}
 .accion-add-row{display:flex;gap:6px;align-items:center;padding:4px 4px 2px;}
 .btn-accion-add{background:var(--navy);color:#fff;border:none;border-radius:6px;width:28px;height:28px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0;}
-.btn-accion-add:hover{background:var(--blue);}
+.btn-accion-add:hover{}
 .accion-row{display:flex;align-items:center;gap:6px;padding:3px 4px;border-left:3px solid var(--sky);margin-bottom:2px;background:#f8fafd;border-radius:0 4px 4px 0;}
 .accion-ticker{font-size:12px;font-weight:700;color:var(--navy);font-family:'Montserrat',sans-serif;min-width:70px;}
 .accion-nombre{font-size:10px;color:var(--gray);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -148,7 +148,7 @@ input,textarea,select{-webkit-user-select:text;-moz-user-select:text;-ms-user-se
 .accion-input{width:72px;padding:3px 6px;border:1px solid #dce3ef;border-radius:4px;font-size:12px;text-align:right;font-family:'Montserrat',sans-serif;}
 .accion-secondary{font-size:11px;color:var(--gray);min-width:54px;text-align:right;font-family:'Montserrat',sans-serif;}
 .accion-del{background:none;border:none;color:#aaa;cursor:pointer;font-size:14px;padding:0 2px;flex-shrink:0;}
-.accion-del:hover{color:#e74c3c;}
+.accion-del:hover{}
 .accion-loading{font-size:11px;color:var(--blue);font-style:italic;padding:4px;}
 
 /* ── CONFIGURACIÓN ── */
@@ -164,7 +164,7 @@ input,textarea,select{-webkit-user-select:text;-moz-user-select:text;-ms-user-se
 .fg input,.fg select{width:100%;padding:9px 12px;border:1.5px solid transparent;border-radius:7px;font-size:13px;font-family:'Montserrat',sans-serif;color:#1A2540;background:#fff;outline:none;transition:border-color .18s;box-sizing:border-box;}
 .fg input:focus,.fg select:focus{border-color:var(--sky);}
 .btn-primary{padding:10px 22px;background:var(--navy);color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Montserrat',sans-serif;transition:background .18s;width:100%;margin-top:4px;}
-.btn-primary:hover{background:var(--sky);color:var(--navy);}
+.btn-primary:hover{}
 .fondos-list{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;max-height:480px;overflow-y:auto;padding-right:2px;}
 .cfg-hint{font-size:12px;color:var(--gray);font-family:'Montserrat',sans-serif;margin:0 0 6px;}
 .fsec-hdr{background:var(--navy);color:#fff;font-size:12px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;padding:7px 12px;border-radius:6px;margin:8px 0 4px;font-family:'Montserrat',sans-serif;grid-column:1/-1;text-align:center;}
@@ -299,7 +299,7 @@ input,textarea,select{-webkit-user-select:text;-moz-user-select:text;-ms-user-se
 .cmp2-tbl{table-layout:auto;}
 .cmp2-tbl td{padding:7px 10px;border-bottom:1px solid #F1F5F9;color:#00205C;font-weight:500;white-space:nowrap;}
 .cmp2-tbl tr:nth-child(even){background:#FAFBFC;}
-.cmp2-tbl tr:hover{background:#F0F4FF;}
+.cmp2-tbl tr:hover{}
 .cmp2-tbl .r{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;}
 .cmp2-tbl .pos{color:#059669;font-weight:700;}.cmp2-tbl .neg{color:#DC2626;font-weight:700;}
 .cmp2-footer{padding:16px 24px 12px;background:transparent;border-top:1px solid #E2E8F0;margin:0 20px;}
@@ -308,7 +308,7 @@ input,textarea,select{-webkit-user-select:text;-moz-user-select:text;-ms-user-se
 .cmp2-vf-btn:last-child{border-radius:0 8px 8px 0;}
 .cmp2-vf-btn:not(:first-child){border-left:none;}
 .cmp2-vf-btn.active{background:#00205C;color:#fff;}
-.cmp2-vf-btn:hover:not(.active){background:#F1F5F9;}
+.cmp2-vf-btn:hover:not(.active){}
 .cmp2-footer p{font-size:10px;color:#94A3B8;line-height:1.5;margin:0;font-family:'Montserrat',sans-serif;}
 @media(max-width:600px) and (orientation:portrait){
   .cmp2-grid-top,.cmp2-grid-mid{grid-template-columns:1fr!important;}
@@ -330,8 +330,8 @@ input,textarea,select{-webkit-user-select:text;-moz-user-select:text;-ms-user-se
    el naranja se usa sólo como ACENTO (hero, sub-tabs activos, línea del backtest). */
 #page-elite .cmp2-vf-btn{border-color:#ED8A56;color:#ED8A56;}
 #page-elite .cmp2-vf-btn.active{background:#ED8A56;color:#fff;}
-#page-elite .cmp2-vf-btn:hover:not(.active){background:rgba(245,158,11,.08);}
-.elite-strat-row:hover{outline:2px solid rgba(237,138,86,.45);outline-offset:-2px;}
+#page-elite .cmp2-vf-btn:hover:not(.active){}
+.elite-strat-row:hover{}
 /* Dashboard de Elite: colores IDÉNTICOS a la pestaña Propuesta (navy), SALVO 4 elementos en naranja:
    subtítulo, barra de acento del título, barras de composición y línea del backtesting. */
 #elite-dash-mount [id^="prop-title-sub"]{color:#ED8A56!important;}
@@ -1811,6 +1811,14 @@ JavaScript es requerido para acceder a esta plataforma.<br>Por favor, habilita J
 </div><!-- /.container -->
 
 <script>
+// Sin efecto visual al pasar el mouse sobre las gráficas: las donas no se abren ni
+// engrosan el borde y los puntos de línea no aparecen. El tooltip informativo se
+// conserva (no cambia el color del elemento). Aplica a TODAS las gráficas.
+if (window.Chart) {
+  Chart.defaults.elements.arc.hoverOffset = 0;
+  Chart.defaults.elements.point.hoverRadius = 0;
+  Chart.defaults.elements.point.hoverBorderWidth = 1;
+}
 const ALL_FUNDS = ["VXREPO1", "VXGUBCP", "VXUDIMP", "VXDEUDA", "VXGUBLP", "VXTBILL", "VXCOBER", "VLMXETF", "VLMXDME", "VALMXA", "VALMX20", "VALMX28", "VALMXVL", "VALMXES", "VLMXTEC", "VLMXESG", "VALMXHC", "VXINFRA", "VLMXJUB", "VLMXP24", "VLMXP31", "VLMXP38", "VLMXP45", "VLMXP52", "VLMXP59"];
 
 document.addEventListener('DOMContentLoaded',()=>{
@@ -2322,12 +2330,12 @@ let _acTimer=null, _acCtx=null, _acResults=[], _acJustPicked=false, _acHi=-1, _d
   st.textContent=`
   .accion-detalle-btn{margin-top:4px;background:var(--navy);color:#fff;border:none;border-radius:5px;
     font-size:10.5px;font-weight:700;padding:3px 8px;cursor:pointer;font-family:'Montserrat',sans-serif;align-self:flex-start;}
-  .accion-detalle-btn:hover{background:var(--sky);}
+  .accion-detalle-btn:hover{}
   #ac-dropdown{position:fixed;z-index:10050;background:#fff;border:1px solid var(--silver);border-radius:8px;
     box-shadow:0 8px 28px rgba(0,32,92,.22);max-height:280px;overflow-y:auto;font-family:'Montserrat',sans-serif;display:none;}
   #ac-dropdown .ac-item{padding:7px 11px;cursor:pointer;border-bottom:1px solid #eef1f4;display:flex;align-items:center;gap:8px;}
   #ac-dropdown .ac-item:last-child{border-bottom:none;}
-  #ac-dropdown .ac-item.hi,#ac-dropdown .ac-item:hover{background:#eaf2fb;}
+  #ac-dropdown .ac-item.hi{background:#eaf2fb;}
   #ac-dropdown .ac-tk{font-weight:800;color:var(--navy);font-size:12.5px;min-width:62px;}
   #ac-dropdown .ac-nm{font-size:11.5px;color:#333;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   #ac-dropdown .ac-badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:10px;color:#fff;}
@@ -2644,7 +2652,7 @@ async function _fwdRender(){
     datasets.push({label:o.e.label+' (-½σ)', data:cono.map(function(p){return +(p.plo*100).toFixed(1);}), borderColor:'transparent', borderWidth:0, pointRadius:0, fill:false, tension:0.35});
     datasets.push({label:o.e.label+' (rango ±½σ)', data:cono.map(function(p){return +(p.phi*100).toFixed(1);}), borderColor:'transparent', borderWidth:0, pointRadius:0, fill:'-1', backgroundColor:_hex2rgba(o.e.color,0.13), tension:0.35});
     }
-    datasets.push({label:o.e.label, data:cono.map(function(p){return +(p.med*100).toFixed(1);}), borderColor:o.e.color, backgroundColor:o.e.color, fill:false, borderWidth:3, pointRadius:0, pointHitRadius:4, pointHoverRadius:3, tension:0.35, _med:true});
+    datasets.push({label:o.e.label, data:cono.map(function(p){return +(p.med*100).toFixed(1);}), borderColor:o.e.color, backgroundColor:o.e.color, fill:false, borderWidth:3, pointRadius:0, pointHitRadius:4, pointHoverRadius:0, tension:0.35, _med:true});
   });
   var ctx = document.getElementById('fwd-chart');
   if(_fwdChart){ _fwdChart.destroy(); }
@@ -3560,7 +3568,7 @@ function buildDashCharts(C, sfx, col){
   type:'bar',
   data:{
     labels:[],
-    datasets:[{data:[],backgroundColor:col.bar,borderRadius:3,barPercentage:.82,categoryPercentage:.92}]
+    datasets:[{data:[],backgroundColor:col.bar,hoverBackgroundColor:col.bar,borderRadius:3,barPercentage:.82,categoryPercentage:.92}]
   },
   options:{
     indexAxis:'y',responsive:true,maintainAspectRatio:false,
@@ -3596,8 +3604,8 @@ function buildDashCharts(C, sfx, col){
   data:{
     labels:['2016','2017','2018','2019','2020','2021','2022','2023','2024'],
     datasets:[
-      {label:'Propuesta',data:[100,108,112,122,115,140,150,170,200],borderColor:col.line,backgroundColor:col.lineFill,fill:true,borderWidth:2,pointRadius:0,pointHitRadius:6,pointHoverRadius:4,pointHoverBackgroundColor:col.line,tension:.35},
-      {label:'Referencia',data:[100,106,110,118,112,134,144,162,193],borderColor:'#41BBC9',backgroundColor:'transparent',borderWidth:1.5,borderDash:[5,4],pointRadius:0,pointHitRadius:6,pointHoverRadius:4,pointHoverBackgroundColor:'#41BBC9',tension:.35}
+      {label:'Propuesta',data:[100,108,112,122,115,140,150,170,200],borderColor:col.line,backgroundColor:col.lineFill,fill:true,borderWidth:2,pointRadius:0,pointHitRadius:6,pointHoverRadius:0,pointHoverBackgroundColor:col.line,tension:.35},
+      {label:'Referencia',data:[100,106,110,118,112,134,144,162,193],borderColor:'#41BBC9',backgroundColor:'transparent',borderWidth:1.5,borderDash:[5,4],pointRadius:0,pointHitRadius:6,pointHoverRadius:0,pointHoverBackgroundColor:'#41BBC9',tension:.35}
     ]
   },
   options:{
@@ -3642,7 +3650,7 @@ function donut(id,labels,data,colors,radius,compact){
   const lblPSW  = compact ? 10 : 12;
   return new Chart(document.getElementById(id),{
     type:'doughnut',
-    data:{labels,datasets:[{data,backgroundColor:colors||PAL.slice(0,data.length),borderWidth:2,borderColor:'#fff',hoverOffset:8,hoverBorderWidth:3,...(radius?{radius}:{})}]},
+    data:{labels,datasets:[{data,backgroundColor:colors||PAL.slice(0,data.length),borderWidth:2,borderColor:'#fff',hoverOffset:0,hoverBorderWidth:2,...(radius?{radius}:{})}]},
     options:{
       responsive:true,maintainAspectRatio:false,cutout:'60%',
       plugins:{
@@ -3936,9 +3944,9 @@ function initCmp2Charts() {
   cmp2Charts.perf = new Chart(document.getElementById('c-cmp2-perf'), {
     type:'line',
     data:{labels:[],datasets:[
-      {label:'P. Actual',data:[],borderColor:CMP2_COLORS[0],backgroundColor:'rgba(0,32,92,0.06)',fill:true,borderWidth:1.5,pointRadius:0,pointHitRadius:4,pointHoverRadius:3,tension:0.35},
-      {label:'P. Modelo',data:[],borderColor:CMP2_COLORS[1],backgroundColor:'rgba(65,187,201,0.06)',fill:true,borderWidth:1.5,pointRadius:0,pointHitRadius:4,pointHoverRadius:3,tension:0.35},
-      {label:'P. Propuesta',data:[],borderColor:CMP2_COLORS[2],backgroundColor:'rgba(61,165,224,0.06)',fill:true,borderWidth:1.5,pointRadius:0,pointHitRadius:4,pointHoverRadius:3,tension:0.35}
+      {label:'P. Actual',data:[],borderColor:CMP2_COLORS[0],backgroundColor:'rgba(0,32,92,0.06)',fill:true,borderWidth:1.5,pointRadius:0,pointHitRadius:4,pointHoverRadius:0,tension:0.35},
+      {label:'P. Modelo',data:[],borderColor:CMP2_COLORS[1],backgroundColor:'rgba(65,187,201,0.06)',fill:true,borderWidth:1.5,pointRadius:0,pointHitRadius:4,pointHoverRadius:0,tension:0.35},
+      {label:'P. Propuesta',data:[],borderColor:CMP2_COLORS[2],backgroundColor:'rgba(61,165,224,0.06)',fill:true,borderWidth:1.5,pointRadius:0,pointHitRadius:4,pointHoverRadius:0,tension:0.35}
     ]},
     options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
       plugins:{legend:{display:false},
@@ -4018,9 +4026,9 @@ function initCmp2Charts() {
   cmp2Charts.scatter = new Chart(document.getElementById('c-cmp2-scatter'), {
     type:'scatter',
     data:{datasets:[
-      {label:'P. Actual',data:[],backgroundColor:CMP2_COLORS[0],borderColor:CMP2_COLORS[0],pointRadius:10,pointHoverRadius:12},
-      {label:'P. Modelo',data:[],backgroundColor:CMP2_COLORS[1],borderColor:CMP2_COLORS[1],pointRadius:10,pointHoverRadius:12},
-      {label:'P. Propuesta',data:[],backgroundColor:CMP2_COLORS[2],borderColor:CMP2_COLORS[2],pointRadius:10,pointHoverRadius:12}
+      {label:'P. Actual',data:[],backgroundColor:CMP2_COLORS[0],borderColor:CMP2_COLORS[0],pointRadius:10,pointHoverRadius:10},
+      {label:'P. Modelo',data:[],backgroundColor:CMP2_COLORS[1],borderColor:CMP2_COLORS[1],pointRadius:10,pointHoverRadius:10},
+      {label:'P. Propuesta',data:[],backgroundColor:CMP2_COLORS[2],borderColor:CMP2_COLORS[2],pointRadius:10,pointHoverRadius:10}
     ]},
     options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:22,right:22}},
       plugins:{legend:{position:'bottom',labels:{boxWidth:14,boxHeight:14,font:{size:11,family:'Montserrat',weight:'700'},padding:14,usePointStyle:true,pointStyle:'rectRounded',color:'#00205C',filter:(item,data)=>!data.datasets[item.datasetIndex].hidden}},
@@ -7209,8 +7217,8 @@ function calcFlujosPension() {
     data: {
       labels: cEdades,
       datasets: [
-        { label: 'Con inversión', data: cInv, borderColor: '#00205C', backgroundColor: 'rgba(0,32,92,0.06)', fill: true, borderWidth: 1.5, pointRadius: 0, pointHitRadius: 4, pointHoverRadius: 3, tension: 0.35 },
-        { label: 'Sin inversión', data: cSin, borderColor: '#41BBC9', backgroundColor: 'rgba(65,187,201,0.06)', fill: true, borderWidth: 1.5, pointRadius: 0, pointHitRadius: 4, pointHoverRadius: 3, tension: 0.35 },
+        { label: 'Con inversión', data: cInv, borderColor: '#00205C', backgroundColor: 'rgba(0,32,92,0.06)', fill: true, borderWidth: 1.5, pointRadius: 0, pointHitRadius: 4, pointHoverRadius: 0, tension: 0.35 },
+        { label: 'Sin inversión', data: cSin, borderColor: '#41BBC9', backgroundColor: 'rgba(65,187,201,0.06)', fill: true, borderWidth: 1.5, pointRadius: 0, pointHitRadius: 4, pointHoverRadius: 0, tension: 0.35 },
       ]
     },
     options: {
@@ -7752,8 +7760,8 @@ function ceDrawCharts(rows, monto, isrRate) {
       data: {
         labels: lbls2,
         datasets: [
-          { label: 'CETES 28d (neto ISR)', data: balC, borderColor: '#00205C', backgroundColor: 'rgba(0,32,92,0.06)', fill: true, borderWidth: 1.5, pointRadius: 0, pointHitRadius: 4, pointHoverRadius: 3, tension: 0.35 },
-          { label: 'VLMXETF (neto ISR)', data: balE, borderColor: '#41BBC9', backgroundColor: 'rgba(65,187,201,0.06)', fill: true, borderWidth: 1.5, pointRadius: 0, pointHitRadius: 4, pointHoverRadius: 3, tension: 0.35 }
+          { label: 'CETES 28d (neto ISR)', data: balC, borderColor: '#00205C', backgroundColor: 'rgba(0,32,92,0.06)', fill: true, borderWidth: 1.5, pointRadius: 0, pointHitRadius: 4, pointHoverRadius: 0, tension: 0.35 },
+          { label: 'VLMXETF (neto ISR)', data: balE, borderColor: '#41BBC9', backgroundColor: 'rgba(65,187,201,0.06)', fill: true, borderWidth: 1.5, pointRadius: 0, pointHitRadius: 4, pointHoverRadius: 0, tension: 0.35 }
         ]
       },
       options: {
